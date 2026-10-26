@@ -1,0 +1,1264 @@
+{
+ "generatedBy": "scripts/dev/generate-mysql-schema.js",
+ "tables": {
+  "company_settings": [
+   {
+    "id": 1,
+    "name": "OBO Financial System",
+    "tagline": "Currency Exchange · Trade Finance · Hargeysa, Somaliland",
+    "address": "Airport Road, Hargeysa, Somaliland",
+    "phone": "+252 63 400 9911",
+    "email": "info@geeska-exchange.example",
+    "logo_data_url": null,
+    "pdf_accent_color": null,
+    "updated_by": null,
+    "updated_at": "@@NOW@@",
+    "brand_color": null,
+    "website": null,
+    "favicon_data_url": null,
+    "secondary_color": null,
+    "accent_color": null,
+    "status_pending_color": null,
+    "status_paid_color": null,
+    "status_refunded_color": null,
+    "font_family": null,
+    "font_size": null,
+    "primary_dark": null,
+    "primary_light": null,
+    "accent_bright": null,
+    "brand_theme_key": null,
+    "registration_number": null,
+    "tax_number": null,
+    "quotation_column_defaults": null
+   }
+  ],
+  "excel_templates": [
+   {
+    "id": "tpl_mvjx5blv_d6176cd467",
+    "kind": "global",
+    "name": "Professional Default",
+    "is_default": 1,
+    "is_archived": 0,
+    "is_builtin": 1,
+    "preset_key": null,
+    "show_logo": 1,
+    "show_company_name": 1,
+    "show_company_subtitle": 1,
+    "show_company_address": 1,
+    "show_company_phone": 1,
+    "show_company_email": 1,
+    "show_company_website": 1,
+    "show_doc_title": 1,
+    "show_doc_number": 1,
+    "show_generated_date": 1,
+    "show_generated_by": 1,
+    "show_date_range": 1,
+    "show_notes": 1,
+    "show_bill_to_address": 1,
+    "show_bill_to_contact": 1,
+    "color_primary": null,
+    "color_secondary": null,
+    "color_accent": null,
+    "color_text": null,
+    "color_muted": null,
+    "color_table_header": null,
+    "table_header_text_color": null,
+    "font_family": "Calibri",
+    "font_size_title": 16,
+    "font_size_heading": 13,
+    "font_size_body": 10,
+    "table_theme": "medium_blue",
+    "table_alt_rows": 1,
+    "freeze_header": 1,
+    "enable_filters": 1,
+    "date_format": "dd mmm yyyy",
+    "show_footer": 1,
+    "footer_show_company_name": 1,
+    "footer_show_generated_by": 1,
+    "footer_show_generated_date": 1,
+    "footer_show_page_number": 1,
+    "footer_custom_text": null,
+    "footer_align": "left",
+    "page_orientation": "auto",
+    "fit_to_page": 1,
+    "repeat_header_rows": 1,
+    "version": 1,
+    "created_at": "@@NOW@@",
+    "created_by": null,
+    "updated_at": "@@NOW@@",
+    "updated_by": null
+   }
+  ],
+  "expense_categories": [
+   {
+    "id": "expcat_01",
+    "name": "Office Rent",
+    "status": "active",
+    "is_builtin": 1,
+    "sort_order": 1,
+    "created_at": "@@NOW@@",
+    "created_by": "system"
+   },
+   {
+    "id": "expcat_02",
+    "name": "Salaries and Wages",
+    "status": "active",
+    "is_builtin": 1,
+    "sort_order": 2,
+    "created_at": "@@NOW@@",
+    "created_by": "system"
+   },
+   {
+    "id": "expcat_03",
+    "name": "Electricity",
+    "status": "active",
+    "is_builtin": 1,
+    "sort_order": 3,
+    "created_at": "@@NOW@@",
+    "created_by": "system"
+   },
+   {
+    "id": "expcat_04",
+    "name": "Internet and Telephone",
+    "status": "active",
+    "is_builtin": 1,
+    "sort_order": 4,
+    "created_at": "@@NOW@@",
+    "created_by": "system"
+   },
+   {
+    "id": "expcat_05",
+    "name": "Transportation and Fuel",
+    "status": "active",
+    "is_builtin": 1,
+    "sort_order": 5,
+    "created_at": "@@NOW@@",
+    "created_by": "system"
+   },
+   {
+    "id": "expcat_06",
+    "name": "Office Supplies",
+    "status": "active",
+    "is_builtin": 1,
+    "sort_order": 6,
+    "created_at": "@@NOW@@",
+    "created_by": "system"
+   },
+   {
+    "id": "expcat_07",
+    "name": "Maintenance and Repairs",
+    "status": "active",
+    "is_builtin": 1,
+    "sort_order": 7,
+    "created_at": "@@NOW@@",
+    "created_by": "system"
+   },
+   {
+    "id": "expcat_08",
+    "name": "Utilities",
+    "status": "active",
+    "is_builtin": 1,
+    "sort_order": 8,
+    "created_at": "@@NOW@@",
+    "created_by": "system"
+   },
+   {
+    "id": "expcat_09",
+    "name": "Marketing",
+    "status": "active",
+    "is_builtin": 1,
+    "sort_order": 9,
+    "created_at": "@@NOW@@",
+    "created_by": "system"
+   },
+   {
+    "id": "expcat_10",
+    "name": "Bank Charges",
+    "status": "active",
+    "is_builtin": 1,
+    "sort_order": 10,
+    "created_at": "@@NOW@@",
+    "created_by": "system"
+   },
+   {
+    "id": "expcat_11",
+    "name": "Other Expenses",
+    "status": "active",
+    "is_builtin": 1,
+    "sort_order": 11,
+    "created_at": "@@NOW@@",
+    "created_by": "system"
+   }
+  ],
+  "pdf_templates": [
+   {
+    "id": "tpl_mvjx5bls_0f4fafaea1",
+    "kind": "global",
+    "name": "Professional Default",
+    "is_default": 1,
+    "is_archived": 0,
+    "is_builtin": 1,
+    "preset_key": null,
+    "show_signature_lines": 1,
+    "show_notes": 1,
+    "show_bill_to_address": 1,
+    "show_bill_to_contact": 1,
+    "header_note": null,
+    "footer_text": null,
+    "paper_size": "A4",
+    "orientation": "portrait",
+    "page_width": null,
+    "page_height": null,
+    "margin_top": 42,
+    "margin_bottom": 42,
+    "margin_left": 42,
+    "margin_right": 42,
+    "color_primary": null,
+    "color_secondary": null,
+    "color_accent": null,
+    "color_text": null,
+    "color_muted": null,
+    "color_table_header": null,
+    "color_table_border": null,
+    "color_background": null,
+    "color_success": null,
+    "color_warning": null,
+    "color_danger": null,
+    "font_family": "helvetica",
+    "font_size_title": null,
+    "font_size_heading": null,
+    "font_size_body": null,
+    "font_size_table": null,
+    "font_size_footer": null,
+    "header_style": "professional",
+    "logo_position": "left",
+    "logo_max_size": 30,
+    "show_logo": 1,
+    "show_company_name": 1,
+    "show_company_subtitle": 1,
+    "show_company_address": 1,
+    "show_company_phone": 1,
+    "show_company_email": 1,
+    "show_company_website": 1,
+    "show_registration_number": 0,
+    "show_tax_number": 0,
+    "show_doc_number": 1,
+    "show_doc_date": 1,
+    "show_footer": 1,
+    "footer_show_company_name": 1,
+    "footer_show_phone": 0,
+    "footer_show_email": 0,
+    "footer_show_website": 0,
+    "footer_show_generated_by": 1,
+    "footer_show_generated_date": 1,
+    "footer_show_page_number": 1,
+    "footer_show_signature": 1,
+    "footer_custom_text": null,
+    "footer_align": "left",
+    "table_header_bg": null,
+    "table_header_text_color": null,
+    "table_alt_rows": 0,
+    "table_border_style": "none",
+    "table_border_color": null,
+    "table_row_padding": 0,
+    "show_summary_cards": 1,
+    "summary_card_color": null,
+    "default_notes": null,
+    "default_terms": null,
+    "show_terms": 0,
+    "signature_style": "auto",
+    "signature_labels": null,
+    "version": 1,
+    "created_at": "@@NOW@@",
+    "created_by": null,
+    "updated_at": "@@NOW@@",
+    "updated_by": null
+   },
+   {
+    "id": "tpl_mvjx5blu_8eecb825ed",
+    "kind": "quotation",
+    "name": "Standard Quotation",
+    "is_default": 1,
+    "is_archived": 0,
+    "is_builtin": 1,
+    "preset_key": null,
+    "show_signature_lines": 1,
+    "show_notes": 1,
+    "show_bill_to_address": 1,
+    "show_bill_to_contact": 1,
+    "header_note": null,
+    "footer_text": null,
+    "paper_size": "A4",
+    "orientation": "portrait",
+    "page_width": null,
+    "page_height": null,
+    "margin_top": 42,
+    "margin_bottom": 42,
+    "margin_left": 42,
+    "margin_right": 42,
+    "color_primary": null,
+    "color_secondary": null,
+    "color_accent": null,
+    "color_text": null,
+    "color_muted": null,
+    "color_table_header": null,
+    "color_table_border": null,
+    "color_background": null,
+    "color_success": null,
+    "color_warning": null,
+    "color_danger": null,
+    "font_family": "helvetica",
+    "font_size_title": null,
+    "font_size_heading": null,
+    "font_size_body": null,
+    "font_size_table": null,
+    "font_size_footer": null,
+    "header_style": "professional",
+    "logo_position": "left",
+    "logo_max_size": 30,
+    "show_logo": 1,
+    "show_company_name": 1,
+    "show_company_subtitle": 1,
+    "show_company_address": 1,
+    "show_company_phone": 1,
+    "show_company_email": 1,
+    "show_company_website": 1,
+    "show_registration_number": 0,
+    "show_tax_number": 0,
+    "show_doc_number": 1,
+    "show_doc_date": 1,
+    "show_footer": 1,
+    "footer_show_company_name": 1,
+    "footer_show_phone": 0,
+    "footer_show_email": 0,
+    "footer_show_website": 0,
+    "footer_show_generated_by": 1,
+    "footer_show_generated_date": 1,
+    "footer_show_page_number": 1,
+    "footer_show_signature": 1,
+    "footer_custom_text": null,
+    "footer_align": "left",
+    "table_header_bg": null,
+    "table_header_text_color": null,
+    "table_alt_rows": 0,
+    "table_border_style": "none",
+    "table_border_color": null,
+    "table_row_padding": 0,
+    "show_summary_cards": 1,
+    "summary_card_color": null,
+    "default_notes": null,
+    "default_terms": null,
+    "show_terms": 0,
+    "signature_style": "auto",
+    "signature_labels": null,
+    "version": 1,
+    "created_at": "@@NOW@@",
+    "created_by": null,
+    "updated_at": null,
+    "updated_by": null
+   }
+  ],
+  "role_permissions": [
+   {
+    "role_id": "role_admin",
+    "permission_key": "accounts.view"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "transfers.view"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "accounts.export"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "accounts.print"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "users.view"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "users.create"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "users.update"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "users.deactivate"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "users.activate"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "users.resetPassword"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "users.assignRole"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "exchange.manageRate"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "exchange.create"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "exchange.view"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "exchange.viewAll"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "exchange.update"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "exchange.delete"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "transfers.update"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "transfers.delete"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "quotations.create"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "quotations.update"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "quotations.settle"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "quotations.duplicate"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "quotations.view"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "quotations.delete"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "reports.view"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "reports.export"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "reports.print"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "auditLog.view"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "payments.view"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "payments.export"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "payments.print"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "accounts.create"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "accounts.update"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "accounts.deactivate"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "accounts.activate"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "transfers.create"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "payments.create"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "payments.update"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "payments.delete"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "accounts.delete"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "settings.view"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "settings.update"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "users.delete"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "users.managePermissions"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "roles.view"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "roles.create"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "roles.update"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "roles.delete"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "roles.managePermissions"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "settings.manageTableDefaults"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "dashboard.customize"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "dashboard.export"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "accounts.import"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "accounts.importOpeningBalance"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "expenses.view"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "expenses.create"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "expenses.update"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "expenses.cancel"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "expenses.manageCategories"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "expenses.export"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "accounts.view"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "transfers.view"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "accounts.export"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "accounts.print"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "exchange.manageRate"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "exchange.viewAll"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "exchange.view"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "quotations.view"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "quotations.delete"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "reports.view"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "reports.export"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "reports.print"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "auditLog.view"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "payments.view"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "payments.export"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "payments.print"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "accounts.create"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "accounts.update"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "accounts.deactivate"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "accounts.activate"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "transfers.create"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "payments.create"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "payments.update"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "payments.delete"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "accounts.delete"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "accounts.view"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "transfers.view"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "accounts.export"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "accounts.print"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "exchange.create"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "exchange.view"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "exchange.viewAll"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "exchange.update"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "exchange.delete"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "transfers.update"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "transfers.delete"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "reports.view"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "reports.export"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "reports.print"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "auditLog.view"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "payments.view"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "payments.export"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "payments.print"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "accounts.create"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "accounts.update"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "accounts.deactivate"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "accounts.activate"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "transfers.create"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "payments.create"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "payments.update"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "payments.delete"
+   },
+   {
+    "role_id": "role_cashier",
+    "permission_key": "accounts.view"
+   },
+   {
+    "role_id": "role_cashier",
+    "permission_key": "transfers.view"
+   },
+   {
+    "role_id": "role_cashier",
+    "permission_key": "accounts.export"
+   },
+   {
+    "role_id": "role_cashier",
+    "permission_key": "accounts.print"
+   },
+   {
+    "role_id": "role_cashier",
+    "permission_key": "exchange.create"
+   },
+   {
+    "role_id": "role_cashier",
+    "permission_key": "exchange.view"
+   },
+   {
+    "role_id": "role_sales",
+    "permission_key": "accounts.view"
+   },
+   {
+    "role_id": "role_sales",
+    "permission_key": "transfers.view"
+   },
+   {
+    "role_id": "role_sales",
+    "permission_key": "accounts.export"
+   },
+   {
+    "role_id": "role_sales",
+    "permission_key": "accounts.print"
+   },
+   {
+    "role_id": "role_sales",
+    "permission_key": "quotations.create"
+   },
+   {
+    "role_id": "role_sales",
+    "permission_key": "quotations.update"
+   },
+   {
+    "role_id": "role_sales",
+    "permission_key": "quotations.settle"
+   },
+   {
+    "role_id": "role_sales",
+    "permission_key": "quotations.duplicate"
+   },
+   {
+    "role_id": "role_sales",
+    "permission_key": "quotations.view"
+   },
+   {
+    "role_id": "role_sales",
+    "permission_key": "accounts.create"
+   },
+   {
+    "role_id": "role_sales",
+    "permission_key": "accounts.update"
+   },
+   {
+    "role_id": "role_sales",
+    "permission_key": "accounts.deactivate"
+   },
+   {
+    "role_id": "role_sales",
+    "permission_key": "accounts.activate"
+   },
+   {
+    "role_id": "role_sales",
+    "permission_key": "transfers.create"
+   },
+   {
+    "role_id": "role_sales",
+    "permission_key": "payments.create"
+   },
+   {
+    "role_id": "role_sales",
+    "permission_key": "payments.update"
+   },
+   {
+    "role_id": "role_sales",
+    "permission_key": "payments.delete"
+   },
+   {
+    "role_id": "role_sales",
+    "permission_key": "payments.view"
+   },
+   {
+    "role_id": "role_sales",
+    "permission_key": "payments.export"
+   },
+   {
+    "role_id": "role_sales",
+    "permission_key": "payments.print"
+   },
+   {
+    "role_id": "role_viewer",
+    "permission_key": "accounts.view"
+   },
+   {
+    "role_id": "role_viewer",
+    "permission_key": "transfers.view"
+   },
+   {
+    "role_id": "role_viewer",
+    "permission_key": "accounts.export"
+   },
+   {
+    "role_id": "role_viewer",
+    "permission_key": "accounts.print"
+   },
+   {
+    "role_id": "role_viewer",
+    "permission_key": "reports.view"
+   },
+   {
+    "role_id": "role_viewer",
+    "permission_key": "reports.export"
+   },
+   {
+    "role_id": "role_viewer",
+    "permission_key": "reports.print"
+   },
+   {
+    "role_id": "role_viewer",
+    "permission_key": "auditLog.view"
+   },
+   {
+    "role_id": "role_viewer",
+    "permission_key": "payments.view"
+   },
+   {
+    "role_id": "role_viewer",
+    "permission_key": "payments.export"
+   },
+   {
+    "role_id": "role_viewer",
+    "permission_key": "payments.print"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "currency.usd"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "currency.slsh"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "rates.view"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "profit.viewExchange"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "rates.viewHistory"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "rates.exportHistory"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "rates.updateDaily"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "rates.updateSale"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "rates.create"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "profit.viewCompany"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "profit.viewDashboard"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "profit.viewReports"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "profit.export"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "currency.usd"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "currency.slsh"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "rates.view"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "profit.viewExchange"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "rates.viewHistory"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "rates.exportHistory"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "rates.updateDaily"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "rates.updateSale"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "rates.create"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "profit.viewCompany"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "profit.viewDashboard"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "profit.viewReports"
+   },
+   {
+    "role_id": "role_manager",
+    "permission_key": "profit.export"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "currency.usd"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "currency.slsh"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "rates.view"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "profit.viewExchange"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "profit.viewCompany"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "profit.viewDashboard"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "profit.viewReports"
+   },
+   {
+    "role_id": "role_accountant",
+    "permission_key": "profit.export"
+   },
+   {
+    "role_id": "role_cashier",
+    "permission_key": "currency.usd"
+   },
+   {
+    "role_id": "role_cashier",
+    "permission_key": "currency.slsh"
+   },
+   {
+    "role_id": "role_cashier",
+    "permission_key": "rates.view"
+   },
+   {
+    "role_id": "role_cashier",
+    "permission_key": "profit.viewExchange"
+   },
+   {
+    "role_id": "role_sales",
+    "permission_key": "currency.usd"
+   },
+   {
+    "role_id": "role_sales",
+    "permission_key": "currency.slsh"
+   },
+   {
+    "role_id": "role_sales",
+    "permission_key": "rates.view"
+   },
+   {
+    "role_id": "role_sales",
+    "permission_key": "profit.viewExchange"
+   },
+   {
+    "role_id": "role_viewer",
+    "permission_key": "currency.usd"
+   },
+   {
+    "role_id": "role_viewer",
+    "permission_key": "currency.slsh"
+   },
+   {
+    "role_id": "role_viewer",
+    "permission_key": "rates.view"
+   },
+   {
+    "role_id": "role_viewer",
+    "permission_key": "profit.viewExchange"
+   },
+   {
+    "role_id": "role_viewer",
+    "permission_key": "profit.viewCompany"
+   },
+   {
+    "role_id": "role_viewer",
+    "permission_key": "profit.viewDashboard"
+   },
+   {
+    "role_id": "role_viewer",
+    "permission_key": "profit.viewReports"
+   },
+   {
+    "role_id": "role_viewer",
+    "permission_key": "profit.export"
+   },
+   {
+    "role_id": "role_admin",
+    "permission_key": "rates.delete"
+   }
+  ],
+  "roles": [
+   {
+    "id": "role_super_admin",
+    "key": "super_admin",
+    "name": "Super Admin",
+    "description": "Full, unconditional access to the entire system. Cannot be restricted by any permission setting.",
+    "is_super_admin": 1,
+    "is_protected": 1,
+    "permissions_version": 1,
+    "status": "active",
+    "created_at": "@@NOW@@",
+    "created_by": null,
+    "updated_at": null,
+    "updated_by": null
+   },
+   {
+    "id": "role_admin",
+    "key": "admin",
+    "name": "Admin",
+    "description": "Extensive management access, configurable by a Super Admin.",
+    "is_super_admin": 0,
+    "is_protected": 1,
+    "permissions_version": 1,
+    "status": "active",
+    "created_at": "@@NOW@@",
+    "created_by": null,
+    "updated_at": null,
+    "updated_by": null
+   },
+   {
+    "id": "role_manager",
+    "key": "manager",
+    "name": "Manager",
+    "description": "Oversees accounts, exchange rates, and quotation approvals.",
+    "is_super_admin": 0,
+    "is_protected": 1,
+    "permissions_version": 1,
+    "status": "active",
+    "created_at": "@@NOW@@",
+    "created_by": null,
+    "updated_at": null,
+    "updated_by": null
+   },
+   {
+    "id": "role_accountant",
+    "key": "accountant",
+    "name": "Accountant",
+    "description": "Handles day-to-day financial transactions and account management.",
+    "is_super_admin": 0,
+    "is_protected": 1,
+    "permissions_version": 1,
+    "status": "active",
+    "created_at": "@@NOW@@",
+    "created_by": null,
+    "updated_at": null,
+    "updated_by": null
+   },
+   {
+    "id": "role_cashier",
+    "key": "cashier",
+    "name": "Cashier / Teller",
+    "description": "Records exchange transactions at the counter.",
+    "is_super_admin": 0,
+    "is_protected": 1,
+    "permissions_version": 1,
+    "status": "active",
+    "created_at": "@@NOW@@",
+    "created_by": null,
+    "updated_at": null,
+    "updated_by": null
+   },
+   {
+    "id": "role_sales",
+    "key": "sales",
+    "name": "Sales Staff",
+    "description": "Creates and manages quotations for company accounts.",
+    "is_super_admin": 0,
+    "is_protected": 1,
+    "permissions_version": 1,
+    "status": "active",
+    "created_at": "@@NOW@@",
+    "created_by": null,
+    "updated_at": null,
+    "updated_by": null
+   },
+   {
+    "id": "role_viewer",
+    "key": "viewer",
+    "name": "Viewer / Auditor",
+    "description": "Read-only access, including reports.",
+    "is_super_admin": 0,
+    "is_protected": 1,
+    "permissions_version": 1,
+    "status": "active",
+    "created_at": "@@NOW@@",
+    "created_by": null,
+    "updated_at": null,
+    "updated_by": null
+   }
+  ]
+ }
+}

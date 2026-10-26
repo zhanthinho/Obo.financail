@@ -1,0 +1,50 @@
+{
+  "name": "obo-financial-system-api",
+  "version": "1.0.0",
+  "description": "Financial System Management API — currency management, money exchange, quotations, RBAC, and reports for OBO Financial System (MySQL)",
+  "main": "src/server.js",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "build": "node scripts/build.js",
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "seed": "node scripts/seed.js",
+    "seed:force": "node scripts/seed.js --force",
+    "build:frontend": "node scripts/build-frontend.js",
+    "migrate:sqlite:dry-run": "node --experimental-sqlite scripts/migrate-sqlite-to-mysql.js --dry-run",
+    "migrate:sqlite:execute": "node --experimental-sqlite scripts/migrate-sqlite-to-mysql.js --execute",
+    "backup": "node scripts/backup.js",
+    "integrity-check": "node scripts/integrity-check.js",
+    "schema:generate": "node --experimental-sqlite scripts/dev/generate-mysql-schema.js",
+    "test:mysql": "node test/mysql.js",
+    "test:migration": "node --experimental-sqlite test/migration.js",
+    "test:tenancy": "node test/tenancy.js",
+    "test:rbac": "node test/rbac.js",
+    "test:security": "node test/security.js",
+    "test:opening-balance": "node test/opening-balance.js",
+    "test:language": "node test/language.js",
+    "test:company-branding": "node test/company-branding.js",
+    "test:global-login": "node test/global-login.js",
+    "test:expenses": "node test/expenses.js",
+    "test:balance-sheet": "node test/balance-sheet.js",
+    "test:dashboard": "node test/dashboard.js",
+    "test:audit": "node test/audit.js",
+    "test:terminology": "node test/terminology.js",
+    "test:e2e": "node test/e2e.js"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "mysql2": "^3.24.6",
+    "pdf-lib": "^1.17.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "playwright": "^1.56.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "license": "UNLICENSED",
+  "private": true
+}

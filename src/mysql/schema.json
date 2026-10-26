@@ -1,0 +1,7064 @@
+{
+ "generatedBy": "scripts/dev/generate-mysql-schema.js",
+ "sourceSchema": "scripts/legacy/schema.sql + scripts/legacy/sqlite-tenant-db.js + scripts/legacy/sqlite-control-db.js",
+ "tenantTables": [
+  {
+   "name": "account_imports",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "file_name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "total_rows",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "imported_count",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_count",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "skipped_count",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "error_count",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "report_json",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "imported_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "imported_by_name",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [],
+   "checks": [],
+   "indexes": [
+    {
+     "name": "idx_account_imports_created",
+     "unique": false,
+     "columns": [
+      "created_at"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ]
+  },
+  {
+   "name": "account_ledger",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "client_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "type",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "currency",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "amount",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "balance_after",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "notes",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "staff_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "staff_name",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "date",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "source_type",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "source_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "reference_number",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "cash_account_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "reference",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [
+    {
+     "columns": [
+      "cash_account_id"
+     ],
+     "refTable": "cash_accounts",
+     "refColumns": [
+      "id"
+     ]
+    },
+    {
+     "columns": [
+      "client_id"
+     ],
+     "refTable": "clients",
+     "refColumns": [
+      "id"
+     ]
+    }
+   ],
+   "checks": [
+    "type IN ('deposit','withdrawal')",
+    "currency IN ('USD','SLSH')"
+   ],
+   "indexes": [
+    {
+     "name": "idx_ledger_client",
+     "unique": false,
+     "columns": [
+      "client_id"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ]
+  },
+  {
+   "name": "audit_log",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "actor_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "actor_name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "actor_role",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "action",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "details",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [],
+   "checks": [],
+   "indexes": [
+    {
+     "name": "idx_audit_at",
+     "unique": false,
+     "columns": [
+      "at"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ]
+  },
+  {
+   "name": "cash_accounts",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "type",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "currency",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "balance",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "status",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "active"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "reference",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "notes",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "last_activity_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "deactivated_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "deactivated_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "deactivation_reason",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [],
+   "checks": [
+    "type IN ('bank','mobile_money','physical_cash','other')",
+    "currency IN ('USD','SLSH')",
+    "status IN ('active','deactivated')"
+   ],
+   "indexes": []
+  },
+  {
+   "name": "cash_exchanges",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "date",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "from_cash_account_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "to_cash_account_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "amount_given",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "currency_given",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "amount_received",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "currency_received",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "rate_used",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "notes",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "reference_number",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "staff_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "staff_name",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "status",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "active"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [
+    {
+     "columns": [
+      "to_cash_account_id"
+     ],
+     "refTable": "cash_accounts",
+     "refColumns": [
+      "id"
+     ]
+    },
+    {
+     "columns": [
+      "from_cash_account_id"
+     ],
+     "refTable": "cash_accounts",
+     "refColumns": [
+      "id"
+     ]
+    }
+   ],
+   "checks": [
+    "currency_given IN ('USD','SLSH')",
+    "currency_received IN ('USD','SLSH')",
+    "status IN ('active','voided')"
+   ],
+   "indexes": []
+  },
+  {
+   "name": "cash_ledger",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "cash_account_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "type",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "currency",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "amount",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "balance_after",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "description",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "reference_number",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "counterparty_client_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "counterparty_label",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "staff_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "staff_name",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "date",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "source_type",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "source_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "reference",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [
+    {
+     "columns": [
+      "counterparty_client_id"
+     ],
+     "refTable": "clients",
+     "refColumns": [
+      "id"
+     ]
+    },
+    {
+     "columns": [
+      "cash_account_id"
+     ],
+     "refTable": "cash_accounts",
+     "refColumns": [
+      "id"
+     ]
+    }
+   ],
+   "checks": [
+    "type IN ('deposit','withdrawal')",
+    "currency IN ('USD','SLSH')"
+   ],
+   "indexes": [
+    {
+     "name": "idx_cash_ledger_account",
+     "unique": false,
+     "columns": [
+      "cash_account_id"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ]
+  },
+  {
+   "name": "cash_loan_payments",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "loan_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "cash_account_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "amount",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "currency",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "date",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "notes",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "reference_number",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "staff_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "staff_name",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [
+    {
+     "columns": [
+      "cash_account_id"
+     ],
+     "refTable": "cash_accounts",
+     "refColumns": [
+      "id"
+     ]
+    },
+    {
+     "columns": [
+      "loan_id"
+     ],
+     "refTable": "cash_loans",
+     "refColumns": [
+      "id"
+     ]
+    }
+   ],
+   "checks": [
+    "currency IN ('USD','SLSH')"
+   ],
+   "indexes": [
+    {
+     "name": "idx_cash_loan_payments_loan",
+     "unique": false,
+     "columns": [
+      "loan_id"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ]
+  },
+  {
+   "name": "cash_loans",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "reference_number",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "client_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "client_name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "cash_account_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "currency",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "principal_amount",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "outstanding_amount",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "status",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "active"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "notes",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "date",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "staff_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "staff_name",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "paid_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "written_off_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "written_off_reason",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [
+    {
+     "columns": [
+      "cash_account_id"
+     ],
+     "refTable": "cash_accounts",
+     "refColumns": [
+      "id"
+     ]
+    },
+    {
+     "columns": [
+      "client_id"
+     ],
+     "refTable": "clients",
+     "refColumns": [
+      "id"
+     ]
+    }
+   ],
+   "checks": [
+    "currency IN ('USD','SLSH')",
+    "status IN ('active','paid','written_off')"
+   ],
+   "indexes": [
+    {
+     "name": "idx_cash_loans_client",
+     "unique": false,
+     "columns": [
+      "client_id"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ]
+  },
+  {
+   "name": "cash_rate_history",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "currency_pair",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "USD_SLSH"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "rate",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "note",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "set_by",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "set_by_name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [
+    {
+     "columns": [
+      "set_by"
+     ],
+     "refTable": "users",
+     "refColumns": [
+      "id"
+     ]
+    }
+   ],
+   "checks": [],
+   "indexes": []
+  },
+  {
+   "name": "cash_transfers",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "date",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "from_cash_account_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "to_cash_account_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "currency",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "amount",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "notes",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "reference_number",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "staff_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "staff_name",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "status",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "active"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [
+    {
+     "columns": [
+      "to_cash_account_id"
+     ],
+     "refTable": "cash_accounts",
+     "refColumns": [
+      "id"
+     ]
+    },
+    {
+     "columns": [
+      "from_cash_account_id"
+     ],
+     "refTable": "cash_accounts",
+     "refColumns": [
+      "id"
+     ]
+    }
+   ],
+   "checks": [
+    "currency IN ('USD','SLSH')",
+    "status IN ('active','voided')"
+   ],
+   "indexes": []
+  },
+  {
+   "name": "clients",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "account_number",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "account_type",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "customer"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "currency",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "USD"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "linked_account_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "contact",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "email",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "id_number",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "address",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "balance_usd",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "balance_slsh",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "status",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "active"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "deactivated_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "deactivated_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "deactivation_reason",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "reactivated_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "reactivated_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "deleted_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "deleted_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "notes",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [
+    {
+     "columns": [
+      "linked_account_id"
+     ],
+     "refTable": "clients",
+     "refColumns": [
+      "id"
+     ]
+    }
+   ],
+   "checks": [
+    "account_type IN ('customer','company')",
+    "currency IN ('USD','SLSH')",
+    "status IN ('active','deactivated')"
+   ],
+   "indexes": [
+    {
+     "name": "idx_clients_account_number",
+     "unique": true,
+     "columns": [
+      "account_number"
+     ],
+     "where": "account_number IS NOT NULL",
+     "expression": null
+    },
+    {
+     "name": null,
+     "unique": true,
+     "columns": [
+      "name"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ]
+  },
+  {
+   "name": "company_settings",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "INTEGER",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "tagline",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "address",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "phone",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "email",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "logo_data_url",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "pdf_accent_color",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "brand_color",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "website",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "favicon_data_url",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "secondary_color",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "accent_color",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "status_pending_color",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "status_paid_color",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "status_refunded_color",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "font_family",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "font_size",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "primary_dark",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "primary_light",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "accent_bright",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "brand_theme_key",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "registration_number",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "tax_number",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "quotation_column_defaults",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [],
+   "checks": [
+    "id = 1"
+   ],
+   "indexes": []
+  },
+  {
+   "name": "excel_templates",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "kind",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "is_default",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "is_archived",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "is_builtin",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "preset_key",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_logo",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_company_name",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_company_subtitle",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_company_address",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_company_phone",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_company_email",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_company_website",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_doc_title",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_doc_number",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_generated_date",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_generated_by",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_date_range",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_notes",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_bill_to_address",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_bill_to_contact",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "color_primary",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "color_secondary",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "color_accent",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "color_text",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "color_muted",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "color_table_header",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "table_header_text_color",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "font_family",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "Calibri"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "font_size_title",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 16
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "font_size_heading",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 13
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "font_size_body",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 10
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "table_theme",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "medium_blue"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "table_alt_rows",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "freeze_header",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "enable_filters",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "date_format",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "dd mmm yyyy"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_footer",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "footer_show_company_name",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "footer_show_generated_by",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "footer_show_generated_date",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "footer_show_page_number",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "footer_custom_text",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "footer_align",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "left"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "page_orientation",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "auto"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "fit_to_page",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "repeat_header_rows",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "version",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [],
+   "checks": [
+    "kind IN ('global','account','quotation','exchange','transaction','reports','deposit','withdrawal','transfer')",
+    "font_family IN ('Calibri','Arial','Times New Roman','Georgia')",
+    "table_theme IN ('medium_blue','medium_green','medium_gray','medium_gold','dark_navy','light','none')",
+    "footer_align IN ('left','center','right')",
+    "page_orientation IN ('auto','portrait','landscape')"
+   ],
+   "indexes": [
+    {
+     "name": "idx_excel_templates_one_default_per_kind",
+     "unique": true,
+     "columns": [
+      "kind"
+     ],
+     "where": "is_default = 1",
+     "expression": null
+    }
+   ]
+  },
+  {
+   "name": "exchange_rates",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "rate",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "set_by",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "set_by_name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [
+    {
+     "columns": [
+      "set_by"
+     ],
+     "refTable": "users",
+     "refColumns": [
+      "id"
+     ]
+    }
+   ],
+   "checks": [],
+   "indexes": []
+  },
+  {
+   "name": "exchange_transactions",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "date",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "client_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "client_name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "from_account_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "to_account_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "amount_given",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "currency_given",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "amount_received",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "currency_received",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "rate_used",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "profit_usd",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "staff_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "staff_name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "status",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "active"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "notes",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "void_reason",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "voided_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "voided_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "reference_number",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "cash_out_account_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "cash_in_account_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [
+    {
+     "columns": [
+      "cash_in_account_id"
+     ],
+     "refTable": "cash_accounts",
+     "refColumns": [
+      "id"
+     ]
+    },
+    {
+     "columns": [
+      "cash_out_account_id"
+     ],
+     "refTable": "cash_accounts",
+     "refColumns": [
+      "id"
+     ]
+    },
+    {
+     "columns": [
+      "staff_id"
+     ],
+     "refTable": "users",
+     "refColumns": [
+      "id"
+     ]
+    },
+    {
+     "columns": [
+      "to_account_id"
+     ],
+     "refTable": "clients",
+     "refColumns": [
+      "id"
+     ]
+    },
+    {
+     "columns": [
+      "from_account_id"
+     ],
+     "refTable": "clients",
+     "refColumns": [
+      "id"
+     ]
+    },
+    {
+     "columns": [
+      "client_id"
+     ],
+     "refTable": "clients",
+     "refColumns": [
+      "id"
+     ]
+    }
+   ],
+   "checks": [
+    "currency_given IN ('USD','SLSH')",
+    "currency_received IN ('USD','SLSH')",
+    "status IN ('active','voided')"
+   ],
+   "indexes": [
+    {
+     "name": "idx_tx_staff",
+     "unique": false,
+     "columns": [
+      "staff_id"
+     ],
+     "where": null,
+     "expression": null
+    },
+    {
+     "name": "idx_tx_date",
+     "unique": false,
+     "columns": [
+      "date"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ]
+  },
+  {
+   "name": "expense_attachments",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "expense_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "file_name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "mime_type",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "size_bytes",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "data_base64",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "uploaded_by_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "uploaded_by_name",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "uploaded_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [
+    {
+     "columns": [
+      "expense_id"
+     ],
+     "refTable": "expenses",
+     "refColumns": [
+      "id"
+     ]
+    }
+   ],
+   "checks": [],
+   "indexes": [
+    {
+     "name": null,
+     "unique": true,
+     "columns": [
+      "expense_id"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ]
+  },
+  {
+   "name": "expense_categories",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "status",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "active"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "is_builtin",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "sort_order",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [],
+   "checks": [
+    "status IN ('active','archived')"
+   ],
+   "indexes": [
+    {
+     "name": "idx_expense_categories_name",
+     "unique": true,
+     "columns": [],
+     "where": null,
+     "expression": "lower(name)"
+    }
+   ]
+  },
+  {
+   "name": "expenses",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "reference_number",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "client_request_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "date",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "category_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "category_name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "description",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "amount",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "currency",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "cash_account_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "external_reference",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "notes",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "cash_ledger_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "reversal_ledger_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "status",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "posted"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_by_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_by_name",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_by_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_by_name",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "cancelled_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "cancelled_by_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "cancelled_by_name",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "cancel_reason",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [
+    {
+     "columns": [
+      "cash_account_id"
+     ],
+     "refTable": "cash_accounts",
+     "refColumns": [
+      "id"
+     ]
+    },
+    {
+     "columns": [
+      "category_id"
+     ],
+     "refTable": "expense_categories",
+     "refColumns": [
+      "id"
+     ]
+    }
+   ],
+   "checks": [
+    "amount > 0",
+    "currency IN ('USD','SLSH')",
+    "status IN ('posted','cancelled')"
+   ],
+   "indexes": [
+    {
+     "name": "idx_expenses_status",
+     "unique": false,
+     "columns": [
+      "status"
+     ],
+     "where": null,
+     "expression": null
+    },
+    {
+     "name": "idx_expenses_cash_account",
+     "unique": false,
+     "columns": [
+      "cash_account_id"
+     ],
+     "where": null,
+     "expression": null
+    },
+    {
+     "name": "idx_expenses_category",
+     "unique": false,
+     "columns": [
+      "category_id"
+     ],
+     "where": null,
+     "expression": null
+    },
+    {
+     "name": "idx_expenses_date",
+     "unique": false,
+     "columns": [
+      "date"
+     ],
+     "where": null,
+     "expression": null
+    },
+    {
+     "name": "idx_expenses_client_request",
+     "unique": true,
+     "columns": [
+      "client_request_id"
+     ],
+     "where": "client_request_id IS NOT NULL",
+     "expression": null
+    },
+    {
+     "name": "idx_expenses_reference",
+     "unique": true,
+     "columns": [
+      "reference_number"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ]
+  },
+  {
+   "name": "opening_balances",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "INTEGER",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "usd",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "slsh",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [],
+   "checks": [
+    "id = 1"
+   ],
+   "indexes": []
+  },
+  {
+   "name": "pdf_templates",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "kind",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "is_default",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "is_archived",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "is_builtin",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "preset_key",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_signature_lines",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_notes",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_bill_to_address",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_bill_to_contact",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "header_note",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "footer_text",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "paper_size",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "A4"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "orientation",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "portrait"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "page_width",
+     "sqliteType": "REAL",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "page_height",
+     "sqliteType": "REAL",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "margin_top",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 42
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "margin_bottom",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 42
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "margin_left",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 42
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "margin_right",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 42
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "color_primary",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "color_secondary",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "color_accent",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "color_text",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "color_muted",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "color_table_header",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "color_table_border",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "color_background",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "color_success",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "color_warning",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "color_danger",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "font_family",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "helvetica"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "font_size_title",
+     "sqliteType": "REAL",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "font_size_heading",
+     "sqliteType": "REAL",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "font_size_body",
+     "sqliteType": "REAL",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "font_size_table",
+     "sqliteType": "REAL",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "font_size_footer",
+     "sqliteType": "REAL",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "header_style",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "professional"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "logo_position",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "left"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "logo_max_size",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 30
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_logo",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_company_name",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_company_subtitle",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_company_address",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_company_phone",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_company_email",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_company_website",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_registration_number",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_tax_number",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_doc_number",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_doc_date",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_footer",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "footer_show_company_name",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "footer_show_phone",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "footer_show_email",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "footer_show_website",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "footer_show_generated_by",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "footer_show_generated_date",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "footer_show_page_number",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "footer_show_signature",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "footer_custom_text",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "footer_align",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "left"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "table_header_bg",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "table_header_text_color",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "table_alt_rows",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "table_border_style",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "none"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "table_border_color",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "table_row_padding",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_summary_cards",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "summary_card_color",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "default_notes",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "default_terms",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_terms",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "signature_style",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "auto"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "signature_labels",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "version",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [],
+   "checks": [
+    "kind IN ('global','account','quotation','exchange','transaction','reports','deposit','withdrawal','transfer')",
+    "paper_size IN ('A4','A5','Letter','Legal','Custom')",
+    "orientation IN ('portrait','landscape')",
+    "font_family IN ('helvetica','times','courier')",
+    "header_style IN ('minimal','classic','modern','professional','corporate')",
+    "logo_position IN ('left','center','right')",
+    "footer_align IN ('left','center','right')",
+    "table_border_style IN ('none','thin','thick')",
+    "signature_style IN ('auto','lines','full','none')"
+   ],
+   "indexes": []
+  },
+  {
+   "name": "quotation_items",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "quotation_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "description",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "qty",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "unit_price",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "currency",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "extra_fields",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [
+    {
+     "columns": [
+      "quotation_id"
+     ],
+     "refTable": "quotations",
+     "refColumns": [
+      "id"
+     ]
+    }
+   ],
+   "checks": [
+    "currency IN ('USD','SLSH')"
+   ],
+   "indexes": [
+    {
+     "name": "idx_items_quotation",
+     "unique": false,
+     "columns": [
+      "quotation_id"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ]
+  },
+  {
+   "name": "quotation_payments",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "quotation_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "reference_number",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "amount",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "currency",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "date",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "method",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "reference",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "notes",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "staff_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "staff_name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "ledger_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [
+    {
+     "columns": [
+      "staff_id"
+     ],
+     "refTable": "users",
+     "refColumns": [
+      "id"
+     ]
+    },
+    {
+     "columns": [
+      "quotation_id"
+     ],
+     "refTable": "quotations",
+     "refColumns": [
+      "id"
+     ]
+    }
+   ],
+   "checks": [
+    "currency IN ('USD','SLSH')"
+   ],
+   "indexes": [
+    {
+     "name": "idx_quotation_payments_quotation",
+     "unique": false,
+     "columns": [
+      "quotation_id"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ]
+  },
+  {
+   "name": "quotations",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "number",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "client_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "client_name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "client_contact",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "client_address",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "issue_date",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "valid_until",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "status",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "Pending"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "invoiced",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "paid",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "paid_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "paid_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "paid_ledger_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "charged",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "charged_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "charged_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "charged_account_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "charged_amount",
+     "sqliteType": "REAL",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "charged_currency",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "charged_ledger_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "refunded",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "refunded_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "refunded_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "discount_percent",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "tax_percent",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "rate_used",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "notes",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "reject_reason",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_by",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_by_name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_by_name",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "currency_mode",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "USD"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [
+    {
+     "columns": [
+      "created_by"
+     ],
+     "refTable": "users",
+     "refColumns": [
+      "id"
+     ]
+    },
+    {
+     "columns": [
+      "charged_account_id"
+     ],
+     "refTable": "clients",
+     "refColumns": [
+      "id"
+     ]
+    },
+    {
+     "columns": [
+      "client_id"
+     ],
+     "refTable": "clients",
+     "refColumns": [
+      "id"
+     ]
+    }
+   ],
+   "checks": [
+    "status IN ('Pending','Partially Paid','Paid','Refunded')",
+    "currency_mode IN ('USD','SLSH','BOTH')"
+   ],
+   "indexes": [
+    {
+     "name": "idx_quotations_status",
+     "unique": false,
+     "columns": [
+      "status"
+     ],
+     "where": null,
+     "expression": null
+    },
+    {
+     "name": null,
+     "unique": true,
+     "columns": [
+      "number"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ]
+  },
+  {
+   "name": "rate_history",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "currency_pair",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "USD_SLSH"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "daily_rate",
+     "sqliteType": "REAL",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "sale_rate",
+     "sqliteType": "REAL",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "daily_slsh_rate",
+     "sqliteType": "REAL",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "rate_difference",
+     "sqliteType": "REAL",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "note",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "set_by",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "set_by_name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [
+    {
+     "columns": [
+      "set_by"
+     ],
+     "refTable": "users",
+     "refColumns": [
+      "id"
+     ]
+    }
+   ],
+   "checks": [],
+   "indexes": []
+  },
+  {
+   "name": "reset_log",
+   "columns": [
+    {
+     "name": "code",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "summary",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "code"
+   ],
+   "foreignKeys": [],
+   "checks": [],
+   "indexes": []
+  },
+  {
+   "name": "role_permissions",
+   "columns": [
+    {
+     "name": "role_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "permission_key",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 2,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "role_id",
+    "permission_key"
+   ],
+   "foreignKeys": [
+    {
+     "columns": [
+      "role_id"
+     ],
+     "refTable": "roles",
+     "refColumns": [
+      "id"
+     ]
+    }
+   ],
+   "checks": [],
+   "indexes": [
+    {
+     "name": "idx_role_permissions_role",
+     "unique": false,
+     "columns": [
+      "role_id"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ]
+  },
+  {
+   "name": "roles",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "key",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "description",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "is_super_admin",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "is_protected",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "permissions_version",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "status",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "active"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [],
+   "checks": [
+    "status IN ('active','inactive')"
+   ],
+   "indexes": [
+    {
+     "name": null,
+     "unique": true,
+     "columns": [
+      "key"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ]
+  },
+  {
+   "name": "sale_rates",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "rate",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "set_by",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "set_by_name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [
+    {
+     "columns": [
+      "set_by"
+     ],
+     "refTable": "users",
+     "refColumns": [
+      "id"
+     ]
+    }
+   ],
+   "checks": [],
+   "indexes": []
+  },
+  {
+   "name": "table_layouts",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "table_key",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "user_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "columns_json",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "density",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [],
+   "checks": [
+    "density IN ('compact','comfortable') OR density IS NULL"
+   ],
+   "indexes": [
+    {
+     "name": "idx_table_layouts_key_user",
+     "unique": true,
+     "columns": [
+      "table_key",
+      "user_id"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ]
+  },
+  {
+   "name": "tenant_meta",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "INTEGER",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    },
+    {
+     "name": "stamped_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [],
+   "checks": [
+    "id = 1"
+   ],
+   "indexes": []
+  },
+  {
+   "name": "transfers",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "date",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "from_account_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "to_account_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "currency",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "amount",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "notes",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "staff_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "staff_name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "status",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "active"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "void_reason",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "voided_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "voided_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "reference",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "reference_number",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [
+    {
+     "columns": [
+      "staff_id"
+     ],
+     "refTable": "users",
+     "refColumns": [
+      "id"
+     ]
+    },
+    {
+     "columns": [
+      "to_account_id"
+     ],
+     "refTable": "clients",
+     "refColumns": [
+      "id"
+     ]
+    },
+    {
+     "columns": [
+      "from_account_id"
+     ],
+     "refTable": "clients",
+     "refColumns": [
+      "id"
+     ]
+    }
+   ],
+   "checks": [
+    "currency IN ('USD','SLSH')",
+    "status IN ('active','voided')"
+   ],
+   "indexes": [
+    {
+     "name": "idx_transfers_to",
+     "unique": false,
+     "columns": [
+      "to_account_id"
+     ],
+     "where": null,
+     "expression": null
+    },
+    {
+     "name": "idx_transfers_from",
+     "unique": false,
+     "columns": [
+      "from_account_id"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ]
+  },
+  {
+   "name": "user_permission_overrides",
+   "columns": [
+    {
+     "name": "user_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "permission_key",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 2,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "granted",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "granted_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "granted_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "user_id",
+    "permission_key"
+   ],
+   "foreignKeys": [
+    {
+     "columns": [
+      "user_id"
+     ],
+     "refTable": "users",
+     "refColumns": [
+      "id"
+     ]
+    }
+   ],
+   "checks": [
+    "granted IN (0,1)"
+   ],
+   "indexes": [
+    {
+     "name": "idx_user_permission_overrides_user",
+     "unique": false,
+     "columns": [
+      "user_id"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ]
+  },
+  {
+   "name": "users",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "username",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "password_hash",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "password_salt",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "role",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "role_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "status",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "active"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "active",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "permissions_version",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "last_login",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "quotation_column_prefs",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "deleted_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "deleted_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [
+    {
+     "columns": [
+      "role_id"
+     ],
+     "refTable": "roles",
+     "refColumns": [
+      "id"
+     ]
+    }
+   ],
+   "checks": [
+    "role IN ('admin','manager','accountant','cashier','sales','viewer')",
+    "status IN ('active','deactivated','suspended')"
+   ],
+   "indexes": [
+    {
+     "name": "idx_users_role_id",
+     "unique": false,
+     "columns": [
+      "role_id"
+     ],
+     "where": null,
+     "expression": null
+    },
+    {
+     "name": null,
+     "unique": true,
+     "columns": [
+      "username"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ]
+  }
+ ],
+ "controlTables": [
+  {
+   "name": "companies",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "seq",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "status",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "active"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "status_reason",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "status_changed_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "status_changed_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "is_primary",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "db_file",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "contact_name",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "phone",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "email",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "address",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "website",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "logo_data_url",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "notes",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "deactivated",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "deactivated_reason",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "deactivated_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "deactivated_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "suspended",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "suspended_reason",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "suspended_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "suspended_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [],
+   "checks": [
+    "status IN ('active','inactive','suspended')"
+   ],
+   "indexes": [
+    {
+     "name": "idx_companies_one_primary",
+     "unique": true,
+     "columns": [
+      "is_primary"
+     ],
+     "where": "is_primary = 1",
+     "expression": null
+    },
+    {
+     "name": "idx_companies_name_ci",
+     "unique": true,
+     "columns": [],
+     "where": null,
+     "expression": "lower(name)"
+    },
+    {
+     "name": null,
+     "unique": true,
+     "columns": [
+      "db_file"
+     ],
+     "where": null,
+     "expression": null
+    },
+    {
+     "name": null,
+     "unique": true,
+     "columns": [
+      "seq"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ]
+  },
+  {
+   "name": "platform_audit",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "actor_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "actor_name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "action",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    },
+    {
+     "name": "details",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [],
+   "checks": [],
+   "indexes": [
+    {
+     "name": "idx_platform_audit_at",
+     "unique": false,
+     "columns": [
+      "at"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ]
+  },
+  {
+   "name": "platform_users",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "username",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "password_hash",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "password_salt",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "status",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "string",
+      "value": "active"
+     },
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "permissions_version",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "last_login",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "migrated_from_company",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [],
+   "checks": [
+    "status IN ('active','deactivated')"
+   ],
+   "indexes": [
+    {
+     "name": null,
+     "unique": true,
+     "columns": [
+      "username"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ]
+  },
+  {
+   "name": "user_directory",
+   "columns": [
+    {
+     "name": "username",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    },
+    {
+     "name": "user_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    }
+   ],
+   "primaryKey": [
+    "username"
+   ],
+   "foreignKeys": [
+    {
+     "columns": [
+      "company_id"
+     ],
+     "refTable": "companies",
+     "refColumns": [
+      "id"
+     ]
+    }
+   ],
+   "checks": [],
+   "indexes": [
+    {
+     "name": "idx_user_directory_company",
+     "unique": false,
+     "columns": [
+      "company_id"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ]
+  }
+ ]
+}

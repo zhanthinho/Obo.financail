@@ -1,35 +1,35 @@
-# Gradle files
-.gradle/
-build/
-.kotlin/
-
-# Local configuration file (sdk path, etc)
-local.properties
-
-# Log/OS Files
+node_modules/
+data/*.sqlite
+data/*.sqlite-*
+test/e2e.sqlite
+test/e2e.sqlite-*
+.env
+tools/
+tunnel.log
+link.txt
+railway-variables.txt
 *.log
+data/backups/
+backups-online/
 
-# Android Studio generated files and folders
-captures/
-.externalNativeBuild/
-.cxx/
-*.aab
-*.apk
-output-metadata.json
+# MULTI-COMPANY round: control database + per-company databases
+data/*-companies/
+test/*-companies/
+test/*-control.sqlite*
+test/.tenancy-tmp/
+test/.security-tmp/
+test/.opening-tmp/
+test/.language-tmp/
+test/.branding-tmp/
+test/.global-login-tmp/
+test/.expenses-tmp/
+test/.balance-sheet-tmp/
 
-# IntelliJ
-*.iml
-.idea/
-misc.xml
-deploymentTargetDropDown.xml
-render.experimental.xml
+# MYSQL round: migration run folders (backups of the SQLite files + reports)
+migration-runs/
+*.json.gz
+.env.*
+!.env.example
 
-# Keystore files
-*.jks
-*.keystore
-
-# Google Services (e.g. APIs or Firebase)
-google-services.json
-
-# Android Profiling
-*.hprof
+# local helper marker
+migration-done.txt
