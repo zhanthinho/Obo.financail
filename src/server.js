@@ -87,6 +87,7 @@ require("./routes/accountStatements").register(router);
 require("./routes/cash").register(router);
 require("./routes/cashAccountStatements").register(router);
 require("./routes/backups").register(router);
+require("./routes/dataReset").register(router);
 require("./routes/loans").register(router);
 require("./routes/expenses").register(router);
 require("./routes/platform").register(router);

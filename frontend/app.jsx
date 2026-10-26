@@ -4258,6 +4258,8 @@ function App() {
       // page every request to which would 403 anyway.
       { key: "settings-excel-templates", label: "Excel Templates", icon: "document", show: !!user.isSuperAdmin },
       { key: "settings-deactivated", label: "Deactivated Accounts", icon: "deactivated", show: perm("accountsManage") },
+      // DATA RESET round: Super Admin only (same gating as the template pages).
+      { key: "settings-data-reset", label: "Reset Data", icon: "settings", show: !!user.isSuperAdmin },
     ] },
   ]
     .map((n) => (n.type === "group" ? { ...n, children: n.children.filter((c) => c.show) } : n))
@@ -4536,6 +4538,7 @@ function App() {
             {view === "settings-general" && perm("settingsManage") && <SettingsModule call={call} notify={notify} company={company} onSaved={refreshCompany} />}
             {view === "settings-pdf-templates" && !!user.isSuperAdmin && <PdfTemplatesModule call={call} dl={dl} preview={preview} print={print} notify={notify} token={token} user={user} />}
             {view === "settings-excel-templates" && !!user.isSuperAdmin && <ExcelTemplatesModule call={call} dl={dl} notify={notify} token={token} user={user} />}
+            {view === "settings-data-reset" && !!user.isSuperAdmin && <DataResetModule call={call} notify={notify} />}
             {view === "settings-deactivated" && perm("accountsManage") && <DeactivatedAccountsModule call={call} dl={dl} preview={preview} print={print} notify={notify} perm={perm} hasRaw={hasRaw} onOpenAccountView={openAccountView} />}
             {/* ACCOUNT VIEW FULL-PAGE round: the dedicated full page, reached
                 from any module below via onOpenAccountView — not a modal, not
@@ -12973,6 +12976,104 @@ function fmtBytes(n) {
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
+// DATA RESET round: Super Admin-only "Reset Data" for the current company.
+// The Super Admin ticks what to clear (categories that others depend on pull
+// those in automatically — shown before confirming), types the company name
+// to confirm, and the server stores a full backup first (its name is shown
+// afterwards). Users, roles, settings and templates are never reset.
+function DataResetModule({ call, notify }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [picked, setPicked] = useState(() => new Set());
+  const [confirming, setConfirming] = useState(false);
+  const [typed, setTyped] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState(null);
+  const reload = useCallback(() => {
+    setLoading(true);
+    call("/api/data-reset").then(setData).catch((e) => notify(e.message, true)).finally(() => setLoading(false));
+  }, [call, notify]);
+  useEffect(() => { reload(); }, [reload]);
+
+  const cats = (data && data.categories) || [];
+  const byKey = useMemo(() => Object.fromEntries(cats.map((c) => [c.key, c])), [cats]);
+  const effective = useMemo(() => {
+    const out = new Set();
+    const add = (k) => { if (!byKey[k] || out.has(k)) return; out.add(k); for (const r of byKey[k].requires || []) add(r); };
+    picked.forEach(add);
+    return out;
+  }, [picked, byKey]);
+  function toggle(key) {
+    setPicked((prev) => { const n = new Set(prev); if (n.has(key)) n.delete(key); else n.add(key); return n; });
+  }
+  const companyName = (data && data.company && data.company.name) || "";
+  const nameOk = typed.trim().toLowerCase() === companyName.trim().toLowerCase() && companyName !== "";
+
+  function runReset() {
+    setBusy(true);
+    call("/api/data-reset", { method: "POST", body: { categories: [...picked], confirmName: typed } })
+      .then((r) => { setResult(r); setConfirming(false); setTyped(""); setPicked(new Set()); notify("Data reset completed."); reload(); })
+      .catch((e) => notify(e.message, true))
+      .finally(() => setBusy(false));
+  }
+
+  const header = <SectionHeader title="Reset Data" sub="Clear chosen records of this company only. A full backup is saved first." actions={<Btn tone="subtle" size="sm" onClick={reload}>Refresh</Btn>} />;
+  if (loading && !data) return <div>{header}<Spinner /></div>;
+  if (!data) return <div>{header}<Empty text="Couldn't load the reset options." /></div>;
+
+  return (
+    <div>
+      {header}
+      {result && (
+        <div style={{ background: C.card, border: `1px solid ${C.green}`, borderRadius: 6, padding: 14, marginBottom: 14, fontSize: 13 }}>
+          <div style={{ fontWeight: 700, color: C.green, marginBottom: 4 }}>Reset completed</div>
+          <div>Backup saved before the reset:</div>
+          <div style={{ fontFamily: FONT_MONO, fontSize: 12, marginTop: 2 }} data-no-i18n="1">{result.backup}</div>
+        </div>
+      )}
+      <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, padding: 18, marginBottom: 14 }}>
+        <PanelTitle title="What to reset" />
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          {cats.map((c) => {
+            const auto = effective.has(c.key) && !picked.has(c.key);
+            return (
+              <label key={c.key} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", borderRadius: 5, background: effective.has(c.key) ? "color-mix(in srgb, var(--c-red) 7%, transparent)" : "transparent", cursor: "pointer", fontSize: 13 }}>
+                <input type="checkbox" checked={effective.has(c.key)} disabled={auto} onChange={() => toggle(c.key)} style={{ cursor: "pointer" }} />
+                <span style={{ flex: 1 }}>{c.label}</span>
+                {auto && <Pill tone="amber">Included automatically</Pill>}
+                <span style={{ fontFamily: FONT_MONO, fontSize: 12, color: C.slate, minWidth: 60, textAlign: "right" }}>{c.count}</span>
+              </label>
+            );
+          })}
+        </div>
+        <div style={{ fontSize: 12, color: C.slate, marginTop: 10 }}>Always kept:</div>
+        <div style={{ fontSize: 12, color: C.slate }}>{(data.kept || []).join(" · ")}</div>
+        <div style={{ marginTop: 14, display: "flex", justifyContent: "flex-end" }}>
+          <Btn tone="danger" disabled={!effective.size} onClick={() => setConfirming(true)}>Reset selected data</Btn>
+        </div>
+      </div>
+      {confirming && (
+        <Modal title="Confirm data reset" onClose={() => !busy && setConfirming(false)}>
+          <div style={{ padding: 20, fontSize: 13, display: "flex", flexDirection: "column", gap: 10 }}>
+            <div>These will be permanently cleared for this company:</div>
+            <ul style={{ margin: 0, paddingLeft: 18 }}>
+              {cats.filter((c) => effective.has(c.key)).map((c) => <li key={c.key}>{c.label}</li>)}
+            </ul>
+            <div>A full backup is saved first. Balances are recalculated from what remains.</div>
+            <div>Type the company name to confirm:</div>
+            <div style={{ fontWeight: 700 }} data-no-i18n="1">{companyName}</div>
+            <input value={typed} onChange={(e) => setTyped(e.target.value)} style={inputStyle} placeholder="Company name" autoFocus />
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 6 }}>
+              <Btn tone="subtle" disabled={busy} onClick={() => setConfirming(false)}>Cancel</Btn>
+              <Btn tone="danger" disabled={!nameOk || busy} onClick={runReset}>{busy ? "Resetting..." : "Reset now"}</Btn>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
 function SystemOverviewModule({ call, notify }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);

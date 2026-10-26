@@ -32,7 +32,8 @@
     "test:dashboard": "node test/dashboard.js",
     "test:audit": "node test/audit.js",
     "test:terminology": "node test/terminology.js",
-    "test:e2e": "node test/e2e.js"
+    "test:e2e": "node test/e2e.js",
+    "test:data-reset": "node test/data-reset.js"
   },
   "dependencies": {
     "exceljs": "^4.4.0",
