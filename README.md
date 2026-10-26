@@ -1,5 +1,21 @@
 # OBO Financial System
 
+## 🔗 Fur system-ka (Open the system)
+
+| Halka laga furayo | Link |
+|---|---|
+| Kombiyuutarka xafiiska (server-ka) | **[http://localhost:4000](http://localhost:4000)** |
+| Telefoon / kombiyuutar kale oo isku WiFi ah | `http://<IP-ga kombiyuutarka>:4000` — IP-ga waxaa ku qoran daaqadda FINMAN marka la furo (tusaale `http://192.168.1.5:4000`) |
+
+> System-ku wuxuu ku shaqeeyaa **kombiyuutarka xafiiska (offline)**; xogtu waxay ku jirtaa MySQL-ka kombiyuutarkaas.
+> Link-yadu way shaqeeyaan marka kombiyuutarkaas shidan yahay oo FINMAN furan yahay. Internet-ka guud lagama furi karo.
+
+**Sida loo furo:** laba-guji icon-ka **FINMAN** ee Desktop-ka (ama `FINMAN.bat` ee folder-ka mashruuca). Wuxuu hubiyaa database-ka, shidaa system-ka, sameeyaa backup toddobaadle ah, kadibna furaa browser-ka. Daaqadda yar **"FINMAN server - ha xirin"** ha xirin inta la isticmaalayo.
+
+**Backup:** si toos ah toddobaad kasta (folder-ka `Backups\`, 12-ka ugu dambeeya); hadda: `BACKUP-HADDA.bat`. Nuqul ku koobiyee USB si joogto ah. Backups-ka GitHub lama gelin (xog lacageed oo gaar ah).
+
+---
+
 A complete, self-hosted Financial System Management app: currency management,
 a money exchange ledger, quotations with a full approval workflow, real
 role-based access control, reports, and PDF/CSV export — for a company
