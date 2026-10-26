@@ -34,7 +34,8 @@
     "test:terminology": "node test/terminology.js",
     "test:e2e": "node test/e2e.js",
     "test:data-reset": "node test/data-reset.js",
-    "test:header": "node test/header.js"
+    "test:header": "node test/header.js",
+    "test:copy-to-online": "node test/copy-to-online.js"
   },
   "dependencies": {
     "exceljs": "^4.4.0",

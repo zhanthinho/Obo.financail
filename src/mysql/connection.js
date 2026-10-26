@@ -29,7 +29,17 @@ function readConfig() {
   const port = settings.DB_PORT ? Number(settings.DB_PORT) : 3306;
   if (!Number.isInteger(port) || port <= 0 || port > 65535) throw new Error("DB_PORT must be a port number.");
   const queryTimeoutMs = Number(process.env.DB_QUERY_TIMEOUT_MS) || 25000;
+  // Encrypted connection for a cloud MySQL (e.g. Aiven), which requires TLS:
+  //   DB_SSL_CA = the server's CA certificate (PEM text; "\n" escapes are
+  //               accepted) -> TLS with the certificate verified (preferred);
+  //   DB_SSL    = "require"  -> TLS without verifying the certificate.
+  // Neither set -> plain connection (local MySQL, GoDaddy), as before.
+  let ssl;
+  const ca = process.env.DB_SSL_CA && String(process.env.DB_SSL_CA).trim();
+  if (ca) ssl = { ca: ca.replace(/\\n/g, "\n"), rejectUnauthorized: true };
+  else if (/^(require|required|true|1)$/i.test(String(process.env.DB_SSL || "").trim())) ssl = { rejectUnauthorized: false };
   return {
+    ssl,
     host: String(settings.DB_HOST).trim(),
     port,
     database: String(settings.DB_NAME).trim(),

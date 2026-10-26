@@ -33,3 +33,6 @@ migration-runs/
 
 # local helper marker
 migration-done.txt
+
+# Cloud MySQL CA certificate (downloaded from Aiven for COPY-XOGTA-ONLINE.bat)
+ca.pem
