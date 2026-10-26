@@ -4,7 +4,9 @@
 // own user `finman` with a long random password, and adds the DB_* settings
 // to this project's .env. You only type the MySQL ROOT password (in MySQL's
 // own prompt); the app's password is generated here and written only to .env.
-// Safe to run again: if .env already has DB_HOST it does nothing.
+// Safe to run again: if the DB_* settings in .env already log in, it does
+// nothing; if they no longer work, it sets a new password for `finman` (root
+// password asked again) and rewrites only the DB_* lines (.env.bak kept).
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
@@ -28,17 +30,35 @@ function findMysql() {
   return null;
 }
 
+// Reads KEY=value pairs from the .env text (first occurrence wins, as in src/env.js).
+function envValue(text, key) {
+  for (const line of text.split(/\r?\n/)) {
+    const m = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=(.*)$/.exec(line);
+    if (m && m[1] === key) { let v = m[2].trim(); if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1); return v; }
+  }
+  return null;
+}
+// True when the DB_* settings in .env can log in to MySQL.
+function settingsWork(mysql, text) {
+  const host = envValue(text, "DB_HOST"), user = envValue(text, "DB_USER"), pw = envValue(text, "DB_PASSWORD"), db = envValue(text, "DB_NAME"), port = envValue(text, "DB_PORT") || "3306";
+  if (!host || !user || !db) return false;
+  const r = spawnSync(mysql, ["-h", host, "-P", port, "-u", user, db, "-e", "SELECT 1"], { env: { ...process.env, MYSQL_PWD: pw || "" }, stdio: "ignore" });
+  return r.status === 0;
+}
+
 function main() {
   const env = fs.existsSync(ENV_FILE) ? fs.readFileSync(ENV_FILE, "utf8") : "";
-  if (/^\s*DB_HOST\s*=/m.test(env)) {
-    console.log("    .env waxaa horay ugu jiray DB_HOST — database-ka mar hore ayaa la diyaariyay.");
-    return 0;
-  }
   const mysql = findMysql();
   if (!mysql) {
     console.log("[X] MySQL lama helin. Marka hore rakib MySQL 8.4: https://dev.mysql.com/downloads/mysql/");
     return 1;
   }
+  const configured = /^\s*DB_HOST\s*=/m.test(env);
+  if (configured && settingsWork(mysql, env)) {
+    console.log("    OK — database-ka waa diyaar (settings-ka .env way shaqaynayaan).");
+    return 0;
+  }
+  if (configured) console.log("    Settings-ka database-ka ee .env ma shaqaynayaan — waa la hagaajinayaa (password cusub ayaa la samaynayaa).");
   const pw = crypto.randomBytes(18).toString("base64url");
   const sql = [
     "CREATE DATABASE IF NOT EXISTS finman CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin;",
@@ -61,11 +81,13 @@ function main() {
     console.log("[X] Database-ka lama samayn karin (password-ka root ma khaldanaa?). Dib u socodsii RUN-MYSQL.bat.");
     return 1;
   }
-  const lines = [];
-  if (env && !env.endsWith("\n")) lines.push("");
-  lines.push("DB_HOST=localhost", "DB_PORT=3306", "DB_NAME=finman", "DB_USER=finman", `DB_PASSWORD=${pw}`);
-  if (!/^\s*JWT_SECRET\s*=/m.test(env)) lines.push(`JWT_SECRET=${crypto.randomBytes(48).toString("hex")}`);
-  fs.appendFileSync(ENV_FILE, lines.join("\n") + "\n");
+  // Keep every other line of .env exactly; replace only the DB_* settings.
+  const kept = env.split(/\r?\n/).filter((l) => !/^\s*DB_(HOST|PORT|NAME|USER|PASSWORD)\s*=/.test(l));
+  while (kept.length && kept[kept.length - 1].trim() === "") kept.pop();
+  kept.push("DB_HOST=localhost", "DB_PORT=3306", "DB_NAME=finman", "DB_USER=finman", `DB_PASSWORD=${pw}`);
+  if (!/^\s*JWT_SECRET\s*=/m.test(env)) kept.push(`JWT_SECRET=${crypto.randomBytes(48).toString("hex")}`);
+  if (fs.existsSync(ENV_FILE)) fs.copyFileSync(ENV_FILE, ENV_FILE + ".bak");
+  fs.writeFileSync(ENV_FILE, kept.join("\n") + "\n");
   console.log("    OK — database 'finman' iyo user 'finman' waa la sameeyay; settings-ka waxaa lagu daray .env");
   return 0;
 }

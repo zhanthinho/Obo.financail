@@ -2386,8 +2386,11 @@ async function main() {
     });
     await check("Customize Dashboard and Export buttons are shown (Admin has dashboard.customize/dashboard.export)", async () => {
       await page.getByRole("button", { name: "⚙ Customize Dashboard", exact: true }).waitFor({ timeout: 3000 });
-      await page.getByRole("button", { name: "Export CSV", exact: true }).waitFor({ timeout: 3000 });
-      await page.getByRole("button", { name: "Export PDF", exact: true }).waitFor({ timeout: 3000 });
+      // HEADER REDESIGN: exports live in the header's ⋯ menu.
+      await page.getByRole("button", { name: "More actions" }).first().click();
+      await page.getByRole("menuitem", { name: "Export CSV", exact: true }).waitFor({ timeout: 3000 });
+      await page.getByRole("menuitem", { name: "Export PDF", exact: true }).waitFor({ timeout: 3000 });
+      await page.keyboard.press("Escape");
     });
     await check("changing Date range reloads the dashboard and shows an active-filter chip", async () => {
       const rangeSelect = page.getByText("Date range", { exact: true }).locator("xpath=following-sibling::select");
@@ -2447,13 +2450,15 @@ async function main() {
     });
     await check("Export CSV downloads a real CSV file", async () => {
       const dl = page.waitForEvent("download");
-      await page.getByRole("button", { name: "Export CSV", exact: true }).click();
+      await page.getByRole("button", { name: "More actions" }).first().click();
+      await page.getByRole("menuitem", { name: "Export CSV", exact: true }).click();
       const download = await dl;
       if (!download.suggestedFilename().endsWith(".csv")) throw new Error(`expected a .csv download, got ${download.suggestedFilename()}`);
     });
     await check("Export PDF downloads a real PDF file", async () => {
       const dl = page.waitForEvent("download");
-      await page.getByRole("button", { name: "Export PDF", exact: true }).click();
+      await page.getByRole("button", { name: "More actions" }).first().click();
+      await page.getByRole("menuitem", { name: "Export PDF", exact: true }).click();
       const download = await dl;
       if (!download.suggestedFilename().endsWith(".pdf")) throw new Error(`expected a .pdf download, got ${download.suggestedFilename()}`);
     });
@@ -2829,7 +2834,8 @@ async function main() {
     await page.click('button:has-text("Money Exchange")');
     await page.waitForTimeout(400);
     const downloadPromise = page.waitForEvent("download");
-    await page.click('button:has-text("Export PDF")');
+    await page.getByRole("button", { name: "More actions" }).first().click();
+    await page.click('[role="menuitem"]:has-text("Export PDF")');
     const download = await downloadPromise;
     await check("PDF export downloads", async () => { if (!download.suggestedFilename().endsWith(".pdf")) throw new Error("not a pdf"); });
 

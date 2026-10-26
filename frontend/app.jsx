@@ -684,6 +684,42 @@ const THEME_CSS = `
   .gk-exw-save-btn:active:not(:disabled) { transform: scale(0.99); }
   .gk-exw-back:hover { background: rgba(0,0,0,0.05) !important; }
   .gk-exw-back.gk-btn-back-outline:hover:not(:disabled) { background: var(--c-back-tint) !important; }
+  /* GLOBAL HEADER REDESIGN (Option 3 — Compact Unified Header) */
+  .gk-ph { margin-bottom: 10px; }
+  .gk-ph-row { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; min-height: 40px; }
+  .gk-ph-head { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 260px; }
+  .gk-ph-icon { width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--c-navy) 12%, transparent); color: var(--c-navy); flex-shrink: 0; }
+  .gk-ph-text { min-width: 0; }
+  .gk-ph-title { margin: 0; font-size: 17px; line-height: 1.25; font-weight: 700; color: var(--c-ink); letter-spacing: -0.01em; overflow-wrap: anywhere; }
+  .gk-ph-sub { font-size: 11.5px; line-height: 1.35; color: var(--c-slate); margin-top: 1px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+  .gk-ph-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; flex-wrap: wrap; }
+  .gk-ph-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .gk-ph-tab { background: none; border: 1px solid var(--c-line); color: var(--c-slate); font: inherit; font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 5px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .gk-ph-tab.is-active { background: var(--c-navy); border-color: var(--c-navy); color: var(--c-text-on-primary); }
+  .gk-ph-tab:focus-visible, .gk-om-btn:focus-visible, .gk-om-item:focus-visible { outline: 2px solid var(--c-cyan); outline-offset: 1px; }
+  .gk-tabbar { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 10px; }
+  .gk-om-wrap { position: relative; display: inline-flex; }
+  .gk-om-btn { width: 34px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--c-line); border-radius: 6px; background: var(--c-card); color: var(--c-navy); cursor: pointer; }
+  .gk-om-btn:hover, .gk-om-btn[aria-expanded="true"] { background: color-mix(in srgb, var(--c-navy) 10%, var(--c-card)); }
+  .gk-om { position: absolute; top: calc(100% + 4px); right: 0; z-index: 300; min-width: 220px; max-width: min(300px, calc(100vw - 24px)); max-height: 65vh; overflow: auto; background: var(--c-card); border: 1px solid var(--c-line); border-radius: 8px; box-shadow: 0 12px 32px rgba(8,20,30,0.18); padding: 4px; }
+  .gk-om--left { right: auto; left: 0; }
+  .gk-om-group + .gk-om-group { border-top: 1px solid var(--c-line); margin-top: 4px; padding-top: 4px; }
+  .gk-om-heading { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--c-slate); padding: 6px 10px 3px; }
+  .gk-om-item { width: 100%; display: flex; align-items: center; gap: 9px; text-align: left; background: none; border: 0; border-radius: 5px; padding: 7px 10px; font: inherit; font-size: 12.5px; color: var(--c-ink); cursor: pointer; }
+  .gk-om-item:hover:not(:disabled), .gk-om-item:focus { background: color-mix(in srgb, var(--c-navy) 9%, transparent); }
+  .gk-om-item:disabled { opacity: 0.5; cursor: not-allowed; }
+  .gk-om-icon { width: 16px; display: inline-flex; color: var(--c-navy); }
+  /* Compact, consistent search/filter bars */
+  .gk-filterbar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 10px; margin-bottom: 10px; background: var(--c-card); border: 1px solid var(--c-line); border-radius: 6px; padding: 8px 10px; }
+  .gk-filterbar--inset { background: var(--c-paper); margin-bottom: 8px; }
+  .gk-filterbar input:not([type="checkbox"]):not([type="radio"]), .gk-filterbar select { min-height: 30px; }
+  @media (max-width: 640px) {
+    .gk-ph-head { flex-basis: 100%; }
+    .gk-ph-actions { justify-content: flex-start; width: 100%; }
+    .gk-ph-sub { -webkit-line-clamp: 2; }
+    .gk-filterbar > * { flex: 1 1 140px; }
+  }
+
 `;
 // APPEARANCE & BRANDING round 2: FONT_SANS now reads the CSS variable
 // (defaulting to the original Inter stack in THEME_CSS's :root block) so
@@ -2044,17 +2080,156 @@ function Modal({ title, subtitle, onClose, children, wide, width, flush }) {
     </div>
   );
 }
-function SectionHeader({ title, sub, actions }) {
-  // COMPACT DENSITY round 2 (explicit user request, reference mockup): title
-  // and spacing shrunk one more notch (22px -> 19px, marginBottom 16 -> 10,
-  // sub 13px -> 11.5px) to match the tighter page headers in the mockup,
-  // where the title/sub and the action row sit much closer together. This
-  // one shared component is every page's title across the whole app, so the
-  // change is automatically system-wide.
+// GLOBAL HEADER REDESIGN (Option 3 — Compact Unified Header). Every page's
+// title row goes through this one component (the name SectionHeader is kept
+// so no call site had to change):
+//   Row 1  [icon] Title · short subtitle        [secondary] [primary] [⋯]
+//   Row 2  optional tabs (pages keep their own search/filter bar below).
+// Actions are still passed as plain <Btn>s, exactly as before — this
+// component sorts them, preserving every original onClick/disabled/permission
+// check (a Btn the page didn't render because of permissions is simply not
+// here):
+//   * Preview / Export / Download / Print buttons  -> ⋯ menu, "Export" group;
+//   * Import buttons                               -> ⋯ menu, "Import" group;
+//   * primary-tone buttons (primary/accent/transfer/deposit/withdraw) stay
+//     visible at the right — the page's main actions;
+//   * at most two other buttons stay visible; any more go to ⋯ "More";
+//   * anything that isn't a Btn (a checkbox, a picker) stays as it is.
+// `menu` adds items straight to ⋯ ({ label, onClick, group, disabled });
+// `tabs` renders the page's tabs ({ key, label, active, onClick }).
+const HEADER_PRIMARY_TONES = new Set(["primary", "accent", "transfer", "deposit", "withdraw"]);
+const HEADER_OVERFLOW_RULES = [[/^(preview|export|download|print)\b/i, "Export"], [/^import\b/i, "Import"]];
+function nodeText(node) {
+  if (node == null || typeof node === "boolean") return "";
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(nodeText).join("");
+  if (React.isValidElement(node)) return nodeText(node.props.children);
+  return "";
+}
+function flattenNodes(node, out = []) {
+  if (node == null || typeof node === "boolean" || node === "") return out;
+  if (Array.isArray(node)) { node.forEach((n) => flattenNodes(n, out)); return out; }
+  if (React.isValidElement(node) && node.type === React.Fragment) return flattenNodes(node.props.children, out);
+  out.push(node);
+  return out;
+}
+function splitHeaderActions(actions, menu) {
+  const others = [], secondary = [], primary = [], overflow = [];
+  flattenNodes(actions).forEach((el, i) => {
+    const keyed = React.isValidElement(el) && el.key == null ? React.cloneElement(el, { key: `ha${i}` }) : el;
+    if (!React.isValidElement(el) || el.type !== Btn) { others.push(keyed); return; }
+    const label = nodeText(el.props.children).replace(/\s+/g, " ").trim();
+    const rule = label && HEADER_OVERFLOW_RULES.find(([re]) => re.test(label));
+    if (rule) { overflow.push({ label, onClick: el.props.onClick, disabled: !!el.props.disabled, group: rule[1], icon: el.props.icon }); return; }
+    if (HEADER_PRIMARY_TONES.has(el.props.tone || "primary")) primary.push(keyed);
+    else secondary.push({ el: keyed, label, danger: el.props.tone === "danger", props: el.props });
+  });
+  const visibleSecondary = [];
+  let kept = 0;
+  for (const s of secondary) {
+    if (s.danger || kept < 2 || !s.label) { visibleSecondary.push(s.el); if (!s.danger) kept += 1; }
+    else overflow.push({ label: s.label, onClick: s.props.onClick, disabled: !!s.props.disabled, group: "More", icon: s.props.icon });
+  }
+  for (const m of menu || []) if (m && m.show !== false) overflow.push({ group: "More", ...m });
+  return { others, secondary: visibleSecondary, primary, overflow };
+}
+function OverflowMenu({ items, label = "More actions" }) {
+  const [open, setOpen] = useState(false);
+  const [alignLeft, setAlignLeft] = useState(false);
+  const btnRef = useRef(null);
+  const menuRef = useRef(null);
+  const groups = useMemo(() => {
+    const order = ["Export", "Import", "More"];
+    const map = new Map();
+    for (const it of items) { const g = it.group || "More"; if (!map.has(g)) map.set(g, []); map.get(g).push(it); }
+    return [...map.entries()].sort((a, b) => (order.indexOf(a[0]) + 99) % 99 - (order.indexOf(b[0]) + 99) % 99);
+  }, [items]);
+  const menuItems = () => (menuRef.current ? [...menuRef.current.querySelectorAll('[role="menuitem"]:not([disabled])')] : []);
+  React.useLayoutEffect(() => {
+    if (!open || !menuRef.current) return;
+    const r = menuRef.current.getBoundingClientRect();
+    if (r.left < 4) setAlignLeft(true);
+    const first = menuItems()[0];
+    if (first) first.focus();
+  }, [open]);
+  useEffect(() => {
+    if (!open) return undefined;
+    const onDown = (e) => {
+      if ((menuRef.current && menuRef.current.contains(e.target)) || (btnRef.current && btnRef.current.contains(e.target))) return;
+      setOpen(false);
+    };
+    const onKey = (e) => { if (e.key === "Escape") { setOpen(false); if (btnRef.current) btnRef.current.focus(); } };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("touchstart", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("touchstart", onDown); document.removeEventListener("keydown", onKey); };
+  }, [open]);
+  function onMenuKey(e) {
+    const list = menuItems();
+    const i = list.indexOf(document.activeElement);
+    if (e.key === "ArrowDown") { e.preventDefault(); (list[(i + 1) % list.length] || list[0]).focus(); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); (list[(i - 1 + list.length) % list.length] || list[0]).focus(); }
+    else if (e.key === "Home") { e.preventDefault(); if (list[0]) list[0].focus(); }
+    else if (e.key === "End") { e.preventDefault(); if (list.length) list[list.length - 1].focus(); }
+    else if (e.key === "Tab") setOpen(false);
+  }
+  if (!items.length) return null;
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
-      <div><div style={{ fontSize: 19, fontWeight: 700, color: C.ink, letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: 10 }}>{iconFor(TITLE_ICON_RULES, title) && <span aria-hidden="true" style={{ width: 32, height: 32, borderRadius: 9, display: "inline-flex", alignItems: "center", justifyContent: "center", background: "color-mix(in srgb, var(--c-navy) 12%, transparent)", color: "var(--c-navy)", flexShrink: 0 }}><NavIcon name={iconFor(TITLE_ICON_RULES, title)} size={18} /></span>}{title}</div>{sub && <div style={{ fontSize: 11.5, color: C.slate, marginTop: 2 }}>{sub}</div>}</div>
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>{actions}</div>
+    <div className="gk-om-wrap">
+      <button ref={btnRef} type="button" className="gk-om-btn" aria-label={label} title={label} aria-haspopup="menu" aria-expanded={open}
+        onClick={() => { setAlignLeft(false); setOpen((o) => !o); }}>
+        <NavIcon name="moreH" size={18} />
+      </button>
+      {open && (
+        <div ref={menuRef} role="menu" aria-label={label} className={`gk-om${alignLeft ? " gk-om--left" : ""}`} onKeyDown={onMenuKey}>
+          {groups.map(([g, list]) => (
+            <div key={g} role="group" aria-label={g} className="gk-om-group">
+              <div className="gk-om-heading" aria-hidden="true">{g}</div>
+              {list.map((it, i) => {
+                const ic = it.icon || resolveBtnIcon(it.label).icon;
+                return (
+                  <button key={`${g}${i}`} type="button" role="menuitem" className="gk-om-item" disabled={it.disabled}
+                    onClick={() => { setOpen(false); if (it.onClick) it.onClick(); }}>
+                    <span className="gk-om-icon" aria-hidden="true">{ic ? <NavIcon name={ic} size={15} /> : null}</span>
+                    <span>{it.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+function SectionHeader({ title, sub, actions, menu, tabs, icon }) {
+  const { others, secondary, primary, overflow } = splitHeaderActions(actions, menu);
+  const iconName = icon || iconFor(TITLE_ICON_RULES, typeof title === "string" ? title : nodeText(title));
+  const hasActions = others.length || secondary.length || primary.length || overflow.length;
+  return (
+    <div className="gk-ph">
+      <div className="gk-ph-row">
+        <div className="gk-ph-head">
+          {iconName && <span className="gk-ph-icon" aria-hidden="true"><NavIcon name={iconName} size={17} /></span>}
+          <div className="gk-ph-text">
+            <h1 className="gk-ph-title">{title}</h1>
+            {sub && <div className="gk-ph-sub">{sub}</div>}
+          </div>
+        </div>
+        {hasActions ? (
+          <div className="gk-ph-actions">
+            {others}{secondary}{primary}
+            <OverflowMenu items={overflow} />
+          </div>
+        ) : null}
+      </div>
+      {tabs && tabs.length > 0 && (
+        <div className="gk-ph-tabs" role="tablist">
+          {tabs.map((t) => (
+            <button key={t.key} type="button" role="tab" aria-selected={!!t.active} className={`gk-ph-tab${t.active ? " is-active" : ""}`} onClick={t.onClick}>{t.label}</button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -5540,13 +5715,9 @@ function Dashboard({ call, dl, preview, notify, perm, hasRaw, user, rate, saleRa
 
   return (
     <div className="gk-dash">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12, marginBottom: 14 }}>
-        <div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: C.ink, display: "flex", alignItems: "center", gap: 10 }}><span aria-hidden="true" style={{ width: 32, height: 32, borderRadius: 9, display: "inline-flex", alignItems: "center", justifyContent: "center", background: "color-mix(in srgb, var(--c-navy) 12%, transparent)", color: "var(--c-navy)" }}><NavIcon name="dashboard" size={18} /></span>Dashboard</div>
-          <div style={{ fontSize: 12.5, color: C.slate, marginTop: 2 }}>Welcome back, {user.name.split(" ")[0]} · {user.roleLabel || ROLE_LABELS[user.role]}</div>
-        </div>
-        {!noReports && (
-          <div className="gk-dash-toolbar" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <SectionHeader title="Dashboard" icon="dashboard" sub={<>Welcome back, {user.name.split(" ")[0]} · {user.roleLabel || ROLE_LABELS[user.role]}</>}
+        actions={!noReports && (
+          <>
             <Btn size="sm" tone="ghost" icon="history" onClick={() => setReloadTick((t) => t + 1)}>Refresh</Btn>
             {hasRaw && hasRaw("dashboard.customize") && <Btn size="sm" tone="ghost" onClick={() => setCustomizeOpen(true)}>⚙ Customize Dashboard</Btn>}
             {hasRaw && hasRaw("dashboard.export") && data && (
@@ -5556,9 +5727,8 @@ function Dashboard({ call, dl, preview, notify, perm, hasRaw, user, rate, saleRa
                 <Btn size="sm" tone="ghost" onClick={() => window.print()}>Print</Btn>
               </>
             )}
-          </div>
-        )}
-      </div>
+          </>
+        )} />
 
       {/* DASHBOARD CUSTOMIZATION round: for a full-dashboard user (has
           "reports"), the Rate management card moved into the ordinary
@@ -5625,7 +5795,7 @@ function Dashboard({ call, dl, preview, notify, perm, hasRaw, user, rate, saleRa
         <>
           {renderQuickActions()}
 
-          <div className="gk-dash-filterbar" style={{ display: "flex", gap: 12, alignItems: "flex-end", marginBottom: 12, flexWrap: "wrap", background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, padding: "12px 14px" }}>
+          <div className="gk-filterbar gk-dash-filterbar">
             <Field label="Date range" width={160}>
               <Select value={range} onChange={(e) => setRange(e.target.value)}>
                 <option value="today">Today</option><option value="yesterday">Yesterday</option>
@@ -5934,15 +6104,15 @@ function ExchangeModule({ call, dl, preview, print, notify, perm, user, rate, sa
     <div>
       <SectionHeader title="Money Exchange" sub="Currency exchange transactions and daily till reconciliation"
         actions={<>{/* Opening balances button removed from Money Exchange at the owner's request (Oct 2026) — still managed from Reports -> Currency Position. */}{perm("exchangeCreate") && <Btn tone="primary" onClick={() => setAddOpen(true)}>+ New transaction</Btn>}</>} />
-      <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+      <div className="gk-tabbar">
         {[["ledger", "Transactions"], ["till", "Daily log / till"], ["rates", "Rate history"]].map(([k, l]) => (
-          <button key={k} onClick={() => setTab(k)} style={{ background: tab === k ? C.navy : "none", borderColor: tab === k ? C.navy : C.line, color: tab === k ? "#fff" : C.slate, border: "1px solid", fontFamily: FONT_SANS, fontSize: 12, fontWeight: 600, padding: "6px 11px", borderRadius: 5, cursor: "pointer" }}><TabLabel k={k} l={l} /></button>
+          <button key={k} onClick={() => setTab(k)} className={`gk-ph-tab${tab === k ? " is-active" : ""}`} aria-pressed={tab === k}><TabLabel k={k} l={l} /></button>
         ))}
       </div>
 
       {tab === "ledger" && (
         <>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 10, background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, padding: "10px 12px" }}>
+          <div className="gk-filterbar">
             <Field label="From" width={140}><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></Field>
             <Field label="To" width={140}><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></Field>
             {perm("exchangeAll") && <Field label="Staff" width={170}><Select value={staffFilter} onChange={(e) => setStaffFilter(e.target.value)}><option value="">All staff</option>{staffOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</Select></Field>}
@@ -6096,7 +6266,7 @@ function ExchangeModule({ call, dl, preview, print, notify, perm, user, rate, sa
             <StatCard label="Last Updated" value={historySummary?.lastUpdated ? fmtDate(historySummary.lastUpdated) : "—"} accent={C.cyan} />
             <StatCard label="Updated By" value={historySummary?.updatedBy || "—"} accent={C.cyan} />
           </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "flex-end", marginBottom: 12, flexWrap: "wrap" }}>
+          <div className="gk-filterbar">
             <Field label="Search" width={220}><Input value={historySearch} onChange={(e) => setHistorySearch(e.target.value)} placeholder="Note or updated by…" /></Field>
             <Field label="Status" width={140}>
               <Select value={historyStatusFilter} onChange={(e) => setHistoryStatusFilter(e.target.value)}>
@@ -6890,7 +7060,7 @@ function QuotationsModule({ call, dl, preview, print, notify, perm, user, rate, 
           <Btn tone="subtle" onClick={() => dl("/api/quotations/export.pdf" + qs(filterParams), "obo-quotations.pdf")}>Export PDF (list)</Btn>
           {perm("quotationsManage") && <Btn tone="primary" onClick={() => { setEditing(null); setMode("editor"); }}>+ New quotation</Btn>}
         </>} />
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 10, background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, padding: "10px 12px" }}>
+      <div className="gk-filterbar">
         <Field label="Search" width={220} hint="Number, account, customer, phone, notes"><SearchInput placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} /></Field>
         <Field label="Account" width={170}><SearchInput placeholder="Account name…" value={account} onChange={(e) => setAccount(e.target.value)} /></Field>
         <Field label="Currency" width={110}><Select value={currency} onChange={(e) => setCurrency(e.target.value)}><option value="">All</option><option value="USD">USD</option><option value="SLSH">SLSH</option></Select></Field>
@@ -8530,12 +8700,12 @@ function AccountsModule({ currency, call, dl, preview, print, notify, perm, hasR
           {canImport && <Btn size="sm" tone="accent" onClick={() => setImportOpen(true)}>Import Accounts</Btn>}
           {perm("accountsManage") ? <Btn tone="primary" icon={isCustomerTab ? "userPlus" : "plus"} onClick={() => setAddOpen(true)}>{isCustomerTab ? `Add Customer (${currency})` : `Add Company (${currency})`}</Btn> : null}
         </>} />
-      <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+      <div className="gk-tabbar">
         {[["customer", "Customer accounts"], ["company", "Company accounts"]].map(([k, l]) => (
-          <button key={k} onClick={() => setTab(k)} style={{ background: tab === k ? C.navy : "none", borderColor: tab === k ? C.navy : C.line, color: tab === k ? "#fff" : C.slate, border: "1px solid", fontFamily: FONT_SANS, fontSize: 12, fontWeight: 600, padding: "6px 11px", borderRadius: 5, cursor: "pointer" }}><TabLabel k={k} l={l} /></button>
+          <button key={k} onClick={() => setTab(k)} className={`gk-ph-tab${tab === k ? " is-active" : ""}`} aria-pressed={tab === k}><TabLabel k={k} l={l} /></button>
         ))}
       </div>
-      <div style={{ display: "flex", gap: 12, alignItems: "flex-end", marginBottom: 10, flexWrap: "wrap", background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, padding: "10px 12px" }}>
+      <div className="gk-filterbar">
         <Field label="Search" width={240} hint="Name, account #, email, phone, ID"><SearchInput placeholder={isCustomerTab ? "Search customers..." : "Search companies..."} aria-label={isCustomerTab ? "Search customers" : "Search companies"} value={search} onChange={(e) => setSearch(e.target.value)} /></Field>
         <Field label="Balance" width={150} hint="Debt vs funds"><Select value={balanceSign} onChange={(e) => setBalanceSign(e.target.value)}><option value="all">All</option><option value="positive">Positive (has funds)</option><option value="negative">Negative (in debt)</option></Select></Field>
         <Field label="Registered from" width={150}><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></Field>
@@ -9228,7 +9398,7 @@ function AccountDetailModal({ call, dl, preview, print, notify, perm, accountId,
             — one row, wraps on narrow screens (spec section 4). All existing
             filtering logic untouched, just joined by two more client-side
             filters (search, status) computed the same way. */}
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 8, background: C.paper, border: `1px solid ${C.line}`, borderRadius: 8, padding: "8px 10px", flexShrink: 0 }}>
+        <div className="gk-filterbar gk-filterbar--inset" style={{ flexShrink: 0 }}>
           <Field label="Search" width={170}><SearchInput className="gk-acct-filter-input" value={activitySearch} onChange={(e) => setActivitySearch(e.target.value)} placeholder="Description, staff, ref…" /></Field>
           <Field label="Type" width={130}><Select className="gk-acct-filter-input" value={activityType} onChange={(e) => setActivityType(e.target.value)}>{typeOptions.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</Select></Field>
           <Field label="Status" width={130}><Select className="gk-acct-filter-input" value={activityStatus} onChange={(e) => setActivityStatus(e.target.value)}>{statusOptions.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</Select></Field>
@@ -9712,15 +9882,15 @@ function DepositsWithdrawalsModule({ currency, call, dl, preview, notify, perm, 
           {perm("accountsManage") && <Btn tone="transfer" onClick={() => setTransferOpen(true)}>+ {currency} Transfer</Btn>}
         </>} />
 
-      <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+      <div className="gk-tabbar">
         {[["transactions", "Transactions"], ["daily", "Daily Transactions"]].map(([k, l]) => (
-          <button key={k} onClick={() => setTab(k)} style={{ background: tab === k ? C.navy : "none", borderColor: tab === k ? C.navy : C.line, color: tab === k ? "#fff" : C.slate, border: "1px solid", fontFamily: FONT_SANS, fontSize: 12, fontWeight: 600, padding: "6px 11px", borderRadius: 5, cursor: "pointer" }}><TabLabel k={k} l={l} /></button>
+          <button key={k} onClick={() => setTab(k)} className={`gk-ph-tab${tab === k ? " is-active" : ""}`} aria-pressed={tab === k}><TabLabel k={k} l={l} /></button>
         ))}
       </div>
 
       {tab === "transactions" && (
         <>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 10, background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, padding: "10px 12px" }}>
+          <div className="gk-filterbar">
             <Field label="Type" width={150}><Select value={type} onChange={(e) => setType(e.target.value)}><option value="all">All</option><option value="deposit">Credits</option><option value="withdrawal">Debits</option></Select></Field>
             <Field label="Search" width={220} hint="Account name, #, or phone"><SearchInput placeholder="Search account…" value={search} onChange={(e) => setSearch(e.target.value)} /></Field>
             <Field label="From" width={140}><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></Field>
@@ -11040,18 +11210,18 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
           <Btn tone="ghost" onClick={() => print("/api/history/statement.pdf" + qs(queryParams))}>Print</Btn>
         </>} />
 
-      <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
+      <div className="gk-tabbar">
         {/* QUOTATION PAYMENT INTEGRATION round: "Quotation Payments" added
             as its own pill, distinct from "Quotations" (every quotation leg
             — charge, payment, adjustment, and refund together) — so a real
             incoming payment can be isolated on its own, per the spec's own
             filter list. */}
         {[["all", "All"], ["exchange", "Exchanges"], ["transfer", "Transfers"], ["quotation", "Quotations"], ["quotation_payment", "Quotation Payments"], ["deposit", "Credits"], ["withdrawal", "Debits"]].map(([k, l]) => (
-          <button key={k} onClick={() => setType(k)} style={{ background: type === k ? C.navy : "none", borderColor: type === k ? C.navy : C.line, color: type === k ? "#fff" : C.slate, border: "1px solid", fontFamily: FONT_SANS, fontSize: 12, fontWeight: 600, padding: "6px 11px", borderRadius: 5, cursor: "pointer" }}><TabLabel k={k} l={l} /></button>
+          <button key={k} onClick={() => setType(k)} className={`gk-ph-tab${type === k ? " is-active" : ""}`} aria-pressed={type === k}><TabLabel k={k} l={l} /></button>
         ))}
       </div>
 
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 10, background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, padding: "10px 12px" }}>
+      <div className="gk-filterbar">
         <Field label="Account Type" width={150}>
           <Select value={accountType} onChange={(e) => setAccountType(e.target.value)}>
             <option value="all">Customer & Company</option><option value="customer">Customer only</option><option value="company">Company only</option>
@@ -13359,8 +13529,8 @@ function ReportsModule({ call, dl, notify, perm, hasRaw }) {
   return (
     <div>
       <SectionHeader title="Reports" sub="Filter, review, and export financial reports" />
-      <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
-        {tabs.map(([k, l]) => <button key={k} onClick={() => setTab(k)} style={{ background: tab === k ? C.navy : "none", borderColor: tab === k ? C.navy : C.line, color: tab === k ? "#fff" : C.slate, border: "1px solid", fontFamily: FONT_SANS, fontSize: 12.5, fontWeight: 600, padding: "7px 13px", borderRadius: 5, cursor: "pointer" }}><TabLabel k={k} l={l} /></button>)}
+      <div className="gk-tabbar">
+        {tabs.map(([k, l]) => <button key={k} onClick={() => setTab(k)} className={`gk-ph-tab${tab === k ? " is-active" : ""}`} aria-pressed={tab === k}><TabLabel k={k} l={l} /></button>)}
       </div>
       {tab === "exchange" && <ExchangeSummaryReport call={call} dl={dl} notify={notify} />}
       {tab === "quotations" && <QuotationReport call={call} dl={dl} notify={notify} />}
@@ -13378,7 +13548,7 @@ function ExchangeSummaryReport({ call, dl, notify }) {
   const dayTotals = useMemo(() => (data?.byDay || []).reduce((s, d) => ({ count: s.count + d.count, volumeUSD: s.volumeUSD + d.volumeUSD, profitUSD: s.profitUSD + d.profitUSD }), { count: 0, volumeUSD: 0, profitUSD: 0 }), [data]);
   return (
     <div>
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 16, background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, padding: "12px 14px" }}>
+      <div className="gk-filterbar">
         <Field label="From" width={140}><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></Field>
         <Field label="To" width={140}><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></Field>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
@@ -13487,7 +13657,7 @@ function StaffActivityReport({ call, dl, notify }) {
   const totalProfitUSD = useMemo(() => rows.reduce((s, r) => s + r.profitUSD, 0), [rows]);
   return (
     <div>
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 16, background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, padding: "12px 14px" }}>
+      <div className="gk-filterbar">
         <Field label="From" width={140}><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></Field>
         <Field label="To" width={140}><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></Field>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
@@ -13564,7 +13734,7 @@ function AuditLogReport({ call, dl, notify, hasRaw }) {
   const todaysEntries = useMemo(() => rows.filter((l) => l.at && l.at.slice(0, 10) === todayStr()).length, [rows]);
   return (
     <div>
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 16, background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, padding: "12px 14px" }}>
+      <div className="gk-filterbar">
         <Field label="Actor" width={200}><Select value={actor} onChange={(e) => setActor(e.target.value)}><option value="">All users</option>{actors.map((a) => <option key={a} value={a}>{a}</option>)}</Select></Field>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
           <TableCustomizeButton tableKey="auditLog" columnDefs={AUDIT_LOG_COLUMNS} layoutState={layoutState} canSetSystemDefault={hasRaw && hasRaw("settings.manageTableDefaults")} notify={notify} />
@@ -14065,7 +14235,7 @@ function ExpensesModule({ call, dl, notify, hasRaw, token }) {
   const t = summary && summary.totals;
   const accountsFor = (cur) => (meta ? meta.accounts.filter((a) => cur === "all" || a.currency === cur) : []);
   const filterBar = (
-    <div className="gk-exp-filters" style={{ display: "flex", gap: 12, alignItems: "flex-end", marginBottom: 14, flexWrap: "wrap", background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, padding: "12px 14px" }}>
+    <div className="gk-filterbar gk-exp-filters">
       <Field label="Period" width={130}>
         <Select value={preset} onChange={(e) => onPreset(e.target.value)} aria-label="Period">
           {EXPENSE_PRESETS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
@@ -14094,18 +14264,13 @@ function ExpensesModule({ call, dl, notify, hasRaw, token }) {
       </Field>
       {/* The expense list's search (it filters the Expenses table below). */}
       <div className="gk-exp-search" style={{ flex: "1 1 170px", minWidth: 170 }}><Field label="Search"><SearchInput placeholder="Description, reference, category…" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} aria-label="Search expenses" /></Field></div>
-      {/* The page's single Add New Expense action, part of this toolbar. */}
-      {canCreate && (
-        <div className="gk-exp-add" style={{ flexShrink: 0 }}>
-          <Btn tone="primary" icon="plus" onClick={() => setFormOpen({})} disabled={!meta}>Add New Expense</Btn>
-        </div>
-      )}
     </div>
   );
 
   return (
     <div>
-      <SectionHeader title="Company Expenses" sub="What the company spends, paid from its own Cash Accounts — USD and SLSH kept separate" />
+      <SectionHeader title="Company Expenses" sub="What the company spends, paid from its own Cash Accounts — USD and SLSH kept separate"
+        actions={canCreate && <Btn tone="primary" icon="plus" onClick={() => setFormOpen({})} disabled={!meta}>Add New Expense</Btn>} />
       {metaError && <div role="alert" style={{ background: C.redBg, color: C.red, border: `1px solid ${C.red}`, borderRadius: 6, padding: "9px 12px", fontSize: 12.5, marginBottom: 12, display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}><span>Could not load expense categories and accounts. {metaError}</span><Btn size="sm" tone="ghost" onClick={loadMeta}>Try again</Btn></div>}
 
       {filterBar}
@@ -14123,15 +14288,15 @@ function ExpensesModule({ call, dl, notify, hasRaw, token }) {
 
       <ExpenseCharts summary={summary} showUSD={showUSD} showSLSH={showSLSH} />
 
-      <div style={{ display: "flex", gap: 6, margin: "16px 0 12px", flexWrap: "wrap" }} role="tablist">
+      <div className="gk-tabbar" style={{ marginTop: 14 }} role="tablist">
         {[["expenses", "Expenses", "receipt"], ["reports", "Reports", "reports"], ...(canCategories ? [["categories", "Categories", "sliders"]] : [])].map(([k, l, icon]) => (
-          <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)} style={{ background: tab === k ? C.navy : "none", borderColor: tab === k ? C.navy : C.line, color: tab === k ? "#fff" : C.slate, border: "1px solid", fontFamily: FONT_SANS, fontSize: 12.5, fontWeight: 600, padding: "7px 13px", borderRadius: 5, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}><NavIcon name={icon} size={14} />{l}</button>
+          <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={`gk-ph-tab${tab === k ? " is-active" : ""}`}><NavIcon name={icon} size={14} />{l}</button>
         ))}
       </div>
 
       {tab === "expenses" && (
         <>
-          <div style={{ display: "flex", gap: 12, alignItems: "flex-end", marginBottom: 12, flexWrap: "wrap" }}>
+          <div className="gk-filterbar">
             <Field label="Status" width={150}>
               <Select value={status} onChange={(e) => setStatus(e.target.value)}><option value="posted">Posted</option><option value="cancelled">Cancelled</option><option value="all">All</option></Select>
             </Field>
@@ -14535,7 +14700,7 @@ function ExpenseReportsPanel({ call, dl, notify, filters, canExport }) {
   const isDetail = groupBy === "detail";
   return (
     <div>
-      <div style={{ display: "flex", gap: 12, alignItems: "flex-end", marginBottom: 12, flexWrap: "wrap" }}>
+      <div className="gk-filterbar">
         <Field label="Report" width={220}>
           <Select value={groupBy} onChange={(e) => setGroupBy(e.target.value)}>{EXPENSE_REPORT_GROUPS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</Select>
         </Field>
@@ -14919,7 +15084,14 @@ function CashInHandModule({ call, dl, notify, perm, hasRaw, onOpenCashAccountVie
 
   return (
     <div>
-      <SectionHeader title="Cash Account" sub="Company-owned cash across banks, mobile money, and physical cash — in USD and SLSH" />
+      <SectionHeader title="Cash Account" sub="Company-owned cash across banks, mobile money, and physical cash — in USD and SLSH"
+        actions={<>
+          {/* Header redesign: the active tab's main action lives in the page header. */}
+          {tab === "accounts" && hasRaw("cash.create") && <Btn tone="primary" onClick={() => setAddAccountOpen(true)}>+ Add Cash Account</Btn>}
+          {tab === "transfers" && hasRaw("cash.transfer") && <Btn tone="transfer" onClick={() => setTransferFormOpen(true)}>+ New Cash Transfer</Btn>}
+          {tab === "exchanges" && hasRaw("cash.exchange") && <Btn tone="accent" onClick={() => setExchangeFormOpen(true)}>+ New Cash Exchange</Btn>}
+          {tab === "loans" && hasRaw("loans.create") && <Btn tone="primary" onClick={() => setLoanFormOpen(true)}>+ New Loan</Btn>}
+        </>} />
 
       {/* BALANCE SHEET round: the Balance Sheet section comes first, directly
           under the page title, followed by the four original Cash in Hand cards. */}
@@ -14929,20 +15101,19 @@ function CashInHandModule({ call, dl, notify, perm, hasRaw, onOpenCashAccountVie
           so they wrap to 2 / 1 columns on tablets and phones (see THEME_CSS). */}
       <CashInHandCards summary={summary} baseCurrency={baseCurrency} onBaseCurrencyChange={setBaseCurrency} canEditRate={perm("rateManage")} onEditRate={() => setEditRateOpen(true)} />
 
-      <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
+      <div className="gk-tabbar">
         {TABS.map(([k, l]) => (
-          <button key={k} onClick={() => setTab(k)} style={{ background: tab === k ? C.navy : "none", borderColor: tab === k ? C.navy : C.line, color: tab === k ? "#fff" : C.slate, border: "1px solid", fontFamily: FONT_SANS, fontSize: 12.5, fontWeight: 600, padding: "7px 13px", borderRadius: 5, cursor: "pointer" }}><TabLabel k={k} l={l} /></button>
+          <button key={k} onClick={() => setTab(k)} className={`gk-ph-tab${tab === k ? " is-active" : ""}`} aria-pressed={tab === k}><TabLabel k={k} l={l} /></button>
         ))}
       </div>
 
       {tab === "accounts" && (
         <>
-          <div style={{ display: "flex", gap: 12, alignItems: "flex-end", marginBottom: 16, flexWrap: "wrap", background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, padding: "12px 14px" }}>
+          <div className="gk-filterbar">
             <Field label="Search" width={220}><SearchInput placeholder="Name or reference…" value={acctSearch} onChange={(e) => setAcctSearch(e.target.value)} /></Field>
             <Field label="Currency" width={130}><Select value={acctCurrency} onChange={(e) => setAcctCurrency(e.target.value)}><option value="all">All</option><option value="USD">USD</option><option value="SLSH">SLSH</option></Select></Field>
             <Field label="Account Type" width={170}><Select value={acctType} onChange={(e) => setAcctType(e.target.value)}><option value="all">All</option><option value="bank">Bank</option><option value="mobile_money">Mobile Money</option><option value="physical_cash">Physical Cash</option><option value="other">Other</option></Select></Field>
             <Field label="Status" width={140}><Select value={acctStatus} onChange={(e) => setAcctStatus(e.target.value)}><option value="all">All</option><option value="active">Active</option><option value="deactivated">Deactivated</option></Select></Field>
-            {hasRaw("cash.create") && <Btn tone="primary" onClick={() => setAddAccountOpen(true)}>+ Add Cash Account</Btn>}
           </div>
           <div className="gk-table-wrap" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, display: "flex", flexDirection: "column" }}>
             {accountsLoading ? <Spinner /> : acctPg.total === 0 ? (<><Empty text="No Cash Accounts Found" /><TableFooter firstIdx={acctPg.firstIdx} lastIdx={acctPg.lastIdx} total={acctPg.total} page={acctPg.page} totalPages={acctPg.totalPages} onPageChange={acctPg.setPage} pageSize={acctPg.pageSize} onPageSizeChange={acctPg.setPageSize} /></>) : (
@@ -15002,7 +15173,7 @@ function CashInHandModule({ call, dl, notify, perm, hasRaw, onOpenCashAccountVie
 
       {tab === "movements" && (
         <>
-          <div style={{ display: "flex", gap: 12, alignItems: "flex-end", marginBottom: 16, flexWrap: "wrap", background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, padding: "12px 14px" }}>
+          <div className="gk-filterbar">
             <Field label="Search" width={220}><SearchInput placeholder="Description, reference…" value={moveSearch} onChange={(e) => setMoveSearch(e.target.value)} /></Field>
             <Field label="Currency" width={130}><Select value={moveCurrency} onChange={(e) => setMoveCurrency(e.target.value)}><option value="all">All</option><option value="USD">USD</option><option value="SLSH">SLSH</option></Select></Field>
             <Field label="Type" width={150}><Select value={moveType} onChange={(e) => setMoveType(e.target.value)}><option value="all">All</option><option value="deposit">Credit</option><option value="withdrawal">Debit</option></Select></Field>
@@ -15092,9 +15263,6 @@ function CashInHandModule({ call, dl, notify, perm, hasRaw, onOpenCashAccountVie
 
       {tab === "transfers" && (
         <>
-          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
-            {hasRaw("cash.transfer") && <Btn tone="transfer" onClick={() => setTransferFormOpen(true)}>+ New Cash Transfer</Btn>}
-          </div>
           <div className="gk-table-wrap" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, display: "flex", flexDirection: "column" }}>
             {transferPg.total === 0 ? (<><Empty text="No Cash Movements Found" /><TableFooter firstIdx={transferPg.firstIdx} lastIdx={transferPg.lastIdx} total={transferPg.total} page={transferPg.page} totalPages={transferPg.totalPages} onPageChange={transferPg.setPage} pageSize={transferPg.pageSize} onPageSizeChange={transferPg.setPageSize} /></>) : (
               <>
@@ -15125,9 +15293,6 @@ function CashInHandModule({ call, dl, notify, perm, hasRaw, onOpenCashAccountVie
 
       {tab === "exchanges" && (
         <>
-          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
-            {hasRaw("cash.exchange") && <Btn tone="accent" onClick={() => setExchangeFormOpen(true)}>+ New Cash Exchange</Btn>}
-          </div>
           <div className="gk-table-wrap" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, display: "flex", flexDirection: "column" }}>
             {exchangePg.total === 0 ? (<><Empty text="No Cash Movements Found" /><TableFooter firstIdx={exchangePg.firstIdx} lastIdx={exchangePg.lastIdx} total={exchangePg.total} page={exchangePg.page} totalPages={exchangePg.totalPages} onPageChange={exchangePg.setPage} pageSize={exchangePg.pageSize} onPageSizeChange={exchangePg.setPageSize} /></>) : (
               <>
@@ -15159,9 +15324,8 @@ function CashInHandModule({ call, dl, notify, perm, hasRaw, onOpenCashAccountVie
 
       {tab === "loans" && (
         <>
-          <div style={{ display: "flex", gap: 12, alignItems: "flex-end", marginBottom: 16, flexWrap: "wrap" }}>
+          <div className="gk-filterbar">
             <Field label="Status" width={160}><Select value={loanStatus} onChange={(e) => setLoanStatus(e.target.value)}><option value="all">All</option><option value="active">Active</option><option value="paid">Paid</option><option value="written_off">Written Off</option></Select></Field>
-            <div style={{ marginLeft: "auto" }}>{hasRaw("loans.create") && <Btn tone="primary" onClick={() => setLoanFormOpen(true)}>+ New Loan</Btn>}</div>
           </div>
           <div className="gk-table-wrap" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, display: "flex", flexDirection: "column" }}>
             {loansLoading ? <Spinner /> : loanPg.total === 0 ? (<><Empty text="No loans found." /><TableFooter firstIdx={loanPg.firstIdx} lastIdx={loanPg.lastIdx} total={loanPg.total} page={loanPg.page} totalPages={loanPg.totalPages} onPageChange={loanPg.setPage} pageSize={loanPg.pageSize} onPageSizeChange={loanPg.setPageSize} /></>) : (
@@ -15440,7 +15604,7 @@ function CashAccountDetailPage({ call, dl, notify, perm, hasRaw, cashAccountId, 
             Transactions tab filter bar exactly (app.jsx ~7329-7343). Every
             filter here only ever narrows THIS account's own already-scoped
             `movements` array — never mixes in another cash account. */}
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 8, background: C.paper, border: `1px solid ${C.line}`, borderRadius: 8, padding: "8px 10px" }}>
+        <div className="gk-filterbar gk-filterbar--inset">
           <Field label="Search" width={170}><SearchInput value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Description, counterparty…" /></Field>
           <Field label="Movement Type" width={150}>
             <Select value={moveType} onChange={(e) => setMoveType(e.target.value)}>
