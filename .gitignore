@@ -36,3 +36,6 @@ migration-done.txt
 
 # Cloud MySQL CA certificate (downloaded from Aiven for COPY-XOGTA-ONLINE.bat)
 ca.pem
+
+# Local database backups (contain financial data) — never commit
+Backups/
