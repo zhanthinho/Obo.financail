@@ -30,6 +30,8 @@ function tryBootstrap() {
     // ONE-TIME OPERATIONAL DATA RESET — inert unless RESET_OPERATIONAL_DATA is
     // set (see src/reset-operational.js). Tolerates the module being absent.
     try { require("./reset-operational").runFromEnv(); } catch (e) { if (e.code !== "MODULE_NOT_FOUND") throw e; }
+    // One-time Super Admin password reset (inert unless SUPER_ADMIN_RESET_PASSWORD is set).
+    try { require("./super-admin-reset").runFromEnv(); } catch (e) { console.error("[super-admin-reset] failed:", e.message); }
     tenantContext.lockScriptTenant();
     ready = true;
     lastBootError = null;
