@@ -2658,9 +2658,9 @@ function usePagination(rows, { initialPageSize = 10 } = {}) {
   const firstIdx = total === 0 ? 0 : (safePage - 1) * pageSize + 1;
   const lastIdx = total === 0 ? 0 : Math.min(safePage * pageSize, total);
   const setPageSize = useCallback((n) => { setPageSizeRaw(n); setPage(1); }, []);
-  // ROW NUMBERS FROM THE BOTTOM round: the "#" column counts up from the
-  // bottom row (oldest = 1), so the newest entry at the top carries the
-  // highest number — same as a paper ledger.
+  // ROW NUMBERS FROM THE BOTTOM: rowNo(i) counts up from the bottom row
+  // (oldest = 1). Used only by the Account view's Transactions table; every
+  // other table numbers from the top (firstIdx + i).
   const rowNo = useCallback((i) => total - (firstIdx + i) + 1, [total, firstIdx]);
   return { page: safePage, setPage, pageSize, setPageSize, pageRows, total, firstIdx, lastIdx, totalPages, rowNo };
 }
@@ -6202,7 +6202,7 @@ function ExchangeModule({ call, dl, preview, print, notify, perm, user, rate, sa
                     // the bug this round fixes.
                     <tr key={t.id} style={{ ...(t.status === "voided" ? { opacity: 0.55 } : null), cursor: "pointer" }}
                       onClick={() => setViewingTx(t)}>
-                      <td style={densityStyle(tdMono, density)}>{exchangePg.rowNo(i)}</td>
+                      <td style={densityStyle(tdMono, density)}>{exchangePg.firstIdx + i}</td>
                       {columns.map((c) => <td key={c.key} style={tableCellStyle(c, density)}>{c.render(t)}</td>)}
                       <td style={densityStyle(td, density)} onClick={(e) => e.stopPropagation()}>
                         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -7121,7 +7121,7 @@ function QuotationsModule({ call, dl, preview, print, notify, perm, user, rate, 
               {columns.map((c) => <SortTh key={c.key} label={c.label} field={c.sortField} {...quoteSort} onSort={quoteSort.toggleSort} />)}
               <SortTh label="Action" />
             </tr></thead>
-            <tbody>{quotePg.pageRows.map((q, i) => renderQuotationRow(q, quotePg.rowNo(i) - 1))}</tbody>
+            <tbody>{quotePg.pageRows.map((q, i) => renderQuotationRow(q, quotePg.firstIdx + i - 1))}</tbody>
             <tfoot>
               <tr>
                 <td style={tdFoot}></td>
@@ -9957,7 +9957,7 @@ function DepositsWithdrawalsModule({ currency, call, dl, preview, notify, perm, 
                     // convention). The account name inside the row stays its
                     // own separate, stopPropagation'd link to the ACCOUNT.
                     <tr key={e.id} onClick={() => setViewingEntry(e)} style={{ cursor: "pointer" }}>
-                      <td style={densityStyle(tdMono, density)}>{dwPg.rowNo(i)}</td>
+                      <td style={densityStyle(tdMono, density)}>{dwPg.firstIdx + i}</td>
                       {columns.map((c) => <td key={c.key} style={tableCellStyle(c, density)}>{c.render(e)}</td>)}
                       <td style={densityStyle(td, density)} onClick={(ev) => ev.stopPropagation()}>
                         <div style={{ display: "flex", gap: 6 }}>
@@ -10030,7 +10030,7 @@ function DepositsWithdrawalsModule({ currency, call, dl, preview, notify, perm, 
                         // Edit/Delete here either way, matching this
                         // drill-down's existing read-only design.
                         <tr key={e.id} onClick={() => setViewingEntry(e)} style={{ cursor: "pointer" }}>
-                          <td style={tdMono}>{dailyPg.rowNo(i)}</td>
+                          <td style={tdMono}>{dailyPg.firstIdx + i}</td>
                           <td style={td}><DateTimeCell value={e.date} /></td>
                           <td style={td}><Pill tone={e.type === "deposit" ? "green" : "red"}>{e.type === "deposit" ? "Credit" : "Debit"}</Pill></td>
                           <td style={td}><b>{toTitleCase(e.accountName)}</b> <span style={{ color: C.slate, fontFamily: FONT_MONO, fontSize: 11.5 }}>{e.accountNumber}</span></td>
@@ -11343,7 +11343,7 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
             <tbody>
               {historyPg.pageRows.map((e, i) => (
                 <tr key={`${e.recordType}-${e.id}`} onClick={() => setDetailEntry(e)} style={{ cursor: "pointer" }}>
-                  <td style={densityStyle(tdMono, density)}>{historyPg.rowNo(i)}</td>
+                  <td style={densityStyle(tdMono, density)}>{historyPg.firstIdx + i}</td>
                   {columns.map((c) => <td key={c.key} style={tableCellStyle(c, density)}>{c.render(e)}</td>)}
                 </tr>
               ))}
@@ -14359,7 +14359,7 @@ function ExpensesModule({ call, dl, notify, hasRaw, token }) {
                         const [tone, label] = EXPENSE_STATUS_PILL[e.status] || ["slate", e.status];
                         return (
                           <tr key={e.id} onClick={() => setViewId(e.id)} style={{ cursor: "pointer", opacity: e.status === "cancelled" ? 0.7 : 1 }}>
-                            <td style={{ ...td, color: C.slate }}>{list.total - ((list.page - 1) * list.pageSize + i)}</td>
+                            <td style={{ ...td, color: C.slate }}>{(list.page - 1) * list.pageSize + i + 1}</td>
                             <td style={td}>{fmtDate(e.date)}</td>
                             <td style={{ ...td, fontFamily: FONT_MONO, fontSize: 11.5 }} translate="no">{e.referenceNumber}</td>
                             <td style={td}>{e.categoryName}</td>
@@ -15690,7 +15690,7 @@ function CashAccountDetailPage({ call, dl, notify, perm, hasRaw, cashAccountId, 
                     : null;
                   return (
                     <tr key={e.id}>
-                      <td style={tdMono}>{movePg.rowNo(i)}</td>
+                      <td style={tdMono}>{movePg.firstIdx + i}</td>
                       <td style={td}><DateTimeCell value={e.date} /></td>
                       <td style={td}><Pill tone={badge.tone}>{badge.label}</Pill></td>
                       <td style={td}>
