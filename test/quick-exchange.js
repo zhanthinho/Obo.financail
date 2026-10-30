@@ -51,16 +51,19 @@ async function waitUp() {
   throw new Error("server did not start");
 }
 const login = async (u) => (await api("/api/auth/login", { method: "POST", body: { username: u, password: PW } })).json.token;
-const DAILY = 8750, SALE = 8650;
+// GLOBAL RATE & PROFIT round: Buy and Sell both 8,750 (so conversions stay
+// 875,000 / $200), Cost 8,850 -> Buy side +10,000 SLSH per $100.
+const DAILY = 8750, SALE = 8650, COST = 8850;
+const calc = require("../src/exchange-calc");
 // Same formulas the form uses (and domain.js's computeExchangeProfit).
-const profitOf = (cur, given, received) => cur === "USD" ? given * (DAILY - SALE) / SALE : received * (SALE - DAILY) / SALE;
+const profitOf = (cur, given, received) => { const m = calc.computeMargin({ currencyGiven: cur, amountGiven: given, amountReceived: received, rate: DAILY, costRate: COST }); return m ? m.usd : 0; };
 
 let admin, accUsd, accSlsh;
 async function balanceOf(id) { return (await api(`/api/accounts/${id}`, { token: admin })).json.account.balance; }
 
 async function apiChecks() {
   admin = await login("amina.yusuf");
-  const r = await api("/api/rate-history", { method: "POST", token: admin, body: { dailyRate: DAILY, saleRate: SALE } });
+  const r = await api("/api/rate-history", { method: "POST", token: admin, body: { dailyRate: DAILY, saleRate: SALE, costRate: COST, buyRate: DAILY, sellRate: DAILY } });
   assert(r.status < 300, "could not set rates");
   accUsd = (await api("/api/accounts?currency=USD", { token: admin })).json.accounts[0];
   accSlsh = (await api("/api/accounts?currency=SLSH", { token: admin })).json.accounts[0];
@@ -77,12 +80,11 @@ async function apiChecks() {
     const t = (await api("/api/transactions", { method: "POST", token: admin, body: { clientName: "Walk-in", amountGiven: 10, currencyGiven: "USD", rateUsed: 8800 } })).json.transaction;
     assert(t.amountReceived === 88000 && t.rateUsed === 8800, JSON.stringify(t));
   });
-  await check("7. profit: the form's estimate is what gets stored", async () => {
-    const est = profitOf("USD", 100);
-    const t = (await api("/api/transactions", { method: "POST", token: admin, body: { clientName: "Walk-in", amountGiven: 100, currencyGiven: "USD", profitUsd: Number(est.toFixed(2)) } })).json.transaction;
-    assert(near(t.profitUsd, 1.16), `profit ${t.profitUsd}`);
-    const est2 = profitOf("SLSH", 875000, 100);
-    assert(est2 < 0, "SLSH->USD at Daily above Sale should be a negative spread for this direction");
+  await check("7. margin: the server's figure matches the shared calculation the form shows", async () => {
+    const t = (await api("/api/transactions", { method: "POST", token: admin, body: { clientName: "Walk-in", amountGiven: 100, currencyGiven: "USD" } })).json.transaction;
+    assert(t.marginSlsh === 10000 && near(t.profitUsd, profitOf("USD", 100, 875000), 1e-9), JSON.stringify(t));
+    const s = (await api("/api/transactions", { method: "POST", token: admin, body: { clientName: "Walk-in", amountGiven: 1750000, currencyGiven: "SLSH" } })).json.transaction;
+    assert(s.marginSlsh === -20000, `sell at a rate below Cost: ${s.marginSlsh}`);
   });
   await check("8. tracked exchange: From Account debited, Receiving Account credited", async () => {
     const bU = await balanceOf(accUsd.id), bS = await balanceOf(accSlsh.id);
@@ -153,7 +155,7 @@ async function browserChecks() {
         await p.fill("#qx-amount", "100"); await p.waitForTimeout(200);
         assert(/SLSH 875,000/.test(await text(p, "You Will Receive")), await text(p, "You Will Receive"));
         assert(/SLSH 875,000/.test(await text(p, "Exchange Summary")), "summary differs");
-        assert(/\$1\.16/.test(await text(p, "Estimated Profit")), await text(p, "Estimated Profit"));
+        assert(/\+SLSH 10,000/.test(await p.locator(".gk-qx-margin").innerText()), await p.locator(".gk-qx-margin").innerText());
         await p.click('button[aria-label="Reverse exchange direction"]'); await p.waitForTimeout(200);
         assert((await p.inputValue("#qx-amount")) === "", "amount left over after switching direction");
         await p.fill("#qx-amount", "1750000"); await p.waitForTimeout(200);
@@ -191,7 +193,7 @@ async function browserChecks() {
       await check("19. Somali: the Quick Exchange page is fully translated", async () => {
         await p.fill("#qx-amount", "100"); await p.click('button[aria-controls="qx-details"]'); await p.waitForTimeout(300);
         const t = await p.locator(".gk-qx").innerText();
-        assert(/Sarrif Degdeg ah/.test(t) && /Waxaad Helaysaa/.test(t) && /Faa'iidada la Qiyaasay/.test(t), t.slice(0, 200));
+        assert(/Sarrif Degdeg ah/.test(t) && /Waxaad Helaysaa/.test(t) && /Farqiga Cost Rate-ka/.test(t), t.slice(0, 200));
         const missing = await p.evaluate(() => [...window.__i18n.missing]);
         const ours = missing.filter((s) => !/^Walk-In$/.test(s) && /Quick Exchange|Walk-in|Account|Direction|Amount|Rate|Receive|Profit|Summary|Details|Currency|override|Customer/i.test(s));
         assert(!ours.length, `untranslated: ${ours.slice(0, 6).join(" | ")}`);

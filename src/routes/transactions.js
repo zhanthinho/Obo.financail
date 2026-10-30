@@ -3,7 +3,8 @@ const { isValidAmount, MAX_AMOUNT } = require("../util");
 const { all, get, run, tx } = require("../db");
 const { sendJSON, badRequest, notFound, sendCSV, sendPDF, sendXLSX, readJSONBody } = require("../http-helpers");
 const { requireAuth, requirePerm, can, allowedCurrencies } = require("../rbac");
-const { getCurrentRate, getCurrentSaleRate, computeExchangeProfit, getCompanySettings, getDefaultPdfTemplate, getDefaultExcelTemplate, findOrCreateClient, addAudit, rebuildAccountBalance, nextExchangeReference, rebuildCashAccountBalance, nextCashLedgerReference } = require("../domain");
+const { computeMargin, defaultRateFor } = require("../exchange-calc");
+const { getCurrentRate, getCurrentSaleRate, getCurrentRates, getCurrentCostRate, costRateAt, costRateLookup, computeExchangeProfit, getCompanySettings, getDefaultPdfTemplate, getDefaultExcelTemplate, findOrCreateClient, addAudit, rebuildAccountBalance, nextExchangeReference, rebuildCashAccountBalance, nextCashLedgerReference } = require("../domain");
 const { uid, nowISO, todayStr, convert, fmtMoney } = require("../util");
 const { toCSV } = require("../csv");
 const { renderReportPDF, renderExchangeReceiptPDF } = require("../pdf");
@@ -63,14 +64,29 @@ function resolveExchangeCashAccount(cashAccountId, expectedCurrency, label) {
   return { cashAccount: a };
 }
 
-function rowToJSON(t, includeProfit) {
+// GLOBAL RATE & PROFIT round: the Cost Rate this exchange was valued at —
+// stored on the row since this round; for an older row, the Cost (or Sale)
+// Rate that applied on its own date (display only, the stored profit is
+// never rewritten). `margin` comes from the shared calculation.
+function txCostRate(t, lookup) {
+  if (t.cost_rate != null) return { costRate: t.cost_rate, costRateSource: "stored" };
+  const r = lookup ? lookup(t.date) : costRateAt(t.date);
+  return { costRate: r, costRateSource: r != null ? "history" : null };
+}
+function marginFields(t, lookup) {
+  const { costRate, costRateSource } = txCostRate(t, lookup);
+  const margin = computeMargin({ currencyGiven: t.currency_given, amountGiven: t.amount_given, amountReceived: t.amount_received, rate: t.rate_used, costRate });
+  return { profitUsd: t.profit_usd, costRate, costRateSource, marginSide: t.currency_given === "USD" ? "buy" : "sell", marginSlsh: margin ? margin.slsh : null };
+}
+
+function rowToJSON(t, includeProfit, lookup) {
   return {
     id: t.id, date: t.date, clientName: t.client_name, referenceNumber: t.reference_number,
     fromAccountId: t.from_account_id, fromAccount: clientAccountBasic(t.from_account_id),
     toAccountId: t.to_account_id, toAccount: clientAccountBasic(t.to_account_id),
     amountGiven: t.amount_given, currencyGiven: t.currency_given,
     amountReceived: t.amount_received, currencyReceived: t.currency_received,
-    rateUsed: t.rate_used, ...(includeProfit ? { profitUsd: t.profit_usd } : {}), staffId: t.staff_id, staffName: t.staff_name,
+    rateUsed: t.rate_used, ...(includeProfit ? marginFields(t, lookup) : {}), staffId: t.staff_id, staffName: t.staff_name,
     status: t.status, notes: t.notes, voidReason: t.void_reason, voidedBy: t.voided_by, voidedAt: t.voided_at,
     // EXCHANGE WORKSPACE round: optional Cash in Hand linkage — both null on
     // every exchange recorded before this round, and on any new one where
@@ -123,7 +139,8 @@ function register(router) {
     if (allowed.length < 2) return sendJSON(res, 200, { transactions: [] });
     const includeProfit = can(user, "profit.viewExchange");
     const rows = queryTransactions(user, query);
-    sendJSON(res, 200, { transactions: rows.map((t) => rowToJSON(t, includeProfit)) });
+    const lookup = includeProfit ? costRateLookup() : null;
+    sendJSON(res, 200, { transactions: rows.map((t) => rowToJSON(t, includeProfit, lookup)) });
   });
 
   router.post("/api/transactions", async (req, res) => {
@@ -137,8 +154,12 @@ function register(router) {
     const currencyGiven = body.currencyGiven === "SLSH" ? "SLSH" : "USD";
     if (!body.clientName || !isValidAmount(given)) return badRequest(res, "clientName and a positive amountGiven are required.");
     const currencyReceived = currencyGiven === "USD" ? "SLSH" : "USD";
-    const rate = body.rateUsed !== undefined && body.rateUsed !== "" && body.rateUsed !== null ? Number(body.rateUsed) : getCurrentRate();
+    // GLOBAL RATE & PROFIT round: with no rate typed, the direction's own
+    // rate applies (Buy Rate for USD -> SLSH, Sell Rate for SLSH -> USD),
+    // falling back to the Daily Rate until those are set.
+    const rate = body.rateUsed !== undefined && body.rateUsed !== "" && body.rateUsed !== null ? Number(body.rateUsed) : defaultRateFor(currencyGiven, getCurrentRates());
     if (!rate || rate <= 0 || !Number.isFinite(rate) || rate > 1e9) return badRequest(res, "Rate must be a positive number.");
+    const costRate = getCurrentCostRate();
     const txDate = body.date ? new Date(body.date).toISOString() : nowISO();
     let received = body.amountReceived !== undefined && body.amountReceived !== "" && body.amountReceived !== null
       ? Number(body.amountReceived)
@@ -152,9 +173,13 @@ function register(router) {
     // the current Sale Rate, the same override-with-server-fallback shape
     // already used just above for `rate` (body.rateUsed vs
     // getCurrentRate()) and `received` (body.amountReceived vs convert()).
+    // GLOBAL RATE & PROFIT round: the fallback is the shared Cost Rate
+    // margin (src/exchange-calc.js) in USD at this exchange's Cost Rate —
+    // Sell-side Profit or Buy-side Cost Rate Difference — 0 with no Cost Rate.
+    const margin = computeMargin({ currencyGiven, amountGiven: given, amountReceived: received, rate, costRate });
     const profitUsd = body.profitUsd !== undefined && body.profitUsd !== null && body.profitUsd !== ""
       ? Number(body.profitUsd) || 0
-      : computeExchangeProfit(currencyGiven, given, received, rate);
+      : (margin ? margin.usd : 0);
 
     // ACCOUNT PICKER DIRECTNESS round: From Account and Receiving Account
     // are now two independent picks made directly in the Exchange form
@@ -205,9 +230,9 @@ function register(router) {
     tx(() => {
       run(
         `INSERT INTO exchange_transactions
-         (id, date, client_id, client_name, from_account_id, to_account_id, amount_given, currency_given, amount_received, currency_received, rate_used, profit_usd, staff_id, staff_name, status, notes, void_reason, voided_by, voided_at, reference_number, cash_out_account_id, cash_in_account_id)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,'active',?,NULL,NULL,NULL,?,?,?)`,
-        [id, txDate, clientId, resolvedClientName, fromAccount ? fromAccount.id : null, toAccount ? toAccount.id : null, given, currencyGiven, received, currencyReceived, rate, profitUsd, user.id, user.name, body.notes || null, referenceNumber, cashOutAccount ? cashOutAccount.id : null, cashInAccount ? cashInAccount.id : null]
+         (id, date, client_id, client_name, from_account_id, to_account_id, amount_given, currency_given, amount_received, currency_received, rate_used, cost_rate, profit_usd, staff_id, staff_name, status, notes, void_reason, voided_by, voided_at, reference_number, cash_out_account_id, cash_in_account_id)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'active',?,NULL,NULL,NULL,?,?,?)`,
+        [id, txDate, clientId, resolvedClientName, fromAccount ? fromAccount.id : null, toAccount ? toAccount.id : null, given, currencyGiven, received, currencyReceived, rate, costRate, profitUsd, user.id, user.name, body.notes || null, referenceNumber, cashOutAccount ? cashOutAccount.id : null, cashInAccount ? cashInAccount.id : null]
       );
       if (fromAccount) {
         run("INSERT INTO account_ledger (id, client_id, type, currency, amount, balance_after, notes, staff_id, staff_name, date, source_type, source_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -344,7 +369,7 @@ function register(router) {
     const currencyGiven = body.currencyGiven === "SLSH" ? "SLSH" : "USD";
     if (!body.clientName || !isValidAmount(given)) return badRequest(res, "clientName and a positive amountGiven are required.");
     const currencyReceived = currencyGiven === "USD" ? "SLSH" : "USD";
-    const rate = body.rateUsed !== undefined && body.rateUsed !== "" && body.rateUsed !== null ? Number(body.rateUsed) : getCurrentRate();
+    const rate = body.rateUsed !== undefined && body.rateUsed !== "" && body.rateUsed !== null ? Number(body.rateUsed) : defaultRateFor(currencyGiven, getCurrentRates());
     if (!rate || rate <= 0 || !Number.isFinite(rate) || rate > 1e9) return badRequest(res, "Rate must be a positive number.");
     let received = body.amountReceived !== undefined && body.amountReceived !== "" && body.amountReceived !== null
       ? Number(body.amountReceived)
@@ -356,9 +381,8 @@ function register(router) {
     // otherwise the edited amounts/rate are re-run through the current
     // Sale Rate spread rather than silently keeping whatever profit the
     // row happened to have before the edit.
-    const profitUsd = body.profitUsd !== undefined && body.profitUsd !== null && body.profitUsd !== ""
-      ? Number(body.profitUsd) || 0
-      : computeExchangeProfit(currencyGiven, given, received, rate);
+    const profitOverride = body.profitUsd !== undefined && body.profitUsd !== null && body.profitUsd !== ""
+      ? Number(body.profitUsd) || 0 : null;
 
     // Same account-resolution and validation as creating a new exchange
     // (currency-separation rule included: the account must match its side's
@@ -431,15 +455,22 @@ function register(router) {
         const clientId = newFromAccount ? newFromAccount.id : findOrCreateClient(body.clientName, body.clientContact, body.clientAddress, currencyGiven);
         const resolvedClientName = newFromAccount ? newFromAccount.name : (get("SELECT name FROM clients WHERE id = ?", [clientId]) || {}).name || body.clientName;
         const txDate = body.date ? new Date(body.date).toISOString() : t.date;
+        // GLOBAL RATE & PROFIT round: an edit keeps the exchange's OWN Cost
+        // Rate (stored, or the one that applied on its date) — never today's.
+        const editCostRate = t.cost_rate;
+        const valuedAt = editCostRate != null ? editCostRate : costRateAt(t.date);
+        const editMargin = computeMargin({ currencyGiven, amountGiven: given, amountReceived: received, rate, costRate: valuedAt });
+        const profitUsd = profitOverride !== null ? profitOverride
+          : editMargin ? editMargin.usd : (Number(t.profit_usd) || 0);
 
         run(
           `UPDATE exchange_transactions
            SET date=?, client_id=?, client_name=?, from_account_id=?, to_account_id=?,
                amount_given=?, currency_given=?, amount_received=?, currency_received=?,
-               rate_used=?, profit_usd=?, notes=?, cash_out_account_id=?, cash_in_account_id=?
+               rate_used=?, cost_rate=?, profit_usd=?, notes=?, cash_out_account_id=?, cash_in_account_id=?
            WHERE id = ?`,
           [txDate, clientId, resolvedClientName, newFromAccount ? newFromAccount.id : null, newToAccount ? newToAccount.id : null,
-           given, currencyGiven, received, currencyReceived, rate, profitUsd, body.notes || null,
+           given, currencyGiven, received, currencyReceived, rate, editCostRate, profitUsd, body.notes || null,
            newCashOutAccount ? newCashOutAccount.id : null, newCashInAccount ? newCashInAccount.id : null, t.id]
         );
 

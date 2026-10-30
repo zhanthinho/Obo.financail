@@ -2945,6 +2945,15 @@
      "isCompanyId": false
     },
     {
+     "name": "cost_rate",
+     "sqliteType": "REAL",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
      "name": "profit_usd",
      "sqliteType": "REAL",
      "notNull": true,
@@ -5416,6 +5425,33 @@
     },
     {
      "name": "rate_difference",
+     "sqliteType": "REAL",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "cost_rate",
+     "sqliteType": "REAL",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "buy_rate",
+     "sqliteType": "REAL",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "sell_rate",
      "sqliteType": "REAL",
      "notNull": false,
      "default": null,

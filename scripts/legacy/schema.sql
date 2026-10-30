@@ -162,6 +162,11 @@ CREATE TABLE IF NOT EXISTS rate_history (
   sale_rate REAL,
   daily_slsh_rate REAL,
   rate_difference REAL,
+  -- GLOBAL RATE & PROFIT round: Cost / Buy / Sell rates (SLSH per 1 USD),
+  -- nullable until set; formulas in src/exchange-calc.js.
+  cost_rate REAL,
+  buy_rate REAL,
+  sell_rate REAL,
   note TEXT,
   set_by TEXT NOT NULL REFERENCES users(id),
   set_by_name TEXT NOT NULL,
@@ -244,6 +249,7 @@ CREATE TABLE IF NOT EXISTS exchange_transactions (
   amount_received REAL NOT NULL,
   currency_received TEXT NOT NULL CHECK(currency_received IN ('USD','SLSH')),
   rate_used REAL NOT NULL,
+  cost_rate REAL, -- GLOBAL RATE & PROFIT round: the Cost Rate this exchange was valued at
   profit_usd REAL NOT NULL DEFAULT 0,
   staff_id TEXT NOT NULL REFERENCES users(id),
   staff_name TEXT NOT NULL,

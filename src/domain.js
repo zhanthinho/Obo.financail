@@ -84,7 +84,44 @@ function saveCashRateHistory({ rate, note, user, currencyPair = "USD_SLSH" }) {
 // currencyPair defaults to the only real pair this business trades today,
 // but the column (and this function) are already pair-aware for whenever a
 // second one is genuinely configured.
-function saveRateHistory({ dailyRate, saleRate, dailySlshRate, note, user, currencyPair = "USD_SLSH" }) {
+// GLOBAL RATE & PROFIT round: the company's Cost, Buy and Sell rates (SLSH
+// per 1 USD), each the latest value ever set — null until set, never
+// invented. Formulas live in src/exchange-calc.js.
+function latestRateColumn(col) {
+  const row = get(`SELECT ${col} as rate FROM rate_history WHERE ${col} IS NOT NULL ORDER BY at DESC LIMIT 1`);
+  return row ? row.rate : null;
+}
+function getCurrentCostRate() { return latestRateColumn("cost_rate"); }
+function getCurrentBuyRate() { return latestRateColumn("buy_rate"); }
+function getCurrentSellRate() { return latestRateColumn("sell_rate"); }
+function getCurrentRates() {
+  return { dailyRate: getCurrentRate(), saleRate: getCurrentSaleRate(), dailySlshRate: getCurrentDailySlshRate(), costRate: getCurrentCostRate(), buyRate: getCurrentBuyRate(), sellRate: getCurrentSellRate() };
+}
+// The Cost Rate that applied at a given moment (the latest one set at or
+// before `at`) — used to DISPLAY a historical exchange's Cost Rate when the
+// transaction itself predates storing it. Falls back to that moment's Sale
+// Rate (the business's earlier valuation rate). Never today's rate.
+function costRateAt(at) {
+  const row = get("SELECT cost_rate, sale_rate FROM rate_history WHERE at <= ? AND (cost_rate IS NOT NULL OR sale_rate IS NOT NULL) ORDER BY at DESC LIMIT 1", [String(at || "")]);
+  if (!row) return null;
+  return row.cost_rate != null ? row.cost_rate : row.sale_rate;
+}
+
+// Same as costRateAt() for many rows at once: reads rate_history once and
+// answers each lookup from memory (Transaction History, reports, lists).
+function costRateLookup() {
+  const rows = all("SELECT at, cost_rate, sale_rate FROM rate_history WHERE cost_rate IS NOT NULL OR sale_rate IS NOT NULL ORDER BY at ASC");
+  return (at) => {
+    const key = String(at || "");
+    let lo = 0, hi = rows.length - 1, found = -1;
+    while (lo <= hi) { const mid = (lo + hi) >> 1; if (rows[mid].at <= key) { found = mid; lo = mid + 1; } else hi = mid - 1; }
+    if (found < 0) return null;
+    const r = rows[found];
+    return r.cost_rate != null ? r.cost_rate : r.sale_rate;
+  };
+}
+
+function saveRateHistory({ dailyRate, saleRate, dailySlshRate, costRate, buyRate, sellRate, note, user, currencyPair = "USD_SLSH" }) {
   const effectiveDaily = dailyRate != null ? dailyRate : getCurrentRate();
   const effectiveSale = saleRate != null ? saleRate : getCurrentSaleRate();
   // DAILY SLSH RATE round: carried forward the same "untouched side keeps
@@ -92,13 +129,18 @@ function saveRateHistory({ dailyRate, saleRate, dailySlshRate, note, user, curre
   // never read by any conversion math (see getCurrentDailySlshRate()).
   const effectiveDailySlsh = dailySlshRate != null ? dailySlshRate : getCurrentDailySlshRate();
   const difference = effectiveDaily != null && effectiveSale != null ? effectiveDaily - effectiveSale : null;
+  // Cost/Buy/Sell carry forward the same way: an untouched one keeps its
+  // current value in the new snapshot row.
+  const effCost = costRate != null ? costRate : getCurrentCostRate();
+  const effBuy = buyRate != null ? buyRate : getCurrentBuyRate();
+  const effSell = sellRate != null ? sellRate : getCurrentSellRate();
   const id = uid("rh");
   const at = nowISO();
   run(
-    "INSERT INTO rate_history (id, currency_pair, daily_rate, sale_rate, daily_slsh_rate, rate_difference, note, set_by, set_by_name, at) VALUES (?,?,?,?,?,?,?,?,?,?)",
-    [id, currencyPair, effectiveDaily, effectiveSale, effectiveDailySlsh, difference, note || null, user.id, user.name, at]
+    "INSERT INTO rate_history (id, currency_pair, daily_rate, sale_rate, daily_slsh_rate, rate_difference, cost_rate, buy_rate, sell_rate, note, set_by, set_by_name, at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+    [id, currencyPair, effectiveDaily, effectiveSale, effectiveDailySlsh, difference, effCost, effBuy, effSell, note || null, user.id, user.name, at]
   );
-  return { id, currencyPair, dailyRate: effectiveDaily, saleRate: effectiveSale, dailySlshRate: effectiveDailySlsh, difference, note: note || null, at };
+  return { id, currencyPair, dailyRate: effectiveDaily, saleRate: effectiveSale, dailySlshRate: effectiveDailySlsh, difference, costRate: effCost, buyRate: effBuy, sellRate: effSell, note: note || null, at };
 }
 
 // The Profit (USD) one exchange makes against the current Sale Rate, given
@@ -119,11 +161,12 @@ function saveRateHistory({ dailyRate, saleRate, dailySlshRate, note, user, curre
 // Returns 0 whenever no Sale Rate has ever been set, or rateUsed is falsy
 // — profit then silently stays at its pre-existing 0 baseline rather than
 // fabricating a number from an unset rate.
+// GLOBAL RATE & PROFIT round: kept for any caller of the old name — now the
+// shared Cost Rate margin (src/exchange-calc.js) in USD at the current Cost
+// Rate; 0 when no Cost Rate is set.
 function computeExchangeProfit(currencyGiven, amountGiven, amountReceived, rateUsed) {
-  const saleRate = getCurrentSaleRate();
-  if (!saleRate || !rateUsed) return 0;
-  if (currencyGiven === "USD") return amountGiven * (rateUsed - saleRate) / saleRate;
-  return amountReceived * (saleRate - rateUsed) / saleRate;
+  const m = require("./exchange-calc").computeMargin({ currencyGiven, amountGiven, amountReceived, rate: rateUsed, costRate: getCurrentCostRate() });
+  return m ? m.usd : 0;
 }
 
 function getCompanySettings() {
@@ -473,7 +516,7 @@ function nextLoanPaymentReference() {
 }
 
 module.exports = {
-  getCurrentRate, getCurrentSaleRate, getCurrentDailySlshRate, saveRateHistory, getCurrentCashRate, getExplicitCashRate, saveCashRateHistory, computeExchangeProfit, getCompanySettings, getDefaultPdfTemplate, getDefaultExcelTemplate, findOrCreateClient, addAudit, currencyPosition,
+  getCurrentRate, getCurrentSaleRate, getCurrentDailySlshRate, getCurrentCostRate, getCurrentBuyRate, getCurrentSellRate, getCurrentRates, costRateAt, costRateLookup, saveRateHistory, getCurrentCashRate, getExplicitCashRate, saveCashRateHistory, computeExchangeProfit, getCompanySettings, getDefaultPdfTemplate, getDefaultExcelTemplate, findOrCreateClient, addAudit, currencyPosition,
   effectiveStatus, quotationTotals, nextQuotationNumber, nextAccountNumber, rebuildAccountBalance,
   nextExchangeReference, nextTransferReference, nextLedgerReference,
   nextQuotationPaymentReference, quotationPaymentSummary,

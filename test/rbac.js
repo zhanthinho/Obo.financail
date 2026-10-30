@@ -860,31 +860,38 @@ async function partB() {
       assert(get.body.rate === 8650, `expected current sale rate 8650, got ${get.body.rate}`);
       assert(Array.isArray(get.body.history) && get.body.history.some((h) => h.rate === 8650), "expected the new sale rate to appear in its own history");
     });
-    await check("AUTO PROFIT: USD given -> SLSH received computes Profit = amountUSD * (dailyRate - saleRate) / saleRate", async () => {
+    // GLOBAL RATE & PROFIT round: the margin now follows Cost / Buy / Sell
+    // rates (src/exchange-calc.js) — a Sale Rate alone no longer produces a
+    // profit figure; with no Cost Rate the stored value stays 0.
+    await check("AUTO PROFIT: with only a Sale Rate (no Cost Rate) a new exchange records 0, not the old spread", async () => {
       const adminToken = await login("amina.yusuf", DEMO_PW);
       const created = await api("/api/transactions", { method: "POST", body: { clientName: "RBAC Sale Rate Test B", amountGiven: 100, currencyGiven: "USD" } }, adminToken);
       assert(created.status === 201, `expected 201, got ${created.status}: ${JSON.stringify(created.body)}`);
-      const expected = 100 * (8700 - 8650) / 8650;
-      assert(Math.abs(created.body.transaction.profitUsd - expected) < 0.001, `expected profit ~${expected.toFixed(4)}, got ${created.body.transaction.profitUsd}`);
+      assert(created.body.transaction.profitUsd === 0, `expected 0, got ${created.body.transaction.profitUsd}`);
     });
-    await check("AUTO PROFIT: SLSH given -> USD received flips the sign of the same spread", async () => {
+    await check("AUTO PROFIT: Buy = (Cost − Buy) × USD, Sell = (Sell − Cost) × USD, stored in USD at the Cost Rate", async () => {
       const adminToken = await login("amina.yusuf", DEMO_PW);
-      const created = await api("/api/transactions", { method: "POST", body: { clientName: "RBAC Sale Rate Test C", amountGiven: 870000, currencyGiven: "SLSH" } }, adminToken);
-      assert(created.status === 201, `expected 201, got ${created.status}: ${JSON.stringify(created.body)}`);
-      const expected = -(100 * (8700 - 8650) / 8650); // 870,000 SLSH at rate 8700 = 100 USD received
-      assert(Math.abs(created.body.transaction.profitUsd - expected) < 0.001, `expected profit ~${expected.toFixed(4)}, got ${created.body.transaction.profitUsd}`);
+      const set = await api("/api/rate-history", { method: "POST", body: { dailyRate: 8700, saleRate: 8650, costRate: 8700, buyRate: 8650, sellRate: 8750 } }, adminToken);
+      assert(set.status === 200, `rates: ${set.status}`);
+      const buy = await api("/api/transactions", { method: "POST", body: { clientName: "RBAC Sale Rate Test C", amountGiven: 100, currencyGiven: "USD" } }, adminToken);
+      assert(buy.status === 201 && buy.body.transaction.rateUsed === 8650, JSON.stringify(buy.body));
+      assert(Math.abs(buy.body.transaction.profitUsd - 5000 / 8700) < 1e-6 && buy.body.transaction.marginSlsh === 5000, `buy ${JSON.stringify(buy.body.transaction)}`);
+      const sell = await api("/api/transactions", { method: "POST", body: { clientName: "RBAC Sale Rate Test C2", amountGiven: 875000, currencyGiven: "SLSH" } }, adminToken);
+      assert(sell.status === 201 && sell.body.transaction.amountReceived === 100, JSON.stringify(sell.body));
+      assert(sell.body.transaction.marginSlsh === 5000, `sell ${JSON.stringify(sell.body.transaction)}`);
     });
     await check("AUTO PROFIT: an explicit profitUsd always overrides the auto-computed spread, on both create and update", async () => {
       const adminToken = await login("amina.yusuf", DEMO_PW);
       const created = await api("/api/transactions", { method: "POST", body: { clientName: "RBAC Sale Rate Test D", amountGiven: 50, currencyGiven: "USD", profitUsd: 42 } }, adminToken);
       assert(created.status === 201, `expected 201, got ${created.status}: ${JSON.stringify(created.body)}`);
       assert(created.body.transaction.profitUsd === 42, `expected the explicit override 42 to be respected, got ${created.body.transaction.profitUsd}`);
-      // Updating without an explicit profitUsd re-runs the (possibly
-      // changed) amounts/rate through the current Sale Rate spread rather
-      // than silently keeping the old override.
+      // Updating without an explicit profitUsd re-runs the amounts/rate
+      // through the shared margin at THIS exchange's own Cost Rate (8,700,
+      // stored when it was created) with the Buy Rate 8,650:
+      // (8,700 − 8,650) × $50 = 2,500 SLSH = $0.2874 at 8,700.
       const updated = await api(`/api/transactions/${created.body.transaction.id}`, { method: "PATCH", body: { clientName: "RBAC Sale Rate Test D", amountGiven: 50, currencyGiven: "USD" } }, adminToken);
       assert(updated.status === 200, `expected 200, got ${updated.status}: ${JSON.stringify(updated.body)}`);
-      const expectedAuto = 50 * (8700 - 8650) / 8650;
+      const expectedAuto = 2500 / 8700;
       assert(Math.abs(updated.body.transaction.profitUsd - expectedAuto) < 0.001, `expected the PATCH (no explicit profitUsd) to recompute to ~${expectedAuto.toFixed(4)}, got ${updated.body.transaction.profitUsd}`);
     });
     await check("POST /api/sale-rate also succeeds for Manager (also has rateManage) — same gate as Daily Rate", async () => {

@@ -269,5 +269,11 @@
  "Reference {0}": "Tixraac {0}",
  "Reference: {0}": "Tixraac: {0}",
  "This exchange takes {0}'s balance below zero (accounts are allowed to go into debt).": "Sarrifkan wuxuu haraaga {0} ka dhigayaa ka hooseeya eber (akoonnadu waa ay deyn geli karaan).",
- "Use current Daily Rate ({0})": "Isticmaal Sicirka Maanta ({0})"
+ "Use current Daily Rate ({0})": "Isticmaal Sicirka Maanta ({0})",
+ "Use current {0} ({1})": "Isticmaal {0} hadda ({1})",
+ "Blank = current {0}. Type a rate to use it for this exchange only.": "Bannaan = {0} hadda. Qor sicir si loogu isticmaalo sarrifkan oo kaliya.",
+ "≈ {0} at Cost Rate {1}": "≈ {0} marka loo eego Cost Rate {1}",
+ "≈ {0} at Cost Rate {1} · Manually set.": "≈ {0} marka loo eego Cost Rate {1} · Gacanta lagu dejiyay.",
+ "{0} · {1} exchange(s)": "{0} · {1} sarrif",
+ "{0} exchange(s) have no Cost Rate — shown in USD only.": "{0} sarrif ma laha Cost Rate — USD oo kaliya ayaa lagu muujiyay."
 }

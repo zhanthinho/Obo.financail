@@ -1,7 +1,9 @@
 "use strict";
 const { all, get } = require("../db");
 const { sendJSON, sendCSV, sendPDF, sendXLSX } = require("../http-helpers");
-const { requireAuth, requirePerm } = require("../rbac");
+const { requireAuth, requirePerm, can } = require("../rbac");
+const { computeMargin } = require("../exchange-calc");
+const { costRateLookup } = require("../domain");
 const { getCompanySettings, getDefaultPdfTemplate, getDefaultExcelTemplate, quotationPaymentSummary, addAudit } = require("../domain");
 const { fmtMoney, chronoSortKey } = require("../util");
 const { toCSV } = require("../csv");
@@ -49,7 +51,11 @@ function normalizeHistoryDate(d) {
 // see the landmine note in ledger.js: a quotation/exchange/transfer-tagged
 // ledger leg must NEVER be mutated through the generic /api/account-ledger
 // endpoints, only through its own type's endpoint.
-function queryHistory(query) {
+function queryHistory(query, opts = {}) {
+  // GLOBAL RATE & PROFIT round: exchange rows carry their own rate, Cost
+  // Rate and margin — only for users allowed to see exchange profit.
+  const includeProfit = !!opts.includeProfit;
+  const lookup = includeProfit ? costRateLookup() : null;
   const type = query.type || "all";
   const accountType = query.accountType && query.accountType !== "all" ? query.accountType : null;
   const currency = query.currency && ["USD", "SLSH"].includes(query.currency) ? query.currency : null;
@@ -83,7 +89,13 @@ function queryHistory(query) {
       accountName: t.client_name, accountType: t.client_account_type || "customer", accountCurrency: t.currency_given, phone: t.client_phone || "",
       amountSummary: `${fmtMoney(t.amount_given, t.currency_given)} -> ${fmtMoney(t.amount_received, t.currency_received)}`,
       status: t.status, staffOrCreator: t.staff_name, staffId: t.staff_id, accountId: t.client_id, notes: t.notes,
-      raw: transactionRowToJSON(t),
+      rate: t.rate_used,
+      ...(includeProfit ? (() => {
+        const costRate = t.cost_rate != null ? t.cost_rate : lookup(t.date);
+        const m = computeMargin({ currencyGiven: t.currency_given, amountGiven: t.amount_given, amountReceived: t.amount_received, rate: t.rate_used, costRate });
+        return { costRate, costRateSource: t.cost_rate != null ? "stored" : costRate != null ? "history" : null, marginSide: t.currency_given === "USD" ? "buy" : "sell", marginSlsh: m ? m.slsh : null, profitUsd: t.profit_usd };
+      })() : {}),
+      raw: transactionRowToJSON(t, includeProfit, lookup),
     })));
   }
   // TWO-STEP ACCOUNT LEDGER LOGIC: a quotation now posts TWO real, linked
@@ -336,7 +348,7 @@ function register(router) {
   router.get("/api/history", (req, res, params, query) => {
     const user = requireAuth(req, res); if (!user) return;
     if (!requirePerm(user, res, "reports")) return;
-    sendJSON(res, 200, { entries: queryHistory(query) });
+    sendJSON(res, 200, { entries: queryHistory(query, { includeProfit: can(user, "profit.viewExchange") }) });
   });
 
   router.get("/api/history/export.csv", (req, res, params, query) => {

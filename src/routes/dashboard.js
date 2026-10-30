@@ -24,7 +24,8 @@
 const { all, get } = require("../db");
 const { sendJSON, sendCSV, sendPDF, badRequest, readJSONBody } = require("../http-helpers");
 const { requireAuth, requirePerm, can } = require("../rbac");
-const { getCompanySettings, getCurrentRate, addAudit, getDefaultPdfTemplate } = require("../domain");
+const { getCompanySettings, getCurrentRate, getCurrentRates, costRateLookup, addAudit, getDefaultPdfTemplate } = require("../domain");
+const { blankMargins, addStoredMargin, roundMargins } = require("../exchange-calc");
 const { uid, nowISO, todayStr, convert, newestFirst } = require("../util");
 const { toCSV } = require("../csv");
 const { renderReportPDF } = require("../pdf");
@@ -337,6 +338,17 @@ function buildDashboard(user, query) {
       usdToSlsh: { count: usdToSlsh.length, amountUsd: usdToSlsh.reduce((s, e) => s + e.amount_given, 0) },
       slshToUsd: { count: slshToUsd.length, amountSlsh: slshToUsd.reduce((s, e) => s + e.amount_given, 0) },
     };
+    // GLOBAL RATE & PROFIT round: current Cost/Buy/Sell rates, and — for
+    // users allowed to see exchange profit — the period's Sell-side Profit
+    // and Buy-side Cost Rate Difference, each exchange counted once.
+    const rates = getCurrentRates();
+    payload.exchangeActivity.rates = { costRate: rates.costRate, buyRate: rates.buyRate, sellRate: rates.sellRate };
+    if (can(user, "profit.viewExchange")) {
+      const lookup = costRateLookup();
+      const b = blankMargins();
+      for (const e of exchanges) addStoredMargin(b, { currencyGiven: e.currency_given, profitUsd: e.profit_usd, costRate: e.cost_rate != null ? e.cost_rate : lookup(e.date) });
+      payload.exchangeActivity.margins = roundMargins(b);
+    }
     const exReducer = { init: () => ({ usdToSlsh: 0, slshToUsd: 0 }), add: (acc, e) => {
       if (e.currency_given === "USD") acc.usdToSlsh += e.amount_given; else acc.slshToUsd += e.amount_given;
     } };

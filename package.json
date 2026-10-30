@@ -36,7 +36,8 @@
     "test:data-reset": "node test/data-reset.js",
     "test:header": "node test/header.js",
     "test:copy-to-online": "node test/copy-to-online.js",
-    "test:quick-exchange": "node test/quick-exchange.js"
+    "test:quick-exchange": "node test/quick-exchange.js",
+    "test:exchange-margin": "node test/exchange-margin.js"
   },
   "dependencies": {
     "exceljs": "^4.4.0",

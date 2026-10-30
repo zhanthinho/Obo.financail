@@ -2,7 +2,7 @@
 const { all } = require("../db");
 const { sendJSON, badRequest, readJSONBody } = require("../http-helpers");
 const { requireAuth, requirePerm } = require("../rbac");
-const { getCurrentRate, getCurrentDailySlshRate, saveRateHistory, addAudit } = require("../domain");
+const { getCurrentRate, getCurrentDailySlshRate, getCurrentRates, saveRateHistory, addAudit } = require("../domain");
 
 // RATE MANAGEMENT UNIFICATION round: this endpoint's request/response
 // contract is UNCHANGED — { rate } in, { rate } out, { rate, history } on
@@ -29,7 +29,8 @@ function register(router) {
     // { rate, history } contract, this is simply extra data alongside it,
     // fetched once at app load so ManageRatesModal can prefill it wherever
     // it's opened from, same as `rate` itself already does.
-    sendJSON(res, 200, { rate: getCurrentRate(), dailySlshRate: getCurrentDailySlshRate(), history });
+    const r = getCurrentRates();
+    sendJSON(res, 200, { rate: getCurrentRate(), dailySlshRate: getCurrentDailySlshRate(), costRate: r.costRate, buyRate: r.buyRate, sellRate: r.sellRate, history });
   });
 
   router.post("/api/rate", async (req, res) => {

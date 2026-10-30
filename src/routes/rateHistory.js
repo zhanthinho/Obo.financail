@@ -3,6 +3,7 @@ const { all, get, run } = require("../db");
 const { sendJSON, sendCSV, notFound, badRequest, readJSONBody } = require("../http-helpers");
 const { requireAuth, requirePerm } = require("../rbac");
 const { getCurrentRate, getCurrentSaleRate, getCurrentDailySlshRate, saveRateHistory, addAudit } = require("../domain");
+const { validateRates } = require("../exchange-calc");
 const { toCSV } = require("../csv");
 
 const PAIR_LABELS = { USD_SLSH: "USD → SLSH" };
@@ -16,6 +17,9 @@ function shapeRow(r, latestAt) {
     saleRate: r.sale_rate,
     dailySlshRate: r.daily_slsh_rate,
     difference: r.rate_difference,
+    costRate: r.cost_rate,
+    buyRate: r.buy_rate,
+    sellRate: r.sell_rate,
     note: r.note,
     setByName: r.set_by_name,
     at: r.at,
@@ -97,9 +101,9 @@ function register(router) {
     const latest = get("SELECT at FROM rate_history ORDER BY at DESC LIMIT 1");
     const latestAt = latest ? latest.at : null;
     const rows = all("SELECT * FROM rate_history ORDER BY at DESC").map((r) => shapeRow(r, latestAt));
-    const csvRows = rows.map((r) => [r.at, r.currencyPairLabel, r.dailyRate ?? "", r.saleRate ?? "", r.dailySlshRate ?? "", r.difference ?? "", r.status, r.setByName, r.note || ""]);
+    const csvRows = rows.map((r) => [r.at, r.currencyPairLabel, r.dailyRate ?? "", r.saleRate ?? "", r.dailySlshRate ?? "", r.difference ?? "", r.costRate ?? "", r.buyRate ?? "", r.sellRate ?? "", r.status, r.setByName, r.note || ""]);
     addAudit(user, "Rate history exported (CSV)", `${rows.length} entries`);
-    sendCSV(res, "obo-rate-history.csv", toCSV(["Date", "Currency Pair", "Daily Rate", "Sale Rate", "Daily SLSH Rate", "Rate Difference", "Status", "Updated By", "Note"], csvRows));
+    sendCSV(res, "obo-rate-history.csv", toCSV(["Date", "Currency Pair", "Daily Rate", "Sale Rate", "Daily SLSH Rate", "Rate Difference", "Cost Rate", "Buy Rate", "Sell Rate", "Status", "Updated By", "Note"], csvRows));
   });
 
   router.get("/api/rate-history/:id", (req, res, params) => {
@@ -153,10 +157,15 @@ function register(router) {
       dailySlshRate = Number(body.dailySlshRate);
       if (!dailySlshRate || dailySlshRate <= 0) return badRequest(res, "Daily SLSH Rate must be a positive number.");
     }
+    // GLOBAL RATE & PROFIT round: optional Cost / Buy / Sell rates.
+    const rateErr = validateRates(body);
+    if (rateErr) return badRequest(res, rateErr);
+    const opt = (v) => (v === undefined || v === null || v === "" ? undefined : Number(v));
+    const costRate = opt(body.costRate), buyRate = opt(body.buyRate), sellRate = opt(body.sellRate);
     const currencyPair = body.currencyPair && PAIR_LABELS[body.currencyPair] ? body.currencyPair : "USD_SLSH";
     const note = typeof body.note === "string" && body.note.trim() ? body.note.trim() : null;
-    const saved = saveRateHistory({ dailyRate, saleRate, dailySlshRate, note, user, currencyPair });
-    addAudit(user, "Exchange rates updated", `Daily Rate set to 1 USD = SLSH ${dailyRate.toLocaleString("en-US")}, Sale Rate set to 1 USD = SLSH ${saleRate.toLocaleString("en-US")}${dailySlshRate ? `, Daily SLSH Rate set to 1 SLSH = USD ${dailySlshRate.toLocaleString("en-US")}` : ""}${note ? ` — ${note}` : ""}`);
+    const saved = saveRateHistory({ dailyRate, saleRate, dailySlshRate, costRate, buyRate, sellRate, note, user, currencyPair });
+    addAudit(user, "Exchange rates updated", `Daily Rate set to 1 USD = SLSH ${dailyRate.toLocaleString("en-US")}, Sale Rate set to 1 USD = SLSH ${saleRate.toLocaleString("en-US")}${dailySlshRate ? `, Daily SLSH Rate set to 1 SLSH = USD ${dailySlshRate.toLocaleString("en-US")}` : ""}${costRate ? `, Cost Rate ${costRate.toLocaleString("en-US")}` : ""}${buyRate ? `, Buy Rate ${buyRate.toLocaleString("en-US")}` : ""}${sellRate ? `, Sell Rate ${sellRate.toLocaleString("en-US")}` : ""}${note ? ` — ${note}` : ""}`);
     sendJSON(res, 200, saved);
   });
 }
