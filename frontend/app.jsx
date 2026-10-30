@@ -900,6 +900,11 @@ function fmtMoney(amount, currency) {
 }
 function fmtNum(n) { return Number(n || 0).toLocaleString("en-US"); }
 // GLOBAL RATE & PROFIT round: "+SLSH 20,000" / "−SLSH 5,000" / "SLSH 0".
+function fmtSignedUsd(n) {
+  const v = Math.round(Number(n || 0) * 100) / 100;
+  const abs = Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return v > 0 ? `+$${abs}` : v < 0 ? `−$${abs}` : "$0.00";
+}
 function fmtSignedSlsh(n) {
   const v = Math.round(Number(n || 0) * 100) / 100;
   const abs = Math.abs(v).toLocaleString("en-US", { maximumFractionDigits: 2 });
@@ -2831,8 +2836,10 @@ function useTableLayout(tableKey, call) {
 // density}). A saved key the app no longer has just silently drops — never
 // a crash or a blank header — and a `required` column always renders even
 // if an old/buggy saved layout somehow omitted it.
+// SINGLE RATE MANAGER round: a column def with `optional: true` starts
+// hidden; it shows once someone ticks it in Customize table.
 function resolveColumns(columnDefs, layout) {
-  if (!layout || !Array.isArray(layout.columns) || layout.columns.length === 0) return columnDefs;
+  if (!layout || !Array.isArray(layout.columns) || layout.columns.length === 0) return columnDefs.filter((c) => !c.optional);
   const byKey = Object.fromEntries(columnDefs.map((c) => [c.key, c]));
   const ordered = layout.columns.filter((k) => byKey[k]).map((k) => byKey[k]);
   const missingRequired = columnDefs.filter((c) => c.required && !layout.columns.includes(c.key));
@@ -2914,7 +2921,7 @@ function TableCustomizerModal({ columnDefs, layout, canSetSystemDefault, onClose
     if (layout && layout.columns && layout.columns.length) {
       return new Set(columnDefs.filter((c) => c.required || layout.columns.includes(c.key)).map((c) => c.key));
     }
-    return new Set(columnDefs.map((c) => c.key));
+    return new Set(columnDefs.filter((c) => !c.optional).map((c) => c.key));
   }, [layout, columnDefs]);
   const [order, setOrder] = useState(initialOrder);
   const [visible, setVisible] = useState(initialVisible);
@@ -4707,11 +4714,9 @@ function App() {
                   <div>
                     <div style={{ fontSize: 9, color: C.slate, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4 }}>Exchange Rates</div>
                     <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 2 }}>
-                      <div style={{ fontSize: 11, color: C.slate }}>Daily <span style={{ fontFamily: FONT_MONO, fontSize: 13, fontWeight: 700, color: C.navy }}>{rate ? fmtNum(rate) : "…"}</span></div>
-                      <div style={{ fontSize: 11, color: C.slate }}>Sale <span style={{ fontFamily: FONT_MONO, fontSize: 13, fontWeight: 700, color: C.navy }}>{saleRate ? fmtNum(saleRate) : "—"}</span></div>
-                      {saleRate && rate && (
-                        <div style={{ fontSize: 11, fontWeight: 700, color: rate - saleRate >= 0 ? C.green : C.red }}>{rate - saleRate >= 0 ? "+" : ""}{fmtNum(rate - saleRate)}</div>
-                      )}
+                      {/* SINGLE RATE MANAGER round: Buy / Sell (the old Daily / Sale pair is gone). */}
+                      <div style={{ fontSize: 11, color: C.slate }}>Buy <span style={{ fontFamily: FONT_MONO, fontSize: 13, fontWeight: 700, color: C.navy }}>{cbsRates.buyRate ? fmtNum(cbsRates.buyRate) : "—"}</span></div>
+                      <div style={{ fontSize: 11, color: C.slate }}>Sell <span style={{ fontFamily: FONT_MONO, fontSize: 13, fontWeight: 700, color: C.navy }}>{cbsRates.sellRate ? fmtNum(cbsRates.sellRate) : "—"}</span></div>
                     </div>
                   </div>
                   <Btn size="sm" tone="subtle" onClick={() => setManageRatesOpen(true)}>Manage Rates</Btn>
@@ -4890,8 +4895,8 @@ function MarginTotals({ totals }) {
   const card = (label, slsh, usd, count, note) => (
     <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 8, padding: "12px 14px" }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: C.slate, textTransform: "uppercase", letterSpacing: "0.03em" }}>{label}</div>
-      <div style={{ fontFamily: FONT_MONO, fontWeight: 800, fontSize: 18, marginTop: 4, color: slsh > 0 ? C.green : slsh < 0 ? C.red : C.ink }}>{fmtSignedSlsh(slsh)}</div>
-      <div style={{ fontSize: 11.5, color: C.slate, marginTop: 2 }}><span>{fmtMoney(usd, "USD")} · {count} exchange(s)</span></div>
+      <div style={{ fontFamily: FONT_MONO, fontWeight: 800, fontSize: 18, marginTop: 4, color: usd > 0 ? C.green : usd < 0 ? C.red : C.ink }}>{fmtSignedUsd(usd)}</div>
+      <div style={{ fontSize: 11.5, color: C.slate, marginTop: 2 }}><span>{fmtSignedSlsh(slsh)} · {count} exchange(s)</span></div>
       {note && <div style={{ fontSize: 10.5, color: C.slate, marginTop: 3, fontStyle: "italic" }}>{note}</div>}
     </div>
   );
@@ -4899,7 +4904,7 @@ function MarginTotals({ totals }) {
     <div className="gk-margin-totals" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 14, marginBottom: 16 }}>
       {card("Profit — Sell", totals.sellProfitSLSH, totals.sellProfitUSD, totals.sellCount)}
       {card("Cost Rate Difference — Buy", totals.buyDiffSLSH, totals.buyDiffUSD, totals.buyCount, "Valuation difference — not realized profit.")}
-      {totals.unvalued > 0 && <div style={{ fontSize: 11.5, color: C.slate, alignSelf: "center" }}><span>{totals.unvalued} exchange(s) have no Cost Rate — shown in USD only.</span></div>}
+      {totals.unvalued > 0 && <div style={{ fontSize: 11.5, color: C.slate, alignSelf: "center" }}><span>{totals.unvalued} exchange(s) have no Cost Rate — not included in the SLSH figure.</span></div>}
     </div>
   );
 }
@@ -4915,8 +4920,8 @@ function MarginCell({ side, slsh, usd, legacy }) {
   return (
     <div style={{ lineHeight: 1.25 }}>
       <div style={{ fontSize: 10, fontWeight: 700, color: C.slate, textTransform: "uppercase", letterSpacing: "0.03em" }}>{label}</div>
-      <div style={{ fontFamily: FONT_MONO, fontWeight: 700, whiteSpace: "nowrap", color: slsh > 0 ? C.green : slsh < 0 ? C.red : C.ink }}>{slsh === null || slsh === undefined ? "—" : fmtSignedSlsh(slsh)}</div>
-      {usd !== undefined && usd !== null && <div style={{ fontFamily: FONT_MONO, fontSize: 10.5, color: C.slate }}>{fmtMoney(Number(usd) || 0, "USD")}</div>}
+      <div style={{ fontFamily: FONT_MONO, fontWeight: 700, whiteSpace: "nowrap", color: usd > 0 ? C.green : usd < 0 ? C.red : C.ink }}>{usd === undefined || usd === null ? "—" : fmtSignedUsd(usd)}</div>
+      {slsh !== null && slsh !== undefined && <div style={{ fontFamily: FONT_MONO, fontSize: 10.5, color: C.slate, whiteSpace: "nowrap" }}>{fmtSignedSlsh(slsh)}</div>}
       {legacy && <div style={{ fontSize: 10, color: C.slate, fontStyle: "italic" }} title="Recorded before Cost / Buy / Sell rates — the stored figure is shown unchanged; its Cost Rate is taken from the rate history on that date.">Earlier formula</div>}
     </div>
   );
@@ -4937,36 +4942,43 @@ function CbsRatesStrip() {
     </div>
   );
 }
+// SINGLE RATE MANAGER round: current Cost / Buy / Sell on the Rate history tab.
+function RateHistoryCurrentCards() {
+  const r = useContext(RatesContext);
+  const v = (n) => (n ? `SLSH ${fmtNum(n)}` : "Not set");
+  return (
+    <>
+      <StatCard label="Cost Rate" value={v(r.costRate)} sub="per 1 USD" accent={C.navy} />
+      <StatCard label="Buy Rate" value={v(r.buyRate)} sub="per 1 USD" accent={C.navy} />
+      <StatCard label="Sell Rate" value={v(r.sellRate)} sub="per 1 USD" accent={C.navy} />
+    </>
+  );
+}
+// SINGLE RATE MANAGER round: the only rate form — Cost, Buy and Sell Rate
+// (SLSH per 1 USD). The old Daily / Sale / Daily SLSH section is gone; each
+// save still writes the legacy columns underneath so Quotations and other
+// conversions keep working: Daily Rate = Sell Rate, Sale Rate = Cost Rate.
 function ManageRatesModal({ call, notify, rate, saleRate, dailySlshRate, onSaved, onClose }) {
-  const [dailyRate, setDailyRate] = useState(rate ? String(rate) : "");
-  const [saleRateVal, setSaleRateVal] = useState(saleRate ? String(saleRate) : "");
-  // DAILY SLSH RATE round: optional, record-only — the "opposite direction"
-  // rate, saved alongside Daily/Sale Rate but never used in any conversion
-  // (see saveRateHistory()/getCurrentDailySlshRate() in domain.js).
-  const [dailySlshRateVal, setDailySlshRateVal] = useState(dailySlshRate ? String(dailySlshRate) : "");
-  // GLOBAL RATE & PROFIT round: Cost / Buy / Sell rates (optional each).
   const ratesCtx = useContext(RatesContext);
-  const [costVal, setCostVal] = useState(ratesCtx.costRate ? String(ratesCtx.costRate) : "");
+  const [costVal, setCostVal] = useState(String(ratesCtx.costRate || saleRate || ""));
   const [buyVal, setBuyVal] = useState(ratesCtx.buyRate ? String(ratesCtx.buyRate) : "");
-  const [sellVal, setSellVal] = useState(ratesCtx.sellRate ? String(ratesCtx.sellRate) : "");
+  const [sellVal, setSellVal] = useState(String(ratesCtx.sellRate || rate || ""));
   const [exampleUsd, setExampleUsd] = useState("100");
-  const spreads = rateSpreads({ costRate: costVal, buyRate: buyVal, sellRate: sellVal });
-  const exNum = Number(exampleUsd) > 0 ? Number(exampleUsd) : 0;
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
-  const hasBoth = Number(dailyRate) > 0 && Number(saleRateVal) > 0;
-  const difference = hasBoth ? Number(dailyRate) - Number(saleRateVal) : null;
+  const spreads = rateSpreads({ costRate: costVal, buyRate: buyVal, sellRate: sellVal });
+  const exNum = Number(exampleUsd) > 0 ? Number(exampleUsd) : 0;
+  const cost = Number(costVal) > 0 ? Number(costVal) : null;
+  // Example in USD (at the Cost Rate), with the SLSH figure underneath.
+  const exampleLine = (perUsd) => (perUsd === null || !exNum || !cost) ? null
+    : <div style={{ fontSize: 11, color: C.slate, marginTop: 2 }}><span>${fmtNum(exNum)}: {fmtSignedUsd(perUsd * exNum / cost)} ({fmtSignedSlsh(perUsd * exNum)})</span></div>;
   async function submit() {
-    if (!Number(dailyRate) || Number(dailyRate) <= 0) return notify("Provide a positive Daily Rate.", true);
-    if (!Number(saleRateVal) || Number(saleRateVal) <= 0) return notify("Provide a positive Sale Rate.", true);
-    if (dailySlshRateVal !== "" && (!Number(dailySlshRateVal) || Number(dailySlshRateVal) <= 0)) return notify("Daily SLSH Rate must be a positive number.", true);
     for (const [label, v] of [["Cost Rate", costVal], ["Buy Rate", buyVal], ["Sell Rate", sellVal]]) {
-      if (v !== "" && !(Number(v) > 0)) return notify(`${label} must be a positive number.`, true);
+      if (!(Number(v) > 0)) return notify(`${label} must be a positive number.`, true);
     }
     setSaving(true);
     try {
-      const opt = (v) => (v === "" ? undefined : Number(v));
-      const d = await call("/api/rate-history", { method: "POST", body: { dailyRate: Number(dailyRate), saleRate: Number(saleRateVal), dailySlshRate: opt(dailySlshRateVal), costRate: opt(costVal), buyRate: opt(buyVal), sellRate: opt(sellVal), note: note.trim() || undefined } });
+      const d = await call("/api/rate-history", { method: "POST", body: { dailyRate: Number(sellVal), saleRate: Number(costVal), costRate: Number(costVal), buyRate: Number(buyVal), sellRate: Number(sellVal), note: note.trim() || undefined } });
       ratesCtx.setRates({ costRate: d.costRate ?? null, buyRate: d.buyRate ?? null, sellRate: d.sellRate ?? null });
       onSaved(d.dailyRate, d.saleRate, d.dailySlshRate);
       notify("Exchange rates updated.");
@@ -4975,16 +4987,14 @@ function ManageRatesModal({ call, notify, rate, saleRate, dailySlshRate, onSaved
   }
   return (
     <Modal title="Manage Exchange Rates" onClose={onClose}>
-      <div style={{ fontSize: 12, color: C.slate, marginBottom: 14 }}>Money Exchange uses the Buy Rate and Sell Rate; each exchange's Profit (Sell) or Cost Rate Difference (Buy) is calculated against the Cost Rate. The Daily Rate is still used by Quotations and other conversions. Sale Rate and Daily SLSH Rate are kept for your records.</div>
+      <div style={{ fontSize: 12, color: C.slate, marginBottom: 14 }}>Buy Rate: the company buys USD (customer gives USD). Sell Rate: the company sells USD (customer gives SLSH). Cost Rate: what one dollar is worth to the company. Profit (Sell) and Cost Rate Difference (Buy) are calculated from these.</div>
       <div style={{ display: "flex", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
         <Field label="Date" width={130}><Input value={fmtDate(todayStr())} disabled /></Field>
         <Field label="From" width={90}><Input value="USD" disabled /></Field>
         <Field label="To" width={90}><Input value="SLSH" disabled /></Field>
       </div>
-      {/* GLOBAL RATE & PROFIT round: Cost / Buy / Sell with live spreads */}
       <div className="gk-rates-cbs" style={{ border: `1px solid ${C.line}`, borderRadius: 10, padding: 12, marginBottom: 14, background: EX.usdBg }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: C.ink, marginBottom: 4 }}>Exchange Rates (SLSH per 1 USD)</div>
-        <div style={{ fontSize: 11.5, color: C.slate, marginBottom: 10 }}>Buy Rate: the company buys USD (customer gives USD). Sell Rate: the company sells USD (customer gives SLSH). Cost Rate: what one dollar is worth to the company.</div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: C.ink, marginBottom: 10 }}>Exchange Rates (SLSH per 1 USD)</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
           <Field label="Cost Rate"><MoneyInput value={costVal} onChange={(e) => setCostVal(e.target.value.replace(/^-/, ""))} placeholder="—" /></Field>
           <Field label="Buy Rate"><MoneyInput value={buyVal} onChange={(e) => setBuyVal(e.target.value.replace(/^-/, ""))} placeholder="—" /></Field>
@@ -4994,27 +5004,15 @@ function ManageRatesModal({ call, notify, rate, saleRate, dailySlshRate, onSaved
           <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 8, padding: "8px 10px" }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: C.slate }}>Cost Rate Difference — Buy</div>
             <div style={{ fontFamily: FONT_MONO, fontWeight: 700, fontSize: 13, marginTop: 3 }}>{spreads.buyDifferencePerUsd === null ? "—" : <span>{fmtSignedSlsh(spreads.buyDifferencePerUsd)} <span style={{ fontWeight: 500, color: C.slate }}>per $1</span></span>}</div>
-            {spreads.buyDifferencePerUsd !== null && exNum > 0 && <div style={{ fontSize: 11, color: C.slate, marginTop: 2 }}>${fmtNum(exNum)}: {fmtSignedSlsh(spreads.buyDifferencePerUsd * exNum)}</div>}
+            {exampleLine(spreads.buyDifferencePerUsd)}
           </div>
           <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 8, padding: "8px 10px" }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: C.slate }}>Profit — Sell</div>
             <div style={{ fontFamily: FONT_MONO, fontWeight: 700, fontSize: 13, marginTop: 3 }}>{spreads.sellProfitPerUsd === null ? "—" : <span>{fmtSignedSlsh(spreads.sellProfitPerUsd)} <span style={{ fontWeight: 500, color: C.slate }}>per $1</span></span>}</div>
-            {spreads.sellProfitPerUsd !== null && exNum > 0 && <div style={{ fontSize: 11, color: C.slate, marginTop: 2 }}>${fmtNum(exNum)}: {fmtSignedSlsh(spreads.sellProfitPerUsd * exNum)}</div>}
+            {exampleLine(spreads.sellProfitPerUsd)}
           </div>
           <Field label="Example amount (USD)"><MoneyInput value={exampleUsd} onChange={(e) => setExampleUsd(e.target.value.replace(/^-/, ""))} /></Field>
         </div>
-      </div>
-      <div style={{ fontSize: 11.5, fontWeight: 700, color: C.slate, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 8 }}>Daily & Sale Rate (Quotations and other conversions)</div>
-      <div style={{ display: "flex", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
-        <Field label="Daily Rate (SLSH per 1 USD)" width={210}><MoneyInput value={dailyRate} onChange={(e) => setDailyRate(e.target.value)} /></Field>
-        <Field label="Sale Rate (SLSH per 1 USD)" width={210}><MoneyInput value={saleRateVal} onChange={(e) => setSaleRateVal(e.target.value)} /></Field>
-      </div>
-      <div style={{ marginBottom: 12 }}>
-        <Field label="Daily SLSH Rate (USD per 1 SLSH, optional)" width={210}><MoneyInput value={dailySlshRateVal} onChange={(e) => setDailySlshRateVal(e.target.value)} placeholder="Opposite of Daily Rate — record only" /></Field>
-      </div>
-      <div style={{ marginBottom: 12, fontSize: 12.5 }}>
-        Rate Difference: <span style={{ fontFamily: FONT_MONO, fontWeight: 700, color: hasBoth ? (difference >= 0 ? C.green : C.red) : C.slate }}>{hasBoth ? `${difference >= 0 ? "+" : ""}${fmtNum(difference)} SLSH` : "—"}</span>
-        <span style={{ marginLeft: 8, fontSize: 11, color: C.slate }}>(calculated automatically)</span>
       </div>
       <Field label="Note (optional)"><Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Today's market rate" /></Field>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
@@ -5037,10 +5035,6 @@ function RateHistoryDetailModal({ row, onClose }) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, fontSize: 13 }}>
         <div><div style={{ fontSize: 11, color: C.slate }}>Date</div><div style={{ fontWeight: 600, marginTop: 2 }}>{fmtDateTime(row.at)}</div></div>
         <div><div style={{ fontSize: 11, color: C.slate }}>Status</div><div style={{ marginTop: 2 }}><Pill tone={row.status === "Active" ? "green" : "slate"}>{row.status}</Pill></div></div>
-        <div><div style={{ fontSize: 11, color: C.slate }}>Daily Rate</div><div style={{ fontFamily: FONT_MONO, fontWeight: 700, marginTop: 2 }}>{row.dailyRate != null ? `SLSH ${fmtNum(row.dailyRate)}` : "—"}</div></div>
-        <div><div style={{ fontSize: 11, color: C.slate }}>Sale Rate</div><div style={{ fontFamily: FONT_MONO, fontWeight: 700, marginTop: 2 }}>{row.saleRate != null ? `SLSH ${fmtNum(row.saleRate)}` : "—"}</div></div>
-        <div><div style={{ fontSize: 11, color: C.slate }}>Daily SLSH Rate</div><div style={{ fontFamily: FONT_MONO, fontWeight: 700, marginTop: 2 }}>{row.dailySlshRate != null ? `USD ${fmtRateSmall(row.dailySlshRate)}` : "—"}</div></div>
-        <div><div style={{ fontSize: 11, color: C.slate }}>Rate Difference</div><div style={{ fontFamily: FONT_MONO, fontWeight: 700, marginTop: 2, color: row.difference != null ? (row.difference >= 0 ? C.green : C.red) : C.slate }}>{row.difference != null ? `${row.difference >= 0 ? "+" : ""}${fmtNum(row.difference)} SLSH` : "—"}</div></div>
         <div><div style={{ fontSize: 11, color: C.slate }}>Cost Rate</div><div style={{ fontFamily: FONT_MONO, fontWeight: 700, marginTop: 2 }}>{row.costRate != null ? `SLSH ${fmtNum(row.costRate)}` : "—"}</div></div>
         <div><div style={{ fontSize: 11, color: C.slate }}>Buy Rate</div><div style={{ fontFamily: FONT_MONO, fontWeight: 700, marginTop: 2 }}>{row.buyRate != null ? `SLSH ${fmtNum(row.buyRate)}` : "—"}</div></div>
         <div><div style={{ fontSize: 11, color: C.slate }}>Sell Rate</div><div style={{ fontFamily: FONT_MONO, fontWeight: 700, marginTop: 2 }}>{row.sellRate != null ? `SLSH ${fmtNum(row.sellRate)}` : "—"}</div></div>
@@ -5413,12 +5407,6 @@ function Dashboard({ call, dl, preview, notify, perm, hasRaw, user, rate, saleRa
       <div className="gk-widget-card gk-dash-card" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, padding: 18 }}>
         <PanelTitle mb={12} title="Rate management" />
         <div style={{ fontSize: 12, color: C.slate, display: "flex", gap: 12, flexWrap: "wrap" }}>
-          <span>Daily rate: <span style={{ fontFamily: FONT_MONO, fontWeight: 600, color: C.navy }}>{rate ? `SLSH ${fmtNum(rate)}` : "not set"}</span></span>
-          <span>Sale rate: <span style={{ fontFamily: FONT_MONO, fontWeight: 600, color: C.navy }}>{saleRate ? `SLSH ${fmtNum(saleRate)}` : "not set"}</span></span>
-          <span>Daily SLSH rate: <span style={{ fontFamily: FONT_MONO, fontWeight: 600, color: C.navy }}>{dailySlshRate ? `USD ${fmtRateSmall(dailySlshRate)}` : "not set"}</span></span>
-          {saleRate && rate && (
-            <span>Spread: <span style={{ fontFamily: FONT_MONO, fontWeight: 700, color: rate - saleRate >= 0 ? C.green : C.red }}>{rate - saleRate >= 0 ? "+" : ""}{fmtNum(rate - saleRate)} SLSH</span></span>
-          )}
         </div>
         <CbsRatesStrip />
         <div style={{ marginTop: 12 }}>
@@ -5932,12 +5920,8 @@ function Dashboard({ call, dl, preview, notify, perm, hasRaw, user, rate, saleRa
             <div className="gk-dash-card" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, padding: 18 }}>
               <PanelTitle mb={12} title="Rate management" />
               <div style={{ fontSize: 12, color: C.slate, display: "flex", gap: 12, flexWrap: "wrap" }}>
-                <span>Daily rate: <span style={{ fontFamily: FONT_MONO, fontWeight: 600, color: C.navy }}>{rate ? `SLSH ${fmtNum(rate)}` : "not set"}</span></span>
-                <span>Sale rate: <span style={{ fontFamily: FONT_MONO, fontWeight: 600, color: C.navy }}>{saleRate ? `SLSH ${fmtNum(saleRate)}` : "not set"}</span></span>
-                {saleRate && rate && (
-                  <span>Spread: <span style={{ fontFamily: FONT_MONO, fontWeight: 700, color: rate - saleRate >= 0 ? C.green : C.red }}>{rate - saleRate >= 0 ? "+" : ""}{fmtNum(rate - saleRate)} SLSH</span></span>
-                )}
               </div>
+              <CbsRatesStrip />
               <div style={{ marginTop: 12 }}>
                 <Btn size="sm" tone="subtle" onClick={() => setDashManageRatesOpen(true)}>Manage Rates</Btn>
               </div>
@@ -6144,7 +6128,7 @@ function ExchangeModule({ call, dl, preview, print, notify, perm, user, rate, sa
     // GLOBAL RATE & PROFIT round: the exchange's own Cost Rate and its
     // margin — Sell-side Profit or Buy-side Cost Rate Difference — in SLSH,
     // with the stored USD figure underneath.
-    { key: "costRate", label: "Cost Rate", sortField: "costRate", render: (t) => <span style={{ fontFamily: FONT_MONO }} title={t.costRateSource === "history" ? "From the rate history on this exchange's date" : undefined}>{t.costRate != null ? fmtNum(t.costRate) : "—"}</span> },
+    { key: "costRate", label: "Cost Rate", optional: true, sortField: "costRate", render: (t) => <span style={{ fontFamily: FONT_MONO }} title={t.costRateSource === "history" ? "From the rate history on this exchange's date" : undefined}>{t.costRate != null ? fmtNum(t.costRate) : "—"}</span> },
     { key: "profit", label: "Profit / Difference", sortField: "profitUsd", render: (t) => <MarginCell side={t.marginSide || (t.currencyGiven === "USD" ? "buy" : "sell")} slsh={marginSlshOf(t.profitUsd, t.costRate)} usd={t.profitUsd} legacy={t.costRateSource === "history"} /> },
     { key: "staff", label: "Staff", sortField: "staffName", render: (t) => t.staffName },
     { key: "status", label: "Status", sortField: "status", render: (t) => (
@@ -6346,8 +6330,8 @@ function ExchangeModule({ call, dl, preview, print, notify, perm, user, rate, sa
           <div className="gk-ex-stats" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 10, marginBottom: 10 }}>
             <StatCard label="Transactions" value={rows.length} accent={C.navy} />
             <StatCard label="Volume (USD equiv.)" value={fmtMoney(totalVolume, "USD")} accent={C.cyan} />
-            <StatCard label="Profit — Sell" value={fmtSignedSlsh(marginTotals.sell.slsh)} sub={fmtMoney(marginTotals.sell.usd, "USD")} accent={C.green} />
-            <StatCard label="Cost Rate Difference — Buy" value={fmtSignedSlsh(marginTotals.buy.slsh)} sub={fmtMoney(marginTotals.buy.usd, "USD")} accent={C.cyan} />
+            <StatCard label="Profit — Sell" value={fmtSignedUsd(marginTotals.sell.usd)} sub={fmtSignedSlsh(marginTotals.sell.slsh)} accent={C.green} />
+            <StatCard label="Cost Rate Difference — Buy" value={fmtSignedUsd(marginTotals.buy.usd)} sub={fmtSignedSlsh(marginTotals.buy.slsh)} accent={C.cyan} />
           </div>
           <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
             <TableCustomizeButton tableKey={tableKey} columnDefs={EXCHANGE_COLUMNS} layoutState={layoutState} canSetSystemDefault={hasRaw && hasRaw("settings.manageTableDefaults")} notify={notify} />
@@ -6458,15 +6442,12 @@ function ExchangeModule({ call, dl, preview, print, notify, perm, user, rate, sa
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14, gap: 10, flexWrap: "wrap" }}>
             <div>
               <div style={{ fontWeight: 700, fontSize: 14, color: C.ink }}>Exchange Rates <span style={{ fontWeight: 500, color: C.slate }}>(USD → SLSH)</span></div>
-              <div style={{ fontSize: 11.5, color: C.slate, marginTop: 2 }}>Daily Rate is quoted to customers. Sale Rate is the wholesale/cost rate this business sources USD/SLSH at. Every exchange's Profit is auto-calculated from the spread between the two.</div>
+              <div style={{ fontSize: 11.5, color: C.slate, marginTop: 2 }}>Buy Rate: the company buys USD. Sell Rate: the company sells USD. Cost Rate: what one dollar is worth to the company.</div>
             </div>
             {perm("rateManage") && <Btn size="sm" tone="accent" onClick={() => setRatesManageOpen(true)}>Set Rates</Btn>}
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 10, marginBottom: 10 }}>
-            <StatCard label="Current Daily Rate" value={historySummary?.currentDaily ? `SLSH ${fmtNum(historySummary.currentDaily)}` : "…"} sub="per 1 USD" accent={C.navy} />
-            <StatCard label="Current Sale Rate" value={historySummary?.currentSale ? `SLSH ${fmtNum(historySummary.currentSale)}` : "Not set"} sub="per 1 USD" accent={C.navy} />
-            <StatCard label="Current Daily SLSH Rate" value={historySummary?.currentDailySlsh ? `USD ${fmtRateSmall(historySummary.currentDailySlsh)}` : "Not set"} sub="per 1 SLSH · record only" accent={C.navy} />
-            <StatCard label="Current Spread" value={historySummary?.currentDifference != null ? `${historySummary.currentDifference >= 0 ? "+" : ""}${fmtNum(historySummary.currentDifference)} SLSH` : "—"} accent={historySummary?.currentDifference >= 0 ? C.green : C.red} />
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10, marginBottom: 10 }}>
+            <RateHistoryCurrentCards />
             <StatCard label="Last Updated" value={historySummary?.lastUpdated ? fmtDate(historySummary.lastUpdated) : "—"} accent={C.cyan} />
             <StatCard label="Updated By" value={historySummary?.updatedBy || "—"} accent={C.cyan} />
           </div>
@@ -6480,7 +6461,6 @@ function ExchangeModule({ call, dl, preview, print, notify, perm, user, rate, sa
             <Field label="Sort" width={160}>
               <Select value={historySort} onChange={(e) => setHistorySort(e.target.value)}>
                 <option value="newest">Newest first</option><option value="oldest">Oldest first</option>
-                <option value="daily">Daily Rate (high → low)</option><option value="sale">Sale Rate (high → low)</option>
               </Select>
             </Field>
             <Btn size="sm" tone="ghost" onClick={() => dl("/api/rate-history/export.csv", "obo-rate-history.csv")}>Export CSV</Btn>
@@ -6491,17 +6471,12 @@ function ExchangeModule({ call, dl, preview, print, notify, perm, user, rate, sa
           <TableScrollShell height={460}>
           <ResizableTable tableKey="exchange.rateHistory" className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead><tr>
-              <SortTh label="Date" /><SortTh label="Currency Pair" /><SortTh label="Daily Rate" /><SortTh label="Sale Rate" /><SortTh label="Daily SLSH Rate" />
-              <SortTh label="Rate Difference" /><SortTh label="Cost Rate" /><SortTh label="Buy Rate" /><SortTh label="Sell Rate" /><SortTh label="Status" /><SortTh label="Updated By" /><SortTh label="Actions" />
+              <SortTh label="Date" /><SortTh label="Currency Pair" /><SortTh label="Cost Rate" /><SortTh label="Buy Rate" /><SortTh label="Sell Rate" /><SortTh label="Status" /><SortTh label="Updated By" /><SortTh label="Actions" />
             </tr></thead>
             <tbody>{ratePg.pageRows.map((r) => (
               <tr key={r.id}>
                 <td style={td}>{fmtDateTime(r.at)}</td>
                 <td style={td}>{r.currencyPairLabel}</td>
-                <td style={tdMono}>{r.dailyRate != null ? fmtNum(r.dailyRate) : "—"}</td>
-                <td style={tdMono}>{r.saleRate != null ? fmtNum(r.saleRate) : "—"}</td>
-                <td style={tdMono}>{r.dailySlshRate != null ? fmtRateSmall(r.dailySlshRate) : "—"}</td>
-                <td style={{ ...tdMono, color: r.difference != null ? (r.difference >= 0 ? C.green : C.red) : C.slate, fontWeight: 700 }}>{r.difference != null ? `${r.difference >= 0 ? "+" : ""}${fmtNum(r.difference)}` : "—"}</td>
                 <td style={tdMono}>{r.costRate != null ? fmtNum(r.costRate) : "—"}</td>
                 <td style={tdMono}>{r.buyRate != null ? fmtNum(r.buyRate) : "—"}</td>
                 <td style={tdMono}>{r.sellRate != null ? fmtNum(r.sellRate) : "—"}</td>
@@ -6572,7 +6547,7 @@ function ExchangeDetailView({ tx, onBack, onOpenAccountView, onReceipt, onEdit, 
           <DetailRow icon="payment" label="Received" value={fmtMoney(tx.amountReceived, tx.currencyReceived)} />
           <DetailRow icon="document" label="Rate" value={fmtNum(tx.rateUsed)} />
           {tx.profitUsd != null && <DetailRow icon="document" label="Cost Rate" value={tx.costRate != null ? fmtNum(tx.costRate) : "—"} />}
-          {tx.profitUsd != null && <DetailRow icon="payment" label={tx.currencyGiven === "USD" ? "Cost Rate Difference" : "Profit"} value={`${tx.costRate ? fmtSignedSlsh(marginSlshOf(tx.profitUsd, tx.costRate)) + " · " : ""}${fmtMoney(tx.profitUsd, "USD")}`} />}
+          {tx.profitUsd != null && <DetailRow icon="payment" label={tx.currencyGiven === "USD" ? "Cost Rate Difference" : "Profit"} value={`${fmtSignedUsd(tx.profitUsd)}${tx.costRate ? " · " + fmtSignedSlsh(marginSlshOf(tx.profitUsd, tx.costRate)) : ""}`} />}
           {/* Shown only for older exchanges that were linked to Cash in Hand. */}
           {tx.cashOutAccount && <DetailRow icon="cash" label="Cash Out From" value={tx.cashOutAccount.name} />}
           {tx.cashInAccount && <DetailRow icon="cash" label="Cash In To" value={tx.cashInAccount.name} />}
@@ -6665,6 +6640,7 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
   // context; an edit is valued at the exchange's OWN Cost Rate, never today's.
   const ratesCtx = useContext(RatesContext);
   const [detailsOpen, setDetailsOpen] = useState(!!editingTx);
+  const [rateDetailsOpen, setRateDetailsOpen] = useState(false);
   const [manageRatesOpen, setManageRatesOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -6790,15 +6766,6 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
           </div>
         </div>
         <div className="gk-qx-rates" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, border: `1px solid ${C.line}`, borderRadius: 9, padding: "6px 12px", background: EX.usdBg, fontSize: 12 }}>
-            <NavIcon name="activity" size={15} style={{ color: EX.primary }} />
-            <span style={{ color: C.slate, fontWeight: 600 }}>Current Rates:</span>
-            <span><span style={{ color: C.slate }}>Buy </span><b style={{ fontFamily: FONT_MONO, color: C.ink }}>{fmtRate(ratesCtx.buyRate)}</b></span>
-            <span style={{ color: C.line }}>·</span>
-            <span><span style={{ color: C.slate }}>Sell </span><b style={{ fontFamily: FONT_MONO, color: C.ink }}>{fmtRate(ratesCtx.sellRate)}</b></span>
-            <span style={{ color: C.line }}>·</span>
-            <span><span style={{ color: C.slate }}>Cost </span><b style={{ fontFamily: FONT_MONO, color: C.ink }}>{fmtRate(ratesCtx.costRate)}</b></span>
-          </div>
           {perm?.("rateManage") && (
             <button type="button" onClick={() => setManageRatesOpen(true)} disabled={busy} className="gk-qx-ghost" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8, border: `1px solid ${C.line}`, background: C.card, color: C.ink, fontWeight: 600, fontSize: 12.5, cursor: "pointer" }}>
               <NavIcon name="settings2" size={15} />Manage Rates
@@ -6923,10 +6890,20 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
                 ) : <div style={{ fontSize: 11, color: C.slate, marginTop: 5 }}><span>Blank = current {directionRateLabel}. Type a rate to use it for this exchange only.</span></div>}
                 <QxFieldError>{rateError}</QxFieldError>
               </div>
-              <div className="gk-qx-ratetiles">
-                <div className="gk-qx-tile"><span><NavIcon name={side === "buy" ? "trendDown" : "trendUp"} size={13} />{side === "buy" ? "Buy Rate" : "Sell Rate"}</span><b>{fmtRate(side === "buy" ? ratesCtx.buyRate : ratesCtx.sellRate)}</b></div>
-                <div className="gk-qx-tile"><span><NavIcon name="landmark" size={13} />{editingTx ? "Cost Rate (this exchange)" : "Cost Rate"}</span><b>{fmtRate(costRate)}</b></div>
-                <div className="gk-qx-tile"><span><NavIcon name="compareArrows" size={13} />{side === "sell" ? "Profit per $1" : "Difference per $1"}</span><b style={{ color: perUsd > 0 ? EX.success : perUsd < 0 ? EX.danger : C.ink }}>{perUsd === null ? "—" : fmtSignedSlsh(perUsd)}</b></div>
+              {/* SINGLE RATE MANAGER round: Cost / Buy / Sell are optional here —
+                  hidden until opened (they're managed in Manage Rates). */}
+              <div>
+                <button type="button" onClick={() => setRateDetailsOpen((o) => !o)} aria-expanded={rateDetailsOpen} aria-controls="qx-ratedetails"
+                  style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: `1px dashed ${C.line}`, borderRadius: 8, padding: "7px 10px", width: "100%", cursor: "pointer", color: C.ink, fontSize: 12, fontWeight: 600 }}>
+                  <NavIcon name="landmark" size={14} style={{ color: EX.primary }} /><span style={{ flex: 1, textAlign: "left" }}>Rate details (optional)</span><NavIcon name={rateDetailsOpen ? "chevronUp" : "chevronDown"} size={15} />
+                </button>
+                {rateDetailsOpen && (
+                  <div id="qx-ratedetails" className="gk-qx-ratetiles" style={{ marginTop: 8 }}>
+                    <div className="gk-qx-tile"><span><NavIcon name={side === "buy" ? "trendDown" : "trendUp"} size={13} />{side === "buy" ? "Buy Rate" : "Sell Rate"}</span><b>{fmtRate(side === "buy" ? ratesCtx.buyRate : ratesCtx.sellRate)}</b></div>
+                    <div className="gk-qx-tile"><span><NavIcon name="landmark" size={13} />{editingTx ? "Cost Rate (this exchange)" : "Cost Rate"}</span><b>{fmtRate(costRate)}</b></div>
+                    <div className="gk-qx-tile"><span><NavIcon name="compareArrows" size={13} />{side === "sell" ? "Profit per $1" : "Difference per $1"}</span><b style={{ color: perUsd > 0 ? EX.success : perUsd < 0 ? EX.danger : C.ink }}>{perUsd === null ? "—" : fmtSignedSlsh(perUsd)}</b></div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -6939,18 +6916,19 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
               <div style={{ fontSize: 11, color: C.slate, marginTop: 3 }}>{amountReceived !== "" ? "Manually set in Additional Details." : `At ${fmtRate(effectiveRate)} SLSH per USD`}</div>
             </div>
             {(() => {
-              const neg = shownSlsh !== null && shownSlsh < 0;
-              const tone = shownSlsh === null ? C.slate : neg ? EX.danger : EX.success;
+              const neg = shownUsd !== null && shownUsd < 0;
+              const tone = shownUsd === null ? C.slate : neg ? EX.danger : EX.success;
               return (
                 <div style={{ borderRadius: 12, padding: 16, background: neg ? EX.dangerBg : EX.successBg, border: `1px solid ${neg ? EX.danger : EX.success}33` }} data-margin-side={side}>
                   <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, fontWeight: 700, color: tone }}>
                     <NavIcon name="chartCombined" size={16} />{marginLabel}
                     <span tabIndex={0} aria-label="How this is calculated" title={side === "sell" ? "Profit = (Sell Rate − Cost Rate) × USD amount, in SLSH." : "Cost Rate Difference = (Cost Rate − Buy Rate) × USD amount, in SLSH. A valuation difference, not realized profit."} style={{ display: "flex", color: C.slate, cursor: "help" }}><NavIcon name="info" size={14} /></span>
                   </div>
-                  <div className="gk-qx-margin" style={{ fontSize: 24, fontWeight: 800, fontFamily: FONT_MONO, color: neg ? EX.danger : C.ink, marginTop: 6, fontVariantNumeric: "tabular-nums" }} aria-live="polite">{shownSlsh === null ? "—" : fmtSignedSlsh(shownSlsh)}</div>
-                  <div style={{ fontSize: 11, color: C.slate, marginTop: 3 }}>
+                  {/* SINGLE RATE MANAGER round: shown in USD; SLSH underneath. */}
+                  <div className="gk-qx-margin" style={{ fontSize: 24, fontWeight: 800, fontFamily: FONT_MONO, color: neg ? EX.danger : C.ink, marginTop: 6, fontVariantNumeric: "tabular-nums" }} aria-live="polite">{shownUsd === null ? "—" : fmtSignedUsd(shownUsd)}</div>
+                  <div className="gk-qx-margin-slsh" style={{ fontSize: 11, color: C.slate, marginTop: 3 }}>
                     {!costRate ? <span>Set a Cost Rate in Manage Rates to calculate this.</span>
-                      : <span>{shownUsd !== null ? `≈ ${fmtMoney(shownUsd, "USD")} at Cost Rate ${fmtRate(costRate)}` : ""}{profitTouched ? " · Manually set." : ""}</span>}
+                      : <span>{shownSlsh !== null ? fmtSignedSlsh(shownSlsh) : ""}{profitTouched ? " · Manually set." : ""}</span>}
                   </div>
                   {side === "buy" && costRate ? <div style={{ fontSize: 10.5, color: C.slate, marginTop: 3, fontStyle: "italic" }}>Valuation difference — not realized profit.</div> : null}
                 </div>
@@ -7005,15 +6983,13 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
               <div style={{ height: 1, background: "rgba(255,255,255,0.14)" }} />
               {sumRow(curIcon(currencyGiven), "From Currency", currencyGiven)}
               {sumRow("arrowUpRight", "Amount Given", amountNum > 0 ? fmtMoney(amountNum, currencyGiven) : "—")}
-              {sumRow("arrowLeftRight", side === "buy" ? "Rate (Buy)" : "Rate (Sell)", fmtRate(effectiveRate))}
-              {sumRow("landmark", "Cost Rate", fmtRate(costRate))}
+              {sumRow("arrowLeftRight", "Exchange Rate", fmtRate(effectiveRate))}
               <div style={{ height: 1, background: "rgba(255,255,255,0.14)" }} />
               {sumRow(curIcon(curReceived), "To Currency", curReceived)}
               {sumRow("arrowDownLeft", "Amount Received", fmtMoney(effectiveReceived, curReceived))}
               {trackMode === "account" && toAccount && sumRow("landmark", "Into", toTitleCase(toAccount.name), { mono: false })}
               <div style={{ height: 1, background: "rgba(255,255,255,0.14)" }} />
-              {sumRow("trendUp", marginLabel, shownSlsh === null ? "—" : fmtSignedSlsh(shownSlsh), { color: shownSlsh > 0 ? "#6EE7B7" : shownSlsh < 0 ? "#FCA5A5" : "#fff" })}
-              {shownUsd !== null && costRate ? <div style={{ textAlign: "right", fontSize: 11, opacity: 0.75, marginTop: -6 }}>≈ {fmtMoney(shownUsd, "USD")}</div> : null}
+              {sumRow("trendUp", marginLabel, shownUsd === null ? "—" : fmtSignedUsd(shownUsd), { color: shownUsd > 0 ? "#6EE7B7" : shownUsd < 0 ? "#FCA5A5" : "#fff" })}
             </div>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
@@ -11388,8 +11364,8 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
     // GLOBAL RATE & PROFIT round: an exchange's own rate, Cost Rate and
     // margin (as recorded — never re-valued at today's rate). Blank for
     // other record types.
-    { key: "rate", label: "Rate", render: (e) => e.recordType === "exchange" ? <span style={{ fontFamily: FONT_MONO }}>{fmtNum(e.rate)}</span> : "—" },
-    { key: "costRate", label: "Cost Rate", render: (e) => e.recordType === "exchange" && e.costRate != null ? <span style={{ fontFamily: FONT_MONO }}>{fmtNum(e.costRate)}</span> : "—" },
+    { key: "rate", label: "Rate", optional: true, render: (e) => e.recordType === "exchange" ? <span style={{ fontFamily: FONT_MONO }}>{fmtNum(e.rate)}</span> : "—" },
+    { key: "costRate", label: "Cost Rate", optional: true, render: (e) => e.recordType === "exchange" && e.costRate != null ? <span style={{ fontFamily: FONT_MONO }}>{fmtNum(e.costRate)}</span> : "—" },
     { key: "margin", label: "Profit / Difference", render: (e) => e.recordType === "exchange" && e.profitUsd !== undefined ? <MarginCell side={e.marginSide} slsh={marginSlshOf(e.profitUsd, e.costRate)} usd={e.profitUsd} legacy={e.costRateSource === "history"} /> : "—" },
     { key: "status", label: "Status", sortField: "status", render: (e) => e.status && <Pill tone={historyRowStatusTone(e)}>{e.status}</Pill> },
     { key: "staff", label: "Staff / Creator", sortField: "staffOrCreator", render: (e) => e.staffOrCreator },
@@ -13884,17 +13860,17 @@ function ExchangeSummaryReport({ call, dl, notify }) {
                   <SortTh label="Date" field="day" {...daySort} onSort={daySort.toggleSort} />
                   <SortTh label="Transactions" field="count" {...daySort} onSort={daySort.toggleSort} />
                   <SortTh label="Volume (USD)" field="volumeUSD" {...daySort} onSort={daySort.toggleSort} />
-                  <SortTh label="Profit — Sell" field="sellProfitSLSH" {...daySort} onSort={daySort.toggleSort} />
-                  <SortTh label="Cost Rate Difference — Buy" field="buyDiffSLSH" {...daySort} onSort={daySort.toggleSort} />
+                  <SortTh label="Profit — Sell" field="sellProfitUSD" {...daySort} onSort={daySort.toggleSort} />
+                  <SortTh label="Cost Rate Difference — Buy" field="buyDiffUSD" {...daySort} onSort={daySort.toggleSort} />
                 </tr></thead>
-                <tbody>{dayPg.pageRows.map((d) => <tr key={d.day}><td style={td}>{fmtDate(d.day)}</td><td style={tdMono}>{d.count}</td><td style={tdMono}>{fmtMoney(d.volumeUSD, "USD")}</td><td style={tdMono}>{fmtSignedSlsh(d.sellProfitSLSH)}<div style={{ fontSize: 10.5, color: C.slate }}>{fmtMoney(d.sellProfitUSD, "USD")}</div></td><td style={tdMono}>{fmtSignedSlsh(d.buyDiffSLSH)}<div style={{ fontSize: 10.5, color: C.slate }}>{fmtMoney(d.buyDiffUSD, "USD")}</div></td></tr>)}</tbody>
+                <tbody>{dayPg.pageRows.map((d) => <tr key={d.day}><td style={td}>{fmtDate(d.day)}</td><td style={tdMono}>{d.count}</td><td style={tdMono}>{fmtMoney(d.volumeUSD, "USD")}</td><td style={tdMono}>{fmtSignedUsd(d.sellProfitUSD)}<div style={{ fontSize: 10.5, color: C.slate }}>{fmtSignedSlsh(d.sellProfitSLSH)}</div></td><td style={tdMono}>{fmtSignedUsd(d.buyDiffUSD)}<div style={{ fontSize: 10.5, color: C.slate }}>{fmtSignedSlsh(d.buyDiffSLSH)}</div></td></tr>)}</tbody>
                 <tfoot>
                   <tr>
                     <td style={{ ...tdFoot, fontWeight: 700 }}>Total ({dayTotals.count} transactions)</td>
                     <td style={{ ...tdFootMono, fontWeight: 700 }}>{dayTotals.count}</td>
                     <td style={{ ...tdFootMono, fontWeight: 700 }}>{fmtMoney(dayTotals.volumeUSD, "USD")}</td>
-                    <td style={{ ...tdFootMono, fontWeight: 700 }}>{fmtSignedSlsh(data.totals?.sellProfitSLSH || 0)}</td>
-                    <td style={{ ...tdFootMono, fontWeight: 700 }}>{fmtSignedSlsh(data.totals?.buyDiffSLSH || 0)}</td>
+                    <td style={{ ...tdFootMono, fontWeight: 700 }}>{fmtSignedUsd(data.totals?.sellProfitUSD || 0)}</td>
+                    <td style={{ ...tdFootMono, fontWeight: 700 }}>{fmtSignedUsd(data.totals?.buyDiffUSD || 0)}</td>
                   </tr>
                 </tfoot>
               </ResizableTable>

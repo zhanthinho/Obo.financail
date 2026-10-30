@@ -275,5 +275,6 @@
  "≈ {0} at Cost Rate {1}": "≈ {0} marka loo eego Cost Rate {1}",
  "≈ {0} at Cost Rate {1} · Manually set.": "≈ {0} marka loo eego Cost Rate {1} · Gacanta lagu dejiyay.",
  "{0} · {1} exchange(s)": "{0} · {1} sarrif",
- "{0} exchange(s) have no Cost Rate — shown in USD only.": "{0} sarrif ma laha Cost Rate — USD oo kaliya ayaa lagu muujiyay."
+ "{0} exchange(s) have no Cost Rate — shown in USD only.": "{0} sarrif ma laha Cost Rate — USD oo kaliya ayaa lagu muujiyay.",
+ "{0} exchange(s) have no Cost Rate — not included in the SLSH figure.": "{0} sarrif ma laha Cost Rate — kuma jiraan tirada SLSH."
 }

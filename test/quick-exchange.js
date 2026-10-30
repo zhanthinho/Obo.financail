@@ -155,7 +155,7 @@ async function browserChecks() {
         await p.fill("#qx-amount", "100"); await p.waitForTimeout(200);
         assert(/SLSH 875,000/.test(await text(p, "You Will Receive")), await text(p, "You Will Receive"));
         assert(/SLSH 875,000/.test(await text(p, "Exchange Summary")), "summary differs");
-        assert(/\+SLSH 10,000/.test(await p.locator(".gk-qx-margin").innerText()), await p.locator(".gk-qx-margin").innerText());
+        assert(/\+\$1\.13/.test(await p.locator(".gk-qx-margin").innerText()), await p.locator(".gk-qx-margin").innerText());
         await p.click('button[aria-label="Reverse exchange direction"]'); await p.waitForTimeout(200);
         assert((await p.inputValue("#qx-amount")) === "", "amount left over after switching direction");
         await p.fill("#qx-amount", "1750000"); await p.waitForTimeout(200);

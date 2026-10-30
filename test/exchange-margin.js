@@ -215,26 +215,30 @@ async function browserChecks() {
     await check("Quick Exchange, Buy $100: Cost Rate Difference +SLSH 20,000 before saving", async () => {
       await p.fill("#qx-amount", "100"); await p.waitForTimeout(200);
       const t = await p.locator(".gk-qx-margin").innerText();
-      assert(/\+SLSH 20,000/.test(t), t);
+      assert(/\+\$1\.74/.test(t) && /\+SLSH 20,000/.test(await p.locator(".gk-qx-margin-slsh").innerText()), t);
+      assert(!(await p.locator("#qx-ratedetails").count()), "rate details should start closed (optional)");
       assert(/Cost Rate Difference/.test(await p.locator("[data-margin-side=buy]").innerText()), "label");
     });
     await check("Quick Exchange, Sell $100: Profit +SLSH 20,000; switching direction updates it", async () => {
       await p.click('button[aria-label="Reverse exchange direction"]');
       await p.fill("#qx-amount", "1170000"); await p.waitForTimeout(200);
-      assert(/\+SLSH 20,000/.test(await p.locator(".gk-qx-margin").innerText()), "sell margin");
+      assert(/\+\$1\.74/.test(await p.locator(".gk-qx-margin").innerText()), "sell margin");
       assert(/Profit/.test(await p.locator("[data-margin-side=sell]").innerText()), "label");
       assert(/\$100\.00/.test(await p.locator("text=You Will Receive").first().locator("..").innerText()), "receive");
     });
     await check("the saved exchange shows its Cost Rate and margin in the list", async () => {
       await p.click('button:has-text("Record Exchange")'); await p.waitForTimeout(2500);
       const first = await p.locator("table tbody tr").first().innerText();
-      assert(/11,500/.test(first) && /PROFIT/i.test(first) && /\+SLSH 20,000/.test(first), first.replace(/\s+/g, " "));
+      assert(/PROFIT/i.test(first) && /\+\$1\.74/.test(first) && /\+SLSH 20,000/.test(first), first.replace(/\s+/g, " "));
+      assert(!/COST RATE/i.test(await p.locator("table thead").first().innerText()), "Cost Rate column should be optional (hidden by default)");
     });
     await check("Manage Rates shows the per-$1 spreads and the example amount", async () => {
       await p.getByRole("button", { name: /New transaction/ }).click(); await p.waitForSelector("#qx-amount");
       await p.locator(".gk-qx button:has-text('Manage Rates')").click(); await p.waitForTimeout(600);
       const t = await p.locator(".gk-rates-cbs").innerText();
-      assert(/\+SLSH 200/.test(t) && /\$100: \+SLSH 20,000/.test(t), t.replace(/\s+/g, " "));
+      assert(/\+SLSH 200/.test(t) && /\$100: \+\$1\.74 \(\+SLSH 20,000\)/.test(t), t.replace(/\s+/g, " "));
+      const modal = await p.locator(".gk-rates-cbs").locator("xpath=ancestor::*[contains(., 'Manage Exchange Rates')][1]").innerText();
+      assert(!/Daily Rate|Sale Rate|Daily SLSH/.test(modal), "old rate manager fields still shown");
     });
     await c.close();
     await check("no browser errors", async () => { assert(!errors.length, errors.slice(0, 3).join(" | ")); });

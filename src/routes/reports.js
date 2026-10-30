@@ -85,7 +85,7 @@ function register(router) {
       generatedBy: user.name,
       template: getDefaultPdfTemplate("reports"),
       columns: [{ label: "Date", width: 0.9 }, { label: "Txns", width: 0.5, align: "right" }, { label: "Volume (USD)", width: 1, align: "right" }, { label: "Profit — Sell", width: 1.4, align: "right" }, { label: "Cost Rate Difference — Buy", width: 1.6, align: "right" }],
-      rows: byDay.map((d) => [d.day, String(d.count), `$${d.volumeUSD.toFixed(0)}`, `SLSH ${money0(d.sellProfitSLSH)} ($${d.sellProfitUSD.toFixed(2)})`, `SLSH ${money0(d.buyDiffSLSH)} ($${d.buyDiffUSD.toFixed(2)})`]),
+      rows: byDay.map((d) => [d.day, String(d.count), `$${d.volumeUSD.toFixed(0)}`, `$${d.sellProfitUSD.toFixed(2)} (SLSH ${money0(d.sellProfitSLSH)})`, `$${d.buyDiffUSD.toFixed(2)} (SLSH ${money0(d.buyDiffSLSH)})`]),
     });
     addAudit(user, "Exchange summary exported (PDF)", `${byDay.length} day(s)`);
     sendPDF(res, "obo-exchange-summary.pdf", pdf);

@@ -2172,5 +2172,8 @@
  "USD (Buy side)": "USD (Dhinaca Iibsiga)",
  "SLSH (Sell side)": "SLSH (Dhinaca Iibinta)",
  "Profit — Sell (USD)": "Faa'iido — Iibin (USD)",
- "Cost Rate Difference — Buy (USD)": "Farqiga Cost Rate-ka — Iibsi (USD)"
+ "Cost Rate Difference — Buy (USD)": "Farqiga Cost Rate-ka — Iibsi (USD)",
+ "Buy Rate: the company buys USD (customer gives USD). Sell Rate: the company sells USD (customer gives SLSH). Cost Rate: what one dollar is worth to the company. Profit (Sell) and Cost Rate Difference (Buy) are calculated from these.": "Buy Rate: shirkaddu waxay iibsanaysaa USD (macmiilku wuxuu keenaa USD). Sell Rate: shirkaddu waxay iibinaysaa USD (macmiilku wuxuu keenaa SLSH). Cost Rate: qiimaha hal dollar ee shirkadda. Faa'iidada (Iibin) iyo Farqiga Cost Rate-ka (Iibsi) waxaa laga xisaabiyaa kuwan.",
+ "Buy Rate: the company buys USD. Sell Rate: the company sells USD. Cost Rate: what one dollar is worth to the company.": "Buy Rate: shirkaddu waxay iibsanaysaa USD. Sell Rate: shirkaddu waxay iibinaysaa USD. Cost Rate: qiimaha hal dollar ee shirkadda.",
+ "Rate details (optional)": "Faahfaahinta sicirka (ikhtiyaari)"
 }
