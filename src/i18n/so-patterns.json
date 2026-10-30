@@ -259,5 +259,15 @@
  "{0} is deactivated — choose another Cash Account.": "{0} waa la joojiyay — dooro Akoon Lacag oo kale.",
  "No active {0} Cash Account": "Ma jiro Akoon Lacag {0} ah oo firfircoon",
  "Combined, at the Cash Account rate {0}: {1} or {2} — for reference only; the figures above are the real ones.": "Isku-darka, sicirka Akoonka Lacagta {0}: {1} ama {2} — tixraac oo keliya; tirooyinka kore ayaa ah kuwa dhabta ah.",
- "Total Cash Account ({0})": "Wadarta Akoonka Lacagta ({0})"
+ "Total Cash Account ({0})": "Wadarta Akoonka Lacagta ({0})",
+ "Amount given ({0})": "Lacagta la bixiyay ({0})",
+ "Amount received override ({0})": "Lacagta la helay oo gacanta lagu qoray ({0})",
+ "At {0} SLSH per USD": "{0} SLSH halkii USD",
+ "From Account ({0})": "Akoonka laga Bixinayo ({0})",
+ "No active {0} accounts.": "Ma jiraan akoonno {0} oo firfircoon.",
+ "Receiving Account ({0})": "Akoonka Helaya ({0})",
+ "Reference {0}": "Tixraac {0}",
+ "Reference: {0}": "Tixraac: {0}",
+ "This exchange takes {0}'s balance below zero (accounts are allowed to go into debt).": "Sarrifkan wuxuu haraaga {0} ka dhigayaa ka hooseeya eber (akoonnadu waa ay deyn geli karaan).",
+ "Use current Daily Rate ({0})": "Isticmaal Sicirka Maanta ({0})"
 }

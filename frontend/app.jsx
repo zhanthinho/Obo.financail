@@ -665,6 +665,21 @@ const THEME_CSS = `
   .gk-exw-cashpair { display: grid; grid-template-columns: 1fr auto 1fr; gap: 14px; align-items: center; }
   @media (max-width: 640px) { .gk-exw-cashpair { grid-template-columns: 1fr; } .gk-exw-cashpair-arrow { transform: rotate(90deg); margin: 0 auto; } }
   @media (max-width: 640px) { .gk-exw-profitdate { grid-template-columns: 1fr !important; } }
+  /* QUICK EXCHANGE round */
+  .gk-qx-header { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+  .gk-qx-dir { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; }
+  .gk-qx-rategrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 14px; align-items: start; }
+  .gk-qx-ratetiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .gk-qx-tile { border: 1px solid ${C.line}; border-radius: 9px; padding: 8px 10px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .gk-qx-tile span { display: flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 600; color: ${C.slate}; }
+  .gk-qx-tile b { font-family: "JetBrains Mono", "SFMono-Regular", Menlo, monospace; font-size: 14px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .gk-qx-results { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .gk-qx-chip:hover, .gk-qx-ghost:hover, .gk-qx-curcard:hover:not(:disabled) { border-color: var(--c-navy) !important; }
+  .gk-qx-swap:hover:not(:disabled) { background: var(--c-navy) !important; color: #fff !important; }
+  .gk-qx button:focus-visible, .gk-qx [tabindex]:focus-visible { outline: 2px solid var(--c-navy); outline-offset: 2px; }
+  @media (max-width: 980px) { .gk-qx-summary { position: static !important; } }
+  @media (max-width: 760px) { .gk-qx-rategrid, .gk-qx-results { grid-template-columns: 1fr; } }
+  @media (max-width: 520px) { .gk-qx-dir { grid-template-columns: 1fr; } .gk-qx-swap { transform: rotate(90deg); } .gk-qx-ratetiles { grid-template-columns: 1fr 1fr; } }
   /* Direction toggle: a two-segment pill switch, the "[ USD ] ⇄ [ SLSH ]"
      selector from the spec. Clicking either segment (or the arrow) swaps
      currencyGiven, reusing the existing swapCurrencies() logic untouched. */
@@ -1220,6 +1235,33 @@ const NAV_ICON_PATHS = {
   grip: <><circle cx="6" cy="9" r="1.3" fill="currentColor" stroke="none" /><circle cx="12" cy="9" r="1.3" fill="currentColor" stroke="none" /><circle cx="18" cy="9" r="1.3" fill="currentColor" stroke="none" /><circle cx="6" cy="15" r="1.3" fill="currentColor" stroke="none" /><circle cx="12" cy="15" r="1.3" fill="currentColor" stroke="none" /><circle cx="18" cy="15" r="1.3" fill="currentColor" stroke="none" /></>,
   // ICON COVERAGE round: icons for common actions that previously had none.
   plus: <><path d="M12 5v14M5 12h14" /></>,
+  // QUICK EXCHANGE round: icons for the redesigned exchange workspace,
+  // drawn in the same 24px / 1.8 stroke style as the rest of this set.
+  arrowLeftRight: <><path d="M8 3 4 7l4 4" /><path d="M4 7h16" /><path d="m16 21 4-4-4-4" /><path d="M20 17H4" /></>,
+  activity: <path d="M22 12h-4l-3 9L9 3l-3 9H2" />,
+  settings2: <><path d="M20 7h-9M14 17H5" /><circle cx="17" cy="17" r="3" /><circle cx="7" cy="7" r="3" /></>,
+  userRound: <><circle cx="12" cy="8" r="4.5" /><path d="M20 21a8 8 0 0 0-16 0" /></>,
+  usersRound: <><path d="M18 21a8 8 0 0 0-16 0" /><circle cx="10" cy="8" r="4.5" /><path d="M22 20c0-3.4-2-6.3-5-7.5a4.5 4.5 0 0 0-1.2-8.3" /></>,
+  landmark: <><path d="M3 22h18M6 18v-7M10 18v-7M14 18v-7M18 18v-7" /><path d="m12 2 8 5H4z" /></>,
+  helpCircle: <><circle cx="12" cy="12" r="9" /><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></>,
+  dollar: <><path d="M12 2v20" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></>,
+  coins: <><circle cx="8" cy="8" r="6" /><path d="M18.1 10.4A6 6 0 1 1 10.3 18" /><path d="M7 6h1v4" /><path d="m16.7 13.9.7.7-2.8 2.8" /></>,
+  banknote: <><rect x="2" y="6" width="20" height="12" rx="2" /><circle cx="12" cy="12" r="2" /><path d="M6 12h.01M18 12h.01" /></>,
+  chartCombined: <><path d="M12 16v5M16 14v7M20 10v11" /><path d="m22 3-8.6 8.6a2 2 0 0 1-2.8 0l-1.2-1.2a2 2 0 0 0-2.8 0L2 16" /><path d="M4 18v3M8 14v7" /></>,
+  trendDown: <><path d="M3 7l6 6 4-4 8 8" /><path d="M15 17h6v-6" /></>,
+  compareArrows: <><circle cx="5" cy="6" r="3" /><path d="M12 6h5a2 2 0 0 1 2 2v7" /><path d="m15 9-3-3 3-3" /><circle cx="19" cy="18" r="3" /><path d="M12 18H7a2 2 0 0 1-2-2V9" /><path d="m9 15 3 3-3 3" /></>,
+  info: <><circle cx="12" cy="12" r="9" /><path d="M12 16v-4M12 8h.01" /></>,
+  clipboardList: <><rect x="8" y="2" width="8" height="4" rx="1" /><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><path d="M12 11h4M12 16h4M8 11h.01M8 16h.01" /></>,
+  arrowUpRight: <><path d="M7 7h10v10" /><path d="M7 17 17 7" /></>,
+  arrowDownLeft: <><path d="M17 7 7 17" /><path d="M17 17H7V7" /></>,
+  calendarClock: <><path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5" /><path d="M16 2v4M8 2v4M3 10h5" /><circle cx="16" cy="16" r="6" /><path d="M16 14v2.2l1.6 1" /></>,
+  fileText: <><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z" /><path d="M14 2v5h5M10 9H8M16 13H8M16 17H8" /></>,
+  chevronDown: <path d="m6 9 6 6 6-6" />,
+  chevronUp: <path d="m18 15-6-6-6 6" />,
+  checkCircle2: <><circle cx="12" cy="12" r="9" /><path d="m9 12 2 2 4-4" /></>,
+  circleAlert: <><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" /></>,
+  triangleAlert: <><path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3" /><path d="M12 9v4M12 17h.01" /></>,
+  loader: <path d="M21 12a9 9 0 1 1-6.2-8.6" />,
   print: <><path d="M7 9V3.5h10V9" /><rect x="3.5" y="9" width="17" height="8" rx="1.8" /><path d="M7 14h10v6.5H7z" /></>,
   sheet: <><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M4 9h16M4 15h16M10 3v18" /></>,
   filePdf: <><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" /><path d="M9 13h6M9 17h4" /></>,
@@ -6078,7 +6120,8 @@ function ExchangeModule({ call, dl, preview, print, notify, perm, user, rate, sa
   if (addOpen || editTx) {
     return (
       <AddTxModal
-        call={call} rate={rate} saleRate={saleRate}
+        call={call} notify={notify} perm={perm} rate={rate} saleRate={saleRate} dailySlshRate={dailySlshRate}
+        onRateChanged={onRateChanged} onSaleRateChanged={onSaleRateChanged} onDailySlshRateChanged={onDailySlshRateChanged}
         presetFromAccountId={!editTx ? exchangePrefill?.accountId : undefined}
         presetCurrencyGiven={!editTx ? exchangePrefill?.currency : undefined}
         editingTx={editTx || undefined}
@@ -6433,67 +6476,73 @@ const EX = {
 // this component). saving disables Cancel/submit the same way
 // DeleteExchangeModal's saving prop does, to guard against a double-click
 // firing two overlapping requests.
-function AddTxModal({ call, rate, saleRate, onClose, onSubmit, presetFromAccountId, presetCurrencyGiven, editingTx, saving }) {
+// QUICK EXCHANGE round: the Money Exchange form redesigned as a compact
+// "Quick Exchange" workspace (direction -> amount -> rate -> result ->
+// summary -> Record). UI only: every number shown and saved comes from the
+// same rules as before — convert() for the received amount at the Daily
+// Rate, the Sale Rate spread for profit (identical to the server's
+// computeExchangeProfit), the same POST/PATCH body, the same _requestId
+// idempotency, and the server stays the authority on validation.
+// Quick-amount shortcuts per GIVEN currency — convenience only, the amount
+// field stays a normal free-entry input.
+const QX_QUICK_AMOUNTS = { USD: [100, 500, 1000, 5000], SLSH: [100000, 500000, 1000000, 5000000] };
+const QX_CARD = { background: C.card, border: `1px solid ${C.line}`, borderRadius: 12, padding: 16, boxShadow: "0 1px 2px rgba(0,0,0,0.03)" };
+function QxSectionTitle({ icon, children, aside }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, fontWeight: 700, color: C.ink }}>
+        <span style={{ width: 26, height: 26, borderRadius: 7, background: EX.usdBg, color: EX.primary, display: "flex", alignItems: "center", justifyContent: "center" }}><NavIcon name={icon} size={15} /></span>
+        {children}
+      </div>
+      {aside}
+    </div>
+  );
+}
+function QxFieldError({ children }) {
+  if (!children) return null;
+  return <div role="alert" style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, color: EX.danger, marginTop: 6 }}><NavIcon name="circleAlert" size={13} />{children}</div>;
+}
+function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateChanged, onSaleRateChanged, onDailySlshRateChanged, onClose, onSubmit, presetFromAccountId, presetCurrencyGiven, editingTx, saving }) {
   // SECURITY & INTEGRITY AUDIT round: one id per opening of this form — a
   // double click or retried save is answered once, never posted twice.
   const [_requestId] = useState(() => newRequestId());
   const [amountGiven, setAmountGiven] = useState(editingTx ? String(editingTx.amountGiven) : "");
-  const [currencyGiven, setCurrencyGiven] = useState(editingTx?.currencyGiven || presetCurrencyGiven || "USD"); const [amountReceived, setAmountReceived] = useState(editingTx ? String(editingTx.amountReceived) : "");
-  const [profitUsd, setProfitUsd] = useState(editingTx ? String(editingTx.profitUsd ?? 0) : "0"); const [notes, setNotes] = useState(editingTx?.notes || "");
-  // SALE RATE / EXCHANGE PROFIT round: Profit stays an editable field
-  // (`profitTouched` tracks whether it should be left alone rather than
-  // live-recomputed), but until it's touched it recomputes from the Sale
-  // Rate spread as the amounts/rate above change — matching the "override,
-  // defaults to automatic" behavior confirmed with the business. A NEW
-  // transaction starts untouched (auto-fills from the very first keystroke
-  // in Amount given); editing an EXISTING one starts touched, so opening
-  // the edit form never silently rewrites a figure someone already chose —
-  // "Use automatic value" (below) switches it back to live-tracking on
-  // demand.
+  const [currencyGiven, setCurrencyGiven] = useState(editingTx?.currencyGiven || presetCurrencyGiven || "USD");
+  // Received-amount override (existing behavior: blank = automatic at the rate).
+  const [amountReceived, setAmountReceived] = useState(editingTx ? String(editingTx.amountReceived) : "");
+  const [profitUsd, setProfitUsd] = useState(editingTx ? String(editingTx.profitUsd ?? 0) : "0");
+  const [notes, setNotes] = useState(editingTx?.notes || "");
+  // Profit tracks the automatic Sale Rate spread until edited by hand; an
+  // edit opens "touched" so an existing figure is never silently rewritten.
   const [profitTouched, setProfitTouched] = useState(!!editingTx);
-  // ACCOUNT PICKER DIRECTNESS round: From Account and Receiving Account are
-  // two independent direct pickers (plain dropdowns, same pattern as Cash
-  // Out From/Cash In To below) rather than a single "type a name to search
-  // and auto-link" field — see the matching comment on fromAccountOptions.
   const [fromAccountId, setFromAccountId] = useState(editingTx?.fromAccountId || presetFromAccountId || "");
   const [toAccountId, setToAccountId] = useState(editingTx?.toAccountId || "");
   const [fromAccountOptions, setFromAccountOptions] = useState(editingTx?.fromAccount ? [editingTx.fromAccount] : []);
   const [toAccountOptions, setToAccountOptions] = useState(editingTx?.toAccount ? [editingTx.toAccount] : []);
-  const [date, setDate] = useState(editingTx ? toLocalDT(editingTx.date) : nowLocalDT()); const [rateUsed, setRateUsed] = useState(editingTx ? String(editingTx.rateUsed) : "");
-  // TRANSACTION TIMESTAMP ACCURACY round: a NEW transaction's Date & time
-  // field is pre-filled with "now" the instant this modal opens (above), so
-  // it goes stale the moment the form sits open for even a few seconds —
-  // e.g. the client search above triggers creating a brand-new linked
-  // account mid-flow, which gets its own (later) timestamp, and the
-  // Exchange then submits with its now-earlier, stale default time. Once
-  // that happens the exchange sorts chronologically BEFORE an account that
-  // didn't exist yet when its stored date claims it occurred, corrupting
-  // the newest-first order and the running balance trail everywhere this
-  // transaction appears (exactly the class of bug the BALANCE & LAST
-  // TRANSACTION FIX round addressed server-side — this is the matching
-  // client-side source of a bad timestamp, not a sorting bug). Mirrors the
-  // existing profitTouched pattern: only re-stamp to the real submit-time
-  // "now" when the field was never touched by hand; an edit, or any
-  // transaction whose date/time the user deliberately set (including
-  // backdating), is left exactly as entered.
+  // Walk-in vs tracked-in-an-account. Starts in account mode whenever an
+  // account is already involved (edit of a linked exchange, or opened from
+  // an Account's "Exchange" quick action).
+  const [trackMode, setTrackMode] = useState((editingTx?.fromAccountId || editingTx?.toAccountId || presetFromAccountId) ? "account" : "walkin");
+  const [date, setDate] = useState(editingTx ? toLocalDT(editingTx.date) : nowLocalDT());
+  // Untouched date -> stamped with the real "now" at submit (see submit()).
   const [dateTouched, setDateTouched] = useState(!!editingTx);
-  // PER-TRANSACTION SALE RATE round: the Daily Rate ("Rate" above) was
-  // already overridable per transaction (rateUsed, defaulting to the global
-  // `rate`) — the Sale Rate used for THIS transaction's profit spread was
-  // not, it only ever came from the global Manage Rates value. Mirrors
-  // rateUsed exactly: blank = use the current global Sale Rate (shown as
-  // the field's placeholder, same as the Rate field above), typed = use
-  // that figure for this transaction only, without touching the global one.
+  const [rateUsed, setRateUsed] = useState(editingTx ? String(editingTx.rateUsed) : "");
   const [saleRateUsed, setSaleRateUsed] = useState("");
+  const [detailsOpen, setDetailsOpen] = useState(!!editingTx);
+  const [manageRatesOpen, setManageRatesOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [triedSubmit, setTriedSubmit] = useState(false);
+  const [amountBlurred, setAmountBlurred] = useState(false);
+  const busy = saving || submitting;
+
   const curReceived = currencyGiven === "USD" ? "SLSH" : "USD";
   const effectiveRate = rateUsed !== "" ? Number(rateUsed) : rate;
   const effectiveSaleRate = saleRateUsed !== "" ? Number(saleRateUsed) : saleRate;
+  // ONE calculation, shared by the result cards and the summary card.
   const auto = amountGiven && effectiveRate ? convert(Number(amountGiven), currencyGiven, curReceived, effectiveRate) : 0;
   const effectiveReceived = amountReceived !== "" ? Number(amountReceived) : auto;
-  // Same spread formula as domain.js's computeExchangeProfit (confirmed
-  // worked example: Daily Rate 8,700, Sale Rate 8,650, $100 USD -> SLSH =
-  // $0.58 profit) — kept in sync with the server so the live preview here
-  // matches what actually gets saved when the field is left untouched.
+  // Same spread formula as domain.js's computeExchangeProfit.
   const autoProfit = useMemo(() => {
     const given = Number(amountGiven) || 0;
     if (!effectiveSaleRate || !effectiveRate || !given) return 0;
@@ -6504,13 +6553,9 @@ function AddTxModal({ call, rate, saleRate, onClose, onSubmit, presetFromAccount
   useEffect(() => {
     if (!profitTouched) setProfitUsd(autoProfit ? autoProfit.toFixed(2) : "0");
   }, [autoProfit, profitTouched]);
+  const profitNum = Number(profitUsd) || 0;
+  const rateDiff = effectiveRate && effectiveSaleRate ? effectiveRate - effectiveSaleRate : null;
 
-  // ACCOUNT PICKER DIRECTNESS round: From Account always lists accounts in
-  // the GIVEN currency, Receiving Account always lists accounts in the
-  // RECEIVED currency — independent of each other and independent of any
-  // linked_account_id pairing configured elsewhere in Accounts. Mirrors the
-  // Cash Out/Cash In effects below exactly (same clear-if-no-longer-valid
-  // behavior on a currency/direction change).
   useEffect(() => {
     call("/api/accounts" + qs({ currency: currencyGiven })).then((d) => {
       setFromAccountOptions(d.accounts);
@@ -6525,250 +6570,322 @@ function AddTxModal({ call, rate, saleRate, onClose, onSubmit, presetFromAccount
   }, [curReceived, call]);
   const fromAccount = fromAccountOptions.find((a) => a.id === fromAccountId) || null;
   const toAccount = toAccountOptions.find((a) => a.id === toAccountId) || null;
-  // CLIENT NAME FIELD REMOVED round: no typed-name field to read anymore —
-  // the name recorded on the transaction comes from whichever account was
-  // picked, falling back to this transaction's own already-stored name when
-  // editing a walk-in exchange (so resaving one never silently renames it),
-  // or "Walk-in" for a brand new walk-in exchange with no account picked.
   const effectiveClientName = fromAccount ? fromAccount.name : (editingTx?.clientName || "Walk-in");
 
-  // Flips which currency is being given/received, and swaps the two
-  // independently-picked accounts along with it (the old Given-side account
-  // is now the Received side, and vice versa) — no account-pairing lookup
-  // needed since both sides are already explicit, individual picks.
+  // Existing behavior: switching direction swaps the two picked accounts and
+  // clears the amounts, so no figure from the old direction is left behind.
   function swapCurrencies() {
     setCurrencyGiven((c) => (c === "USD" ? "SLSH" : "USD"));
     const f = fromAccountId, t = toAccountId;
     setFromAccountId(t); setToAccountId(f);
-    setAmountGiven(""); setAmountReceived("");
+    setAmountGiven(""); setAmountReceived(""); setAmountBlurred(false);
+  }
+  function chooseTrackMode(m) {
+    setTrackMode(m);
+    if (m === "walkin") { setFromAccountId(""); setToAccountId(""); }
   }
 
-  // EXCHANGE WORKSPACE round: optional "Cash Out From"/"Cash In To" Cash in
-  // Hand linkage (spec sections 7-10) — Cash Out always lists accounts in
-  // the GIVEN currency, Cash In always lists accounts in the RECEIVED
-  // currency, independent of which specific direction is active. Preloaded
-  // from editingTx's own cashOutAccount/cashInAccount (rowToJSON already
-  // returns them) so an edit opens with its existing linkage intact.
-  // CASH IN HAND REMOVAL round: the picker is no longer on the form. Only an
-  // edit of an exchange that was ALREADY linked still loads its accounts, so
-  // saving that edit keeps (rather than silently drops) its existing link.
+  // Edit of an exchange already linked to Cash accounts keeps that link.
   const hadCashLink = !!(editingTx?.cashOutAccountId || editingTx?.cashInAccountId);
-  const [cashOutAccountId, setCashOutAccountId] = useState(editingTx?.cashOutAccountId || "");
-  const [cashInAccountId, setCashInAccountId] = useState(editingTx?.cashInAccountId || "");
-  const [cashOutOptions, setCashOutOptions] = useState(editingTx?.cashOutAccount ? [editingTx.cashOutAccount] : []);
-  const [cashInOptions, setCashInOptions] = useState(editingTx?.cashInAccount ? [editingTx.cashInAccount] : []);
-  useEffect(() => {
-    if (!hadCashLink) return;
-    call("/api/cash/accounts/for-exchange" + qs({ currency: currencyGiven })).then((d) => {
-      setCashOutOptions(d.accounts);
-      // A direction swap (or picking a client account of a different
-      // currency) can leave a previously chosen Cash Out account pointing
-      // at the WRONG currency's accounts — clear it only if it's no longer
-      // in the fresh list for the now-current Given currency; otherwise
-      // (including the very first load of an edit's preloaded account)
-      // leave it exactly as it was.
-      setCashOutAccountId((id) => (id && !d.accounts.some((a) => a.id === id)) ? "" : id);
-    }).catch(() => setCashOutOptions([]));
-  }, [currencyGiven, call, hadCashLink]);
-  useEffect(() => {
-    if (!hadCashLink) return;
-    call("/api/cash/accounts/for-exchange" + qs({ currency: curReceived })).then((d) => {
-      setCashInOptions(d.accounts);
-      setCashInAccountId((id) => (id && !d.accounts.some((a) => a.id === id)) ? "" : id);
-    }).catch(() => setCashInOptions([]));
-  }, [curReceived, call, hadCashLink]);
-  const cashOutAccount = cashOutOptions.find((a) => a.id === cashOutAccountId) || null;
-  const cashInAccount = cashInOptions.find((a) => a.id === cashInAccountId) || null;
+  const cashOutAccountId = hadCashLink ? (editingTx.cashOutAccountId || "") : "";
+  const cashInAccountId = hadCashLink ? (editingTx.cashInAccountId || "") : "";
 
-  // ON-PAGE WORKSPACE round: this is plain in-page content now, not a
-  // fixed-overlay modal, so the page's normal scroll (and the surrounding
-  // app shell behind it) must stay exactly as usable as on any other
-  // screen — no useModalBodyScrollLock() here (that hook is for the
-  // actual overlay dialogs below: DeleteExchangeModal, ExchangeReceiptModal).
-  const givenAccentColor = currencyGiven === "USD" ? EX.primary : EX.accent;
-  const receivedAccentColor = curReceived === "USD" ? EX.primary : EX.accent;
-  const insufficientCashOut = cashOutAccount && Number(amountGiven) > cashOutAccount.balance;
-  function submit() {
-    onSubmit({ _requestId,
-      clientName: effectiveClientName, clientAccountId: fromAccountId || undefined, receivingAccountId: toAccountId || undefined, amountGiven: Number(amountGiven), currencyGiven,
-      amountReceived: amountReceived === "" ? undefined : Number(amountReceived), profitUsd: Number(profitUsd) || 0, notes,
-      // TRANSACTION TIMESTAMP ACCURACY round: untouched -> the real
-      // time right now (at the moment of clicking), not the stale
-      // value the field was pre-filled with when the modal first
-      // opened — see dateTouched's comment above for why that matters.
-      date: dateTouched ? (date ? new Date(date).toISOString() : undefined) : new Date().toISOString(),
-      rateUsed: rateUsed === "" ? undefined : Number(rateUsed),
-      cashOutAccountId: cashOutAccountId || undefined, cashInAccountId: cashInAccountId || undefined,
-    });
+  // Refresh: re-reads the authorized Daily/Sale rates. A rate typed for THIS
+  // transaction is never overwritten — the "Use current rate" link resets it.
+  async function refreshRates() {
+    if (refreshing) return;
+    setRefreshing(true);
+    try {
+      const [r, s] = await Promise.all([call("/api/rate"), call("/api/sale-rate")]);
+      onRateChanged?.(r.rate); onDailySlshRateChanged?.(r.dailySlshRate); onSaleRateChanged?.(s.rate);
+      notify?.("Exchange rates refreshed.");
+    } catch (e) { notify?.(e.message, true); }
+    finally { setRefreshing(false); }
   }
-  const canSave = Number(amountGiven) > 0 && !saving;
+
+  const amountNum = Number(amountGiven);
+  const amountError = (triedSubmit || amountBlurred) && !(amountNum > 0) ? "Enter an amount greater than 0." : null;
+  const rateError = !(effectiveRate > 0) ? "No exchange rate is set. Set the Daily Rate in Manage Rates." : null;
+  const accountError = triedSubmit && trackMode === "account" && !fromAccountId && !toAccountId ? "Pick at least one account, or switch to Walk-in Customer." : null;
+  const canSave = amountNum > 0 && effectiveRate > 0 && !(trackMode === "account" && !fromAccountId && !toAccountId) && !busy;
+
+  async function submit() {
+    setTriedSubmit(true);
+    if (!canSave) return;
+    setSubmitting(true);
+    try {
+      await onSubmit({ _requestId,
+        clientName: effectiveClientName, clientAccountId: fromAccountId || undefined, receivingAccountId: toAccountId || undefined, amountGiven: amountNum, currencyGiven,
+        amountReceived: amountReceived === "" ? undefined : Number(amountReceived), profitUsd: profitNum, notes,
+        date: dateTouched ? (date ? new Date(date).toISOString() : undefined) : new Date().toISOString(),
+        rateUsed: rateUsed === "" ? undefined : Number(rateUsed),
+        cashOutAccountId: cashOutAccountId || undefined, cashInAccountId: cashInAccountId || undefined,
+      });
+    } finally { setSubmitting(false); }
+  }
+
+  const fmtRate = (n) => (n || n === 0) && Number.isFinite(Number(n)) ? Number(n).toLocaleString("en-US", { maximumFractionDigits: 4 }) : "—";
+  const curIcon = (c) => (c === "USD" ? "dollar" : "coins");
+  const segBtn = (active) => ({ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, padding: "9px 10px", borderRadius: 8, border: `1.5px solid ${active ? EX.primary : C.line}`, background: active ? EX.usdBg : C.card, color: active ? EX.primary : C.ink, fontWeight: 700, fontSize: 12.5, cursor: busy ? "not-allowed" : "pointer" });
+  const sumRow = (icon, label, value, opts = {}) => (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+      <span style={{ display: "flex", alignItems: "center", gap: 7, opacity: 0.8 }}><NavIcon name={icon} size={14} />{label}</span>
+      <span style={{ fontWeight: 700, fontFamily: opts.mono === false ? undefined : FONT_MONO, textAlign: "right", color: opts.color, fontVariantNumeric: "tabular-nums" }}>{value}</span>
+    </div>
+  );
 
   return (
-    <div role="region" aria-label={editingTx ? "Edit exchange transaction" : "New exchange transaction"}>
-      {/* 1. PAGE HEADER — back control + title. Plain in-page content, not a
-          fixed/full-viewport overlay: this workspace fills the module's own
-          content area the same way Quotations' full-page editor does, so
-          the sidebar menu (and the app's top bar) stay visible and usable
-          the whole time this form is open, and the page scrolls normally
-          instead of the form covering the screen. */}
-      <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 12, padding: "14px 24px", display: "flex", alignItems: "center", gap: 14, marginBottom: 20, boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}>
-        <button onClick={onClose} disabled={saving} aria-label="Back" title="Back" className="gk-exw-back gk-btn-back-outline" style={{ width: 36, height: 36, borderRadius: 8, border: "1px solid var(--c-back-text)", background: C.card, color: "var(--c-back-text)", cursor: saving ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "background-color 150ms ease", flexShrink: 0 }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
-        </button>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontWeight: 800, fontSize: 17, color: C.navy, letterSpacing: "-0.01em" }}>{editingTx ? "Edit Exchange Transaction" : "New Exchange Transaction"}</div>
-          <div style={{ fontSize: 12, color: C.slate, marginTop: 1 }}>Currency exchange workspace · {editingTx ? editingTx.referenceNumber : "a new reference is assigned on save"}</div>
+    <div role="region" aria-label={editingTx ? "Edit exchange transaction" : "Quick Exchange"} className="gk-qx">
+      {/* HEADER */}
+      <div className="gk-qx-header" style={{ ...QX_CARD, padding: "12px 16px", marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+          <button onClick={onClose} disabled={busy} aria-label="Back" title="Back" className="gk-btn-back-outline" style={{ width: 36, height: 36, borderRadius: 8, border: "1px solid var(--c-back-text)", background: C.card, color: "var(--c-back-text)", cursor: busy ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <NavIcon name="arrowLeft" size={18} />
+          </button>
+          <span style={{ width: 36, height: 36, borderRadius: 9, background: EX.primary, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><NavIcon name="arrowLeftRight" size={19} /></span>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontWeight: 800, fontSize: 16.5, color: C.navy, letterSpacing: "-0.01em" }}>{editingTx ? "Edit Exchange" : "Quick Exchange"}</div>
+            <div style={{ fontSize: 12, color: C.slate, marginTop: 1 }}>{editingTx ? `Reference ${editingTx.referenceNumber || "—"}` : "Convert between USD and SLSH with current rates."}</div>
+          </div>
+        </div>
+        <div className="gk-qx-rates" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, border: `1px solid ${C.line}`, borderRadius: 9, padding: "6px 12px", background: EX.usdBg, fontSize: 12 }}>
+            <NavIcon name="activity" size={15} style={{ color: EX.primary }} />
+            <span style={{ color: C.slate, fontWeight: 600 }}>Current Rates:</span>
+            <span><span style={{ color: C.slate }}>Daily Rate </span><b style={{ fontFamily: FONT_MONO, color: C.ink }}>{fmtRate(rate)}</b></span>
+            <span style={{ color: C.line }}>·</span>
+            <span><span style={{ color: C.slate }}>Sale Rate </span><b style={{ fontFamily: FONT_MONO, color: C.ink }}>{fmtRate(saleRate)}</b></span>
+          </div>
+          {perm?.("rateManage") && (
+            <button type="button" onClick={() => setManageRatesOpen(true)} disabled={busy} className="gk-qx-ghost" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8, border: `1px solid ${C.line}`, background: C.card, color: C.ink, fontWeight: 600, fontSize: 12.5, cursor: "pointer" }}>
+              <NavIcon name="settings2" size={15} />Manage Rates
+            </button>
+          )}
         </div>
       </div>
 
-      <div style={{ maxWidth: 1180, margin: "0 auto" }} className="gk-exw-grid">
-          {/* ---------------- MAIN COLUMN ---------------- */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <div className="gk-exw-grid" style={{ maxWidth: 1180, margin: "0 auto" }}>
+        {/* ---------------- MAIN COLUMN ---------------- */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 14, minWidth: 0 }}>
 
-            {/* 2. CUSTOMER / ACCOUNT */}
-            <div className="gk-exw-card" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 12, padding: 18, boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: C.slate, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 10 }}>Customer / Account</div>
-              {/* CLIENT NAME FIELD REMOVED round: the exchange no longer
-                  needs a separate typed name at all — pick From/Receiving
-                  Account below to move real balances, or leave both as
-                  walk-in. The record still needs SOME name internally (for
-                  the transaction list, receipts, history), so it's derived
-                  automatically from whichever account is picked (see
-                  effectiveClientName below) instead of being asked for. */}
-              {/* ACCOUNT PICKER DIRECTNESS round: two independent, direct
-                  dropdowns — no typed-name search/auto-link step. Same
-                  layout and styling as the Cash Out From/Cash In To pair
-                  below, so both account-picking parts of this form behave
-                  identically. */}
+          {/* CUSTOMER / ACCOUNT */}
+          <div style={QX_CARD}>
+            <QxSectionTitle icon="userRound" aside={
+              <span title="Walk-in: no account balance changes. Track in Account: the amount given is taken from the From Account and the amount received is added to the Receiving Account." aria-label="About account tracking" tabIndex={0} style={{ color: C.slate, display: "flex", cursor: "help" }}><NavIcon name="helpCircle" size={16} /></span>
+            }>Customer / Account</QxSectionTitle>
+            <div role="radiogroup" aria-label="Customer type" style={{ display: "flex", gap: 8 }}>
+              <button type="button" role="radio" aria-checked={trackMode === "walkin"} disabled={busy} onClick={() => chooseTrackMode("walkin")} style={segBtn(trackMode === "walkin")}><NavIcon name="userRound" size={15} />Walk-in Customer</button>
+              <button type="button" role="radio" aria-checked={trackMode === "account"} disabled={busy} onClick={() => chooseTrackMode("account")} style={segBtn(trackMode === "account")}><NavIcon name="landmark" size={15} />Track in Account</button>
+            </div>
+            {trackMode === "walkin" ? (
+              <div style={{ fontSize: 11.5, color: C.slate, marginTop: 10 }}>Walk-in exchange — no account balance is changed.</div>
+            ) : (
               <div className="gk-exw-cashpair" style={{ marginTop: 12 }}>
-                <div>
-                  <div style={{ fontSize: 10.5, fontWeight: 700, color: EX.danger, textTransform: "uppercase", letterSpacing: "0.03em", marginBottom: 5 }}>From Account</div>
+                <div style={{ minWidth: 0 }}>
+                  <label htmlFor="qx-from" style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: C.ink, marginBottom: 5 }}><NavIcon name="usersRound" size={13} style={{ color: EX.primary }} /><span>From Account ({currencyGiven})</span></label>
                   {fromAccountOptions.length === 0 ? (
                     <div style={{ fontSize: 11.5, color: C.slate, border: `1px dashed ${C.line}`, borderRadius: 8, padding: "10px 10px" }}>No active {currencyGiven} accounts.</div>
                   ) : (
-                    <Select value={fromAccountId} onChange={(e) => setFromAccountId(e.target.value)} aria-label="From Account">
-                      <option value="">— None (walk-in, not tracked in an account) —</option>
+                    <Select id="qx-from" value={fromAccountId} onChange={(e) => setFromAccountId(e.target.value)} disabled={busy}>
+                      <option value="">— None —</option>
                       {fromAccountOptions.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)} · {a.accountNumber} · {fmtMoney(a.balance, a.currency)}</option>)}
                     </Select>
                   )}
-                  {fromAccount && <div style={{ fontSize: 11, color: C.slate, marginTop: 4 }}>Balance: {fmtMoney(fromAccount.balance, fromAccount.currency)}</div>}
+                  {fromAccount && <div style={{ fontSize: 11, color: C.slate, marginTop: 4 }}>Available: {fmtMoney(fromAccount.balance, fromAccount.currency)}</div>}
                 </div>
-                <div className="gk-exw-cashpair-arrow" style={{ color: C.slate, fontSize: 16 }}>→</div>
-                <div>
-                  <div style={{ fontSize: 10.5, fontWeight: 700, color: EX.success, textTransform: "uppercase", letterSpacing: "0.03em", marginBottom: 5 }}>Receiving Account</div>
+                <div className="gk-exw-cashpair-arrow" style={{ color: C.slate, display: "flex" }}><NavIcon name="arrowRight" size={16} /></div>
+                <div style={{ minWidth: 0 }}>
+                  <label htmlFor="qx-to" style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: C.ink, marginBottom: 5 }}><NavIcon name="landmark" size={13} style={{ color: EX.primary }} /><span>Receiving Account ({curReceived})</span></label>
                   {toAccountOptions.length === 0 ? (
                     <div style={{ fontSize: 11.5, color: C.slate, border: `1px dashed ${C.line}`, borderRadius: 8, padding: "10px 10px" }}>No active {curReceived} accounts.</div>
                   ) : (
-                    <Select value={toAccountId} onChange={(e) => setToAccountId(e.target.value)} aria-label="Receiving Account">
-                      <option value="">— None (not tracked in an account) —</option>
+                    <Select id="qx-to" value={toAccountId} onChange={(e) => setToAccountId(e.target.value)} disabled={busy}>
+                      <option value="">— None —</option>
                       {toAccountOptions.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)} · {a.accountNumber} · {fmtMoney(a.balance, a.currency)}</option>)}
                     </Select>
                   )}
                   {toAccount && <div style={{ fontSize: 11, color: C.slate, marginTop: 4 }}>Balance: {fmtMoney(toAccount.balance, toAccount.currency)}</div>}
-                  {!toAccount && <div style={{ fontSize: 11, color: C.slate, marginTop: 4 }}>Not tracked in an account unless one is picked.</div>}
                 </div>
               </div>
-            </div>
-
-            {/* 3. EXCHANGE DIRECTION */}
-            <div className="gk-exw-card" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 12, padding: 18, boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: C.slate, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 10 }}>Exchange Direction</div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
-                <button type="button" onClick={() => currencyGiven !== "USD" && swapCurrencies()} className="gk-exw-dir-btn" style={{ padding: "9px 28px", borderRadius: 9, border: `1.5px solid ${currencyGiven === "USD" ? EX.primary : C.line}`, fontWeight: 700, fontSize: 13.5, cursor: "pointer", background: currencyGiven === "USD" ? EX.primary : "transparent", color: currencyGiven === "USD" ? "#fff" : C.navy }}>USD</button>
-                <button type="button" onClick={swapCurrencies} title="Switch direction" className="gk-exw-dir-swap" style={{ width: 36, height: 36, borderRadius: "50%", border: `1px solid color-mix(in srgb, ${EX.primary} 33%, transparent)`, background: "transparent", color: EX.primary, fontSize: 17, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>⇄</button>
-                <button type="button" onClick={() => currencyGiven !== "SLSH" && swapCurrencies()} className="gk-exw-dir-btn" style={{ padding: "9px 28px", borderRadius: 9, border: `1.5px solid ${currencyGiven === "SLSH" ? EX.accent : C.line}`, fontWeight: 700, fontSize: 13.5, cursor: "pointer", background: currencyGiven === "SLSH" ? EX.accent : "transparent", color: currencyGiven === "SLSH" ? "#fff" : C.navy }}>SLSH</button>
+            )}
+            {fromAccount && amountNum > 0 && amountNum > Number(fromAccount.balance) && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: EX.warning, background: EX.warningBg, borderRadius: 7, padding: "6px 9px", marginTop: 10 }}>
+                <NavIcon name="triangleAlert" size={14} /><span>This exchange takes {fromAccount.name}'s balance below zero (accounts are allowed to go into debt).</span>
               </div>
-              <div style={{ textAlign: "center", fontSize: 11.5, color: C.slate, marginTop: 8 }}>{currencyGiven} → {curReceived}</div>
-            </div>
+            )}
+            <QxFieldError>{accountError}</QxFieldError>
+          </div>
 
-            {/* 4-5-6. GIVEN / RATE / RECEIVED — the heart of the exchange.
-                COMPACT CARDS round: cards resized to the ~80-90px-tall
-                reference the business asked for (tighter padding, smaller
-                type) — no change to any calculation, currency, rate,
-                profit, or cash logic below, UI sizing only. align-items:
-                center on .gk-exw-pair (unchanged) means the Rate/Sale rate
-                stack in the middle column never stretches the GIVEN/
-                RECEIVED cards taller than their own content. */}
-            <div className="gk-exw-card gk-exw-pair" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 12, padding: 12, boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}>
-              <div key={`given-${currencyGiven}`} className="gk-exw-flash gk-exw-amountcard" style={{ border: `1px solid ${EX.usdBorder}`, borderRadius: 8, padding: "8px 10px", background: currencyGiven === "USD" ? EX.usdBg : EX.slshBg }}>
-                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: 11.5, fontWeight: 600, color: givenAccentColor, textTransform: "uppercase", letterSpacing: "0.04em" }}>Given</span>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: C.ink }}>{currencyGiven}</span>
-                </div>
-                <MoneyInput value={amountGiven} onChange={(e) => setAmountGiven(e.target.value)} aria-label="Amount given" style={{ fontSize: 23, lineHeight: 1.15, fontWeight: 700, fontFamily: FONT_MONO, textAlign: "center", padding: "2px 4px", border: "none", background: "transparent", color: C.ink }} />
-                {fromAccount && <div style={{ textAlign: "center", fontSize: 11, color: C.slate }}>Available: {fmtMoney(fromAccount.balance, fromAccount.currency)}</div>}
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
-                <div className="gk-exw-pair-arrow" style={{ color: EX.primary, fontSize: 21, lineHeight: 1 }}>→</div>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: C.slate, textTransform: "uppercase" }}>Rate</div>
-                  <MoneyInput placeholder={String(rate)} value={rateUsed} onChange={(e) => setRateUsed(e.target.value)} aria-label="Rate" style={{ width: 92, height: 31, boxSizing: "border-box", textAlign: "center", fontFamily: FONT_MONO, fontSize: 12.5, fontWeight: 700, padding: "4px 8px" }} />
-                </div>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: C.slate, textTransform: "uppercase" }}>Sale rate</div>
-                  <MoneyInput placeholder={saleRate ? String(saleRate) : "—"} value={saleRateUsed} onChange={(e) => setSaleRateUsed(e.target.value)} aria-label="Sale rate" style={{ width: 92, height: 31, boxSizing: "border-box", textAlign: "center", fontFamily: FONT_MONO, fontSize: 12.5, padding: "4px 8px" }} />
-                </div>
-              </div>
-
-              <div key={`received-${curReceived}-${auto}`} className="gk-exw-flash gk-exw-amountcard" style={{ border: `1px solid ${curReceived === "USD" ? EX.usdBorder : EX.slshBorder}`, borderRadius: 8, padding: "8px 10px", background: curReceived === "USD" ? EX.usdBg : EX.slshBg }}>
-                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: 11.5, fontWeight: 600, color: receivedAccentColor, textTransform: "uppercase", letterSpacing: "0.04em" }}>Received</span>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: C.ink }}>{curReceived}</span>
-                </div>
-                <MoneyInput placeholder={auto ? auto.toFixed(curReceived === "USD" ? 2 : 0) : ""} value={amountReceived} onChange={(e) => setAmountReceived(e.target.value)} aria-label="Amount received" style={{ fontSize: 23, lineHeight: 1.15, fontWeight: 700, fontFamily: FONT_MONO, textAlign: "center", padding: "2px 4px", border: "none", background: "transparent", color: C.ink }} />
-                <div style={{ textAlign: "center", fontSize: 11, color: C.slate, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Auto at {rateUsed !== "" ? "the rate above" : "current rate"} — edit to apply a spread</div>
-              </div>
-            </div>
-
-            {/* 7. CASH OUT FROM / CASH IN TO — removed from the form at the
-                owner's request (Oct 2026). Existing exchanges that were
-                already linked keep that link on edit (see hadCashLink
-                above); new exchanges are simply not linked. */}
-
-            {/* 8-9. PROFIT / DATE & TIME / NOTES */}
-            <div className="gk-exw-card gk-exw-profitdate" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 12, padding: 18, boxShadow: "0 1px 2px rgba(0,0,0,0.03)", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-              <Field label="Profit / margin (USD)" hint={!effectiveSaleRate ? "Set a Sale Rate (above, or in the Rate history tab) to auto-calculate this." : profitTouched ? "Manually set — not tracking the Sale Rate spread." : "Auto-calculated from the Sale Rate spread. Edit to override."}>
-                <MoneyInput key={`profit-${autoProfit}`} className={!profitTouched ? "gk-exw-flash" : undefined} value={profitUsd} onChange={(e) => { setProfitTouched(true); setProfitUsd(e.target.value); }}
-                  style={{ fontWeight: 700, color: Number(profitUsd) > 0 ? EX.success : C.ink, background: Number(profitUsd) > 0 ? EX.successBg : C.card, borderColor: Number(profitUsd) > 0 ? EX.success + "55" : C.line }} />
-                {profitTouched && effectiveSaleRate && (
-                  <button type="button" onClick={() => setProfitTouched(false)} style={{ background: "none", border: "none", color: EX.primary, textDecoration: "underline", cursor: "pointer", fontSize: 11, padding: 0, marginTop: 4 }}>
-                    Use automatic value ({fmtMoney(autoProfit, "USD")})
+          {/* EXCHANGE DIRECTION */}
+          <div style={QX_CARD}>
+            <QxSectionTitle icon="arrowLeftRight" aside={<span style={{ fontSize: 12, fontWeight: 700, color: EX.primary, fontFamily: FONT_MONO }}>{currencyGiven} → {curReceived}</span>}>Exchange Direction</QxSectionTitle>
+            <div className="gk-qx-dir">
+              {["USD", "SLSH"].map((c, idx) => {
+                const isFrom = currencyGiven === c;
+                const card = (
+                  <button key={c} type="button" disabled={busy} aria-pressed={isFrom} onClick={() => !isFrom && swapCurrencies()} className="gk-qx-curcard"
+                    style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", borderRadius: 10, border: `1.5px solid ${isFrom ? EX.primary : C.line}`, background: isFrom ? EX.usdBg : C.card, cursor: busy ? "not-allowed" : "pointer", textAlign: "left", minWidth: 0 }}>
+                    <span style={{ width: 32, height: 32, borderRadius: "50%", background: isFrom ? EX.primary : EX.usdBg, color: isFrom ? "#fff" : EX.primary, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><NavIcon name={curIcon(c)} size={16} /></span>
+                    <span style={{ minWidth: 0 }}>
+                      <span style={{ display: "block", fontWeight: 800, fontSize: 14, color: C.ink }}>{c}</span>
+                      <span style={{ display: "block", fontSize: 11, color: isFrom ? EX.primary : C.slate, fontWeight: 600 }}>{isFrom ? "Customer gives" : "Customer receives"}</span>
+                    </span>
                   </button>
-                )}
-              </Field>
-              <Field label="Date & time"><Input type="datetime-local" value={date} onChange={(e) => { setDateTouched(true); setDate(e.target.value); }} /></Field>
-              <div style={{ gridColumn: "1 / -1" }}><Field label="Reference / Notes"><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></Field></div>
+                );
+                return idx === 0 ? [card, (
+                  <button key="swap" type="button" onClick={swapCurrencies} disabled={busy} aria-label="Reverse exchange direction" title="Reverse direction" className="gk-qx-swap"
+                    style={{ width: 38, height: 38, borderRadius: "50%", border: `1px solid ${EX.usdBorder}`, background: C.card, color: EX.primary, cursor: busy ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, justifySelf: "center" }}>
+                    <NavIcon name="arrowLeftRight" size={17} />
+                  </button>
+                )] : card;
+              })}
             </div>
           </div>
 
-          {/* ---------------- SUMMARY COLUMN ---------------- */}
-          <div style={{ position: "sticky", top: 0 }}>
-            <div style={{ background: EX.primaryDark, borderRadius: 12, padding: 20, color: "#fff", boxShadow: "0 8px 24px color-mix(in srgb, var(--c-navy-deep) 25%, transparent)" }}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", opacity: 0.75, marginBottom: 14 }}>Exchange Summary</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: 13 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}><span style={{ opacity: 0.75 }}>From</span><span style={{ fontWeight: 700, textAlign: "right" }}>{cashOutAccount ? cashOutAccount.name : effectiveClientName}</span></div>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}><span style={{ opacity: 0.75 }}>Amount</span><span style={{ fontWeight: 700, fontFamily: FONT_MONO }}>{amountGiven ? fmtMoney(Number(amountGiven), currencyGiven) : "—"}</span></div>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}><span style={{ opacity: 0.75 }}>Rate</span><span style={{ fontWeight: 700, fontFamily: FONT_MONO }}>{fmtNum(effectiveRate)}</span></div>
-                <div style={{ height: 1, background: "rgba(255,255,255,0.14)" }} />
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}><span style={{ opacity: 0.75 }}>To</span><span style={{ fontWeight: 700, textAlign: "right" }}>{cashInAccount ? cashInAccount.name : toAccount ? toAccount.name : "—"}</span></div>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}><span style={{ opacity: 0.75 }}>Received</span><span style={{ fontWeight: 700, fontFamily: FONT_MONO }}>{fmtMoney(effectiveReceived, curReceived)}</span></div>
-                <div style={{ height: 1, background: "rgba(255,255,255,0.14)" }} />
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                  <span style={{ opacity: 0.75 }}>Profit</span>
-                  <span style={{ fontWeight: 700, fontFamily: FONT_MONO, color: Number(profitUsd) > 0 ? "#6EE7B7" : "#fff" }}>{fmtMoney(Number(profitUsd) || 0, "USD")}</span>
-                </div>
+          {/* AMOUNT TO EXCHANGE */}
+          <div style={QX_CARD}>
+            <QxSectionTitle icon="banknote">Amount to Exchange</QxSectionTitle>
+            <label htmlFor="qx-amount" style={{ display: "block", fontSize: 11, fontWeight: 600, color: C.slate, marginBottom: 5 }}>Amount given ({currencyGiven})</label>
+            <div style={{ display: "flex", alignItems: "center", border: `1.5px solid ${amountError ? EX.danger : EX.usdBorder}`, borderRadius: 10, background: C.card, overflow: "hidden" }}>
+              <MoneyInput id="qx-amount" value={amountGiven} onChange={(e) => setAmountGiven(e.target.value.replace(/^-/, ""))} onBlur={() => setAmountBlurred(true)} disabled={busy} placeholder="0.00" aria-invalid={!!amountError}
+                style={{ flex: 1, minWidth: 0, fontSize: 22, fontWeight: 700, fontFamily: FONT_MONO, border: "none", background: "transparent", padding: "10px 12px", color: C.ink, fontVariantNumeric: "tabular-nums" }} />
+              <span style={{ padding: "0 14px", fontWeight: 800, fontSize: 13, color: EX.primary, borderLeft: `1px solid ${C.line}`, alignSelf: "stretch", display: "flex", alignItems: "center", background: EX.usdBg }}>{currencyGiven}</span>
+            </div>
+            <QxFieldError>{amountError}</QxFieldError>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }} aria-label="Quick amounts">
+              {QX_QUICK_AMOUNTS[currencyGiven].map((v) => (
+                <button key={v} type="button" disabled={busy} onClick={() => { setAmountGiven(String(v)); setAmountBlurred(true); }} className="gk-qx-chip"
+                  style={{ padding: "5px 11px", borderRadius: 999, border: `1px solid ${Number(amountGiven) === v ? EX.primary : C.line}`, background: Number(amountGiven) === v ? EX.usdBg : C.card, color: C.ink, fontSize: 12, fontWeight: 600, fontFamily: FONT_MONO, cursor: "pointer" }}>
+                  {fmtNum(v)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* EXCHANGE RATE */}
+          <div style={QX_CARD}>
+            <QxSectionTitle icon="chartCombined" aside={
+              <button type="button" onClick={refreshRates} disabled={refreshing || busy} aria-label="Refresh exchange rates" title="Refresh exchange rates" className="gk-qx-ghost"
+                style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 10px", borderRadius: 7, border: `1px solid ${C.line}`, background: C.card, color: C.ink, fontSize: 12, fontWeight: 600, cursor: refreshing ? "wait" : "pointer" }}>
+                <NavIcon name="refresh" size={14} className={refreshing ? "gk-spin" : undefined} />Refresh
+              </button>
+            }>Exchange Rate</QxSectionTitle>
+            <div className="gk-qx-rategrid">
+              <div>
+                <label htmlFor="qx-rate" style={{ display: "block", fontSize: 11, fontWeight: 600, color: C.slate, marginBottom: 5 }}>Customer Exchange Rate (SLSH per USD)</label>
+                <MoneyInput id="qx-rate" placeholder={rate ? String(rate) : ""} value={rateUsed} onChange={(e) => setRateUsed(e.target.value.replace(/^-/, ""))} disabled={busy} aria-invalid={!!rateError}
+                  style={{ fontFamily: FONT_MONO, fontWeight: 700, fontSize: 15, fontVariantNumeric: "tabular-nums" }} />
+                {rateUsed !== "" && Number(rateUsed) !== Number(rate) && rate ? (
+                  <button type="button" onClick={() => setRateUsed("")} style={{ background: "none", border: "none", color: EX.primary, textDecoration: "underline", cursor: "pointer", fontSize: 11, padding: 0, marginTop: 5 }}>Use current Daily Rate ({fmtRate(rate)})</button>
+                ) : <div style={{ fontSize: 11, color: C.slate, marginTop: 5 }}>Blank = current Daily Rate. Type a rate to use it for this exchange only.</div>}
+                <QxFieldError>{rateError}</QxFieldError>
+              </div>
+              <div className="gk-qx-ratetiles">
+                <div className="gk-qx-tile"><span><NavIcon name="trendUp" size={13} />Daily Rate</span><b>{fmtRate(rate)}</b></div>
+                <div className="gk-qx-tile"><span><NavIcon name="trendDown" size={13} />Sale Rate</span><b>{fmtRate(effectiveSaleRate)}</b></div>
+                <div className="gk-qx-tile"><span><NavIcon name="compareArrows" size={13} />Rate Difference</span><b style={{ color: rateDiff > 0 ? EX.success : rateDiff < 0 ? EX.danger : C.ink }}>{rateDiff === null ? "—" : `${rateDiff > 0 ? "+" : ""}${fmtRate(rateDiff)}`}</b></div>
               </div>
             </div>
+          </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 16 }}>
-              <button type="button" disabled={!canSave} onClick={submit} className="gk-exw-save-btn" style={{ width: "100%", padding: "12px 16px", borderRadius: 10, border: "none", background: EX.primary, color: "#fff", fontWeight: 700, fontSize: 14, cursor: canSave ? "pointer" : "not-allowed", opacity: canSave ? 1 : 0.55 }}>
-                {saving ? (editingTx ? "Saving…" : "Recording…") : (editingTx ? "Save Changes" : "Record Exchange")}
-              </button>
-              <button type="button" disabled={saving} onClick={onClose} style={{ width: "100%", padding: "11px 16px", borderRadius: 10, border: `1px solid ${C.line}`, background: C.card, color: C.ink, fontWeight: 600, fontSize: 13.5, cursor: saving ? "not-allowed" : "pointer" }}>Cancel</button>
+          {/* RESULT + PROFIT */}
+          <div className="gk-qx-results">
+            <div key={`recv-${curReceived}-${auto}`} className="gk-exw-flash" style={{ borderRadius: 12, padding: 16, background: EX.successBg, border: `1px solid ${EX.success}33` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, fontWeight: 700, color: EX.success }}><NavIcon name="wallet" size={16} />You Will Receive</div>
+              <div style={{ fontSize: 24, fontWeight: 800, fontFamily: FONT_MONO, color: C.ink, marginTop: 6, fontVariantNumeric: "tabular-nums", overflowWrap: "anywhere" }} aria-live="polite">{fmtMoney(effectiveReceived, curReceived)}</div>
+              <div style={{ fontSize: 11, color: C.slate, marginTop: 3 }}>{amountReceived !== "" ? "Manually set in Additional Details." : `At ${fmtRate(effectiveRate)} SLSH per USD`}</div>
             </div>
+            <div style={{ borderRadius: 12, padding: 16, background: profitNum < 0 ? EX.dangerBg : EX.successBg, border: `1px solid ${profitNum < 0 ? EX.danger : EX.success}33` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, fontWeight: 700, color: profitNum < 0 ? EX.danger : EX.success }}>
+                <NavIcon name="chartCombined" size={16} />Estimated Profit
+                <span tabIndex={0} aria-label="How profit is calculated" title="Profit = the spread between the customer rate and the Sale Rate (the rate the business sources currency at), in USD. It can be overridden in Additional Details." style={{ display: "flex", color: C.slate, cursor: "help" }}><NavIcon name="info" size={14} /></span>
+              </div>
+              <div style={{ fontSize: 24, fontWeight: 800, fontFamily: FONT_MONO, color: profitNum < 0 ? EX.danger : C.ink, marginTop: 6, fontVariantNumeric: "tabular-nums" }} aria-live="polite">{fmtMoney(profitNum, "USD")}</div>
+              <div style={{ fontSize: 11, color: C.slate, marginTop: 3 }}>{!effectiveSaleRate ? "Set a Sale Rate to calculate profit automatically." : profitTouched ? "Manually set." : "Automatic, from the Sale Rate spread."}</div>
+            </div>
+          </div>
+
+          {/* ADDITIONAL DETAILS */}
+          <div style={{ ...QX_CARD, padding: 0 }}>
+            <button type="button" onClick={() => setDetailsOpen((o) => !o)} aria-expanded={detailsOpen} aria-controls="qx-details"
+              style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 16px", background: "none", border: "none", cursor: "pointer", color: C.ink, fontWeight: 700, fontSize: 12.5 }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 8 }}><NavIcon name="fileText" size={15} style={{ color: EX.primary }} />Additional Details (Optional)</span>
+              <NavIcon name={detailsOpen ? "chevronUp" : "chevronDown"} size={17} />
+            </button>
+            {detailsOpen && (
+              <div id="qx-details" className="gk-exw-profitdate" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, padding: "0 16px 16px" }}>
+                <div>
+                  <label htmlFor="qx-date" style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, fontWeight: 600, color: C.ink, marginBottom: 4 }}><NavIcon name="calendarClock" size={14} style={{ color: EX.primary }} />Date & Time</label>
+                  <Input id="qx-date" type="datetime-local" value={date} disabled={busy} onChange={(e) => { setDateTouched(true); setDate(e.target.value); }} />
+                  <div style={{ fontSize: 11, color: C.slate, marginTop: 4 }}>{dateTouched ? "Recorded with the date & time above." : "Left as is, the exact time of saving is used."}</div>
+                </div>
+                <div>
+                  <label htmlFor="qx-notes" style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, fontWeight: 600, color: C.ink, marginBottom: 4 }}><NavIcon name="fileText" size={14} style={{ color: EX.primary }} />Reference / Notes</label>
+                  <Input id="qx-notes" value={notes} disabled={busy} onChange={(e) => setNotes(e.target.value)} />
+                  <div style={{ fontSize: 11, color: C.slate, marginTop: 4 }}>{editingTx ? `Reference: ${editingTx.referenceNumber || "—"}` : "A reference number is assigned automatically on save."}</div>
+                </div>
+                <div>
+                  <label htmlFor="qx-recv" style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, fontWeight: 600, color: C.ink, marginBottom: 4 }}><NavIcon name="arrowDownLeft" size={14} style={{ color: EX.primary }} /><span>Amount received override ({curReceived})</span></label>
+                  <MoneyInput id="qx-recv" placeholder={auto ? auto.toFixed(curReceived === "USD" ? 2 : 0) : ""} value={amountReceived} disabled={busy} onChange={(e) => setAmountReceived(e.target.value.replace(/^-/, ""))} style={{ fontFamily: FONT_MONO }} />
+                  <div style={{ fontSize: 11, color: C.slate, marginTop: 4 }}>Blank = automatic at the exchange rate.</div>
+                </div>
+                <div>
+                  <label htmlFor="qx-sale" style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, fontWeight: 600, color: C.ink, marginBottom: 4 }}><NavIcon name="trendDown" size={14} style={{ color: EX.primary }} />Sale Rate for this exchange</label>
+                  <MoneyInput id="qx-sale" placeholder={saleRate ? String(saleRate) : "—"} value={saleRateUsed} disabled={busy} onChange={(e) => setSaleRateUsed(e.target.value.replace(/^-/, ""))} style={{ fontFamily: FONT_MONO }} />
+                  <div style={{ fontSize: 11, color: C.slate, marginTop: 4 }}>Blank = current Sale Rate. Used only for the profit estimate.</div>
+                </div>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <label htmlFor="qx-profit" style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, fontWeight: 600, color: C.ink, marginBottom: 4 }}><NavIcon name="chartCombined" size={14} style={{ color: EX.primary }} />Profit override (USD)</label>
+                  <MoneyInput id="qx-profit" value={profitUsd} disabled={busy} onChange={(e) => { setProfitTouched(true); setProfitUsd(e.target.value); }} style={{ fontFamily: FONT_MONO, maxWidth: 260 }} />
+                  {profitTouched && effectiveSaleRate ? (
+                    <button type="button" onClick={() => setProfitTouched(false)} style={{ display: "block", background: "none", border: "none", color: EX.primary, textDecoration: "underline", cursor: "pointer", fontSize: 11, padding: 0, marginTop: 5 }}>
+                      Use automatic value ({fmtMoney(autoProfit, "USD")})
+                    </button>
+                  ) : <div style={{ fontSize: 11, color: C.slate, marginTop: 4 }}>Edit to override the automatic profit.</div>}
+                </div>
+              </div>
+            )}
           </div>
         </div>
+
+        {/* ---------------- SUMMARY COLUMN ---------------- */}
+        <div className="gk-qx-summary" style={{ position: "sticky", top: 0 }}>
+          <div style={{ background: EX.primaryDark, borderRadius: 12, padding: 18, color: "#fff", boxShadow: "0 8px 24px color-mix(in srgb, var(--c-navy-deep) 25%, transparent)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", opacity: 0.85, marginBottom: 14 }}><NavIcon name="clipboardList" size={16} />Exchange Summary</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: 13 }}>
+              {sumRow("userRound", "Customer", trackMode === "walkin" ? "Walk-in" : (fromAccount ? toTitleCase(fromAccount.name) : toAccount ? toTitleCase(toAccount.name) : "—"), { mono: false })}
+              <div style={{ height: 1, background: "rgba(255,255,255,0.14)" }} />
+              {sumRow(curIcon(currencyGiven), "From Currency", currencyGiven)}
+              {sumRow("arrowUpRight", "Amount Given", amountNum > 0 ? fmtMoney(amountNum, currencyGiven) : "—")}
+              {sumRow("arrowLeftRight", "Exchange Rate", fmtRate(effectiveRate))}
+              <div style={{ height: 1, background: "rgba(255,255,255,0.14)" }} />
+              {sumRow(curIcon(curReceived), "To Currency", curReceived)}
+              {sumRow("arrowDownLeft", "Amount Received", fmtMoney(effectiveReceived, curReceived))}
+              {trackMode === "account" && toAccount && sumRow("landmark", "Into", toTitleCase(toAccount.name), { mono: false })}
+              <div style={{ height: 1, background: "rgba(255,255,255,0.14)" }} />
+              {sumRow("trendUp", "Estimated Profit", fmtMoney(profitNum, "USD"), { color: profitNum > 0 ? "#6EE7B7" : profitNum < 0 ? "#FCA5A5" : "#fff" })}
+            </div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
+            <button type="button" disabled={!canSave} onClick={submit} aria-busy={busy} className="gk-exw-save-btn"
+              style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 16px", borderRadius: 10, border: "none", background: EX.primary, color: "#fff", fontWeight: 700, fontSize: 14, cursor: canSave ? "pointer" : "not-allowed", opacity: canSave ? 1 : 0.55 }}>
+              <NavIcon name={busy ? "loader" : "checkCircle2"} size={17} className={busy ? "gk-spin" : undefined} />
+              {busy ? (editingTx ? "Saving…" : "Recording…") : (editingTx ? "Save Changes" : "Record Exchange")}
+            </button>
+            <button type="button" disabled={busy} onClick={onClose}
+              style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, padding: "11px 16px", borderRadius: 10, border: `1px solid ${C.line}`, background: C.card, color: C.ink, fontWeight: 600, fontSize: 13.5, cursor: busy ? "not-allowed" : "pointer" }}>
+              <NavIcon name="x" size={16} />Cancel
+            </button>
+            {!canSave && !busy && triedSubmit && <div style={{ fontSize: 11.5, color: EX.danger, textAlign: "center" }}>Fix the highlighted fields to record this exchange.</div>}
+          </div>
+        </div>
+      </div>
+
+      {manageRatesOpen && (
+        <ManageRatesModal call={call} notify={notify} rate={rate} saleRate={saleRate} dailySlshRate={dailySlshRate}
+          onSaved={(d, s, slsh) => { onRateChanged?.(d); onSaleRateChanged?.(s); onDailySlshRateChanged?.(slsh); }}
+          onClose={() => setManageRatesOpen(false)} />
+      )}
     </div>
   );
 }
