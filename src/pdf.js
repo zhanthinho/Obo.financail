@@ -1203,7 +1203,9 @@ async function renderTransferReceiptPDF({ company, t, generatedBy, template }) {
 // renderTablePDF, so the "reports" kind's active PDF Template actually
 // applies to them. renderTablePDF itself is untouched and still used
 // elsewhere (bulk list exports that aren't a per-kind "document").
-async function renderReportPDF({ company, title, meta, columns, rows, generatedBy, template }) {
+// totalsRow (optional): { <column index>: text } — drawn as a bold, shaded
+// TOTAL line under the table (e.g. { 1: "TOTAL BALANCE", 3: "$1,234.00" }).
+async function renderReportPDF({ company, title, meta, columns, rows, generatedBy, template, totalsRow }) {
   const cols = columns.map((c, i) => ({ key: `c${i}`, label: c.label, width: c.width, align: c.align }));
   return renderProfessionalDocument({
     company, generatedBy, template,
@@ -1211,6 +1213,7 @@ async function renderReportPDF({ company, title, meta, columns, rows, generatedB
     subtitleLines: [meta || ""].filter(Boolean),
     table: {
       columns: cols, rows,
+      totalsRow: totalsRow ? Object.fromEntries(Object.entries(totalsRow).map(([i, v]) => [`c${i}`, v])) : undefined,
       cellText: (r, key) => {
         const i = Number(key.slice(1));
         return r[i] != null ? String(r[i]) : "—";

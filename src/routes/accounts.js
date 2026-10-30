@@ -211,6 +211,18 @@ function register(router) {
         const balance = c.currency === "USD" ? c.balance_usd : c.balance_slsh;
         return [c.account_number, c.name, c.contact || "—", fmtMoney(balance, c.currency)];
       }),
+      // TOTAL BALANCE line: the sum of the listed accounts' balances, kept
+      // per currency (USD and SLSH are never added together).
+      totalsRow: (() => {
+        const sum = { USD: 0, SLSH: 0 }, seen = { USD: false, SLSH: false };
+        for (const c of rows) {
+          const cur = c.currency === "USD" ? "USD" : "SLSH";
+          sum[cur] += Number(c.currency === "USD" ? c.balance_usd : c.balance_slsh) || 0;
+          seen[cur] = true;
+        }
+        const parts = ["USD", "SLSH"].filter((k) => seen[k] || k === currency).map((k) => fmtMoney(Math.round(sum[k] * 100) / 100, k));
+        return { 1: "TOTAL BALANCE", 3: parts.join("  ·  ") || fmtMoney(0, currency || "USD") };
+      })(),
     });
     addAudit(user, "Accounts exported (PDF)", `${rows.length} account(s)${currency ? ` — ${currency}` : ""}`);
     sendPDF(res, `obo-accounts${currency ? `-${currency.toLowerCase()}` : ""}.pdf`, pdf);
