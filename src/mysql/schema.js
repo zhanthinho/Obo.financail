@@ -76,6 +76,18 @@ const EXTRA_CONTROL_TABLES = [
       PRIMARY KEY ("scope", "table_name")
     ) ${TABLE_OPTIONS}`,
   },
+  {
+    // FULL SYSTEM AUDIT round: sessions ended with "Sign out" (see
+    // src/session-revocation.js). Only a SHA-256 of the token is kept, never
+    // the token; a row is useless once its token has expired and is pruned.
+    name: "revoked_sessions",
+    ddl: (p) => `CREATE TABLE IF NOT EXISTS "${p}revoked_sessions" (
+      "token_hash" VARCHAR(64) NOT NULL PRIMARY KEY,
+      "expires_at" BIGINT NOT NULL,
+      "revoked_at" VARCHAR(40) NOT NULL,
+      KEY "idx_revoked_sessions_expires" ("expires_at")
+    ) ${TABLE_OPTIONS}`,
+  },
 ];
 
 function tablesFor(kind) { return kind === "tenant" ? SCHEMA.tenantTables : SCHEMA.controlTables; }

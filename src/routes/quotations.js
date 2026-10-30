@@ -1,5 +1,5 @@
 "use strict";
-const { isValidAmount } = require("../util");
+const { isValidAmount, toNumber } = require("../util");
 const { all, get, run, tx } = require("../db");
 const { sendJSON, badRequest, notFound, sendCSV, sendPDF, sendXLSX, readJSONBody } = require("../http-helpers");
 const { requireAuth, requirePerm, allowedCurrencies } = require("../rbac");
@@ -71,9 +71,10 @@ function validateItems(items) {
   for (const it of items) {
     if (!it.description || !it.description.trim()) return "Each item needs a description.";
     if (!it.currency || !["USD", "SLSH"].includes(it.currency)) return "Each item needs a currency (USD or SLSH).";
-    if (!(Number(it.qty) > 0)) return "Each item needs a quantity greater than 0.";
-    if (Number.isNaN(Number(it.unitPrice))) return "Each item needs a valid numeric unit price.";
-    if (!Number.isFinite(Number(it.qty)) || Number(it.qty) > 1e9 || !Number.isFinite(Number(it.unitPrice)) || Math.abs(Number(it.unitPrice)) > 1e12) return "An item quantity or unit price is too large.";
+    // FULL SYSTEM AUDIT round: strict numbers (true / [5] are not a quantity).
+    if (!(toNumber(it.qty) > 0)) return "Each item needs a quantity greater than 0.";
+    if (Number.isNaN(toNumber(it.unitPrice))) return "Each item needs a valid numeric unit price.";
+    if (!Number.isFinite(toNumber(it.qty)) || toNumber(it.qty) > 1e9 || !Number.isFinite(toNumber(it.unitPrice)) || Math.abs(toNumber(it.unitPrice)) > 1e12) return "An item quantity or unit price is too large.";
   }
   return null;
 }
@@ -137,7 +138,7 @@ function buildQuotationFilter(query, user) {
 function insertItems(quotationId, items) {
   for (const it of items) {
     run("INSERT INTO quotation_items (id, quotation_id, description, qty, unit_price, currency, extra_fields) VALUES (?,?,?,?,?,?,?)", [
-      uid("it"), quotationId, it.description, Number(it.qty), Number(it.unitPrice), it.currency,
+      uid("it"), quotationId, it.description, toNumber(it.qty), toNumber(it.unitPrice), it.currency,
       it.extraFields && Object.keys(it.extraFields).length ? JSON.stringify(it.extraFields) : null,
     ]);
   }
@@ -350,7 +351,7 @@ function register(router) {
     if (!body.clientName) return badRequest(res, "clientName is required.");
     const itemErr = validateItems(body.items);
     if (itemErr) return badRequest(res, itemErr);
-    if (body.rateUsed !== undefined && body.rateUsed !== "" && body.rateUsed !== null && !(Number(body.rateUsed) > 0)) {
+    if (body.rateUsed !== undefined && body.rateUsed !== "" && body.rateUsed !== null && !(toNumber(body.rateUsed) > 0 && toNumber(body.rateUsed) <= 1e9)) {
       return badRequest(res, "Rate must be a positive number.");
     }
     if (body.currencyMode !== undefined && body.currencyMode !== "" && body.currencyMode !== null && !VALID_CURRENCY_MODES.has(body.currencyMode)) {
@@ -415,7 +416,7 @@ function register(router) {
       // conversion is a no-op, see util.js's convert()), so a missing/blank
       // rate here just falls back to the existing rate (or the live Daily
       // Rate at creation time) rather than blocking the save.
-      rateUsed = body.rateUsed !== undefined && body.rateUsed !== "" && body.rateUsed !== null ? Number(body.rateUsed) : existing.rate_used;
+      rateUsed = body.rateUsed !== undefined && body.rateUsed !== "" && body.rateUsed !== null ? toNumber(body.rateUsed) : existing.rate_used;
       if (!(rateUsed > 0)) return badRequest(res, "Rate must be a positive number.");
       discountPercent = body.discountPercent !== undefined ? Number(body.discountPercent) : existing.discount_percent;
       taxPercent = body.taxPercent !== undefined ? Number(body.taxPercent) : existing.tax_percent;

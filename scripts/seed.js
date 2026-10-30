@@ -22,6 +22,10 @@ function daysAgoISO(n, hour = 9, min = 0) {
   const d = new Date();
   d.setDate(d.getDate() - n);
   d.setHours(hour, min, 0, 0);
+  // Demo data is never dated in the future: seeded between midnight and
+  // 09:00, "today 09:00" would otherwise sort above anything entered now.
+  const latest = Date.now() - (n + 1) * 60 * 1000;
+  if (d.getTime() > latest) d.setTime(latest);
   return d.toISOString();
 }
 

@@ -1,5 +1,5 @@
 "use strict";
-const { isValidAmount } = require("../util");
+const { isValidAmount, toNumber } = require("../util");
 const { all, get, run, tx } = require("../db");
 const { sendJSON, badRequest, notFound, readJSONBody, sendPDF, sendXLSX, sendCSV } = require("../http-helpers");
 const { requireAuth, requirePerm, allowedCurrencies, requireCurrencyAccess, hasCurrencyAccess, can } = require("../rbac");
@@ -41,7 +41,10 @@ const accountImport = require("../account-import");
 const MAX_OPENING_ABS = 1e13;
 function parseOpeningBalance(raw) {
   if (raw === undefined || raw === null || raw === "") return { value: 0 };
-  const n = typeof raw === "number" ? raw : Number(String(raw).replace(/,/g, "").trim());
+  // FULL SYSTEM AUDIT round: only a number or text ("1,250.50"); [5] or true
+  // used to be accepted as 5 / 1.
+  if (typeof raw !== "number" && typeof raw !== "string") return { error: "Opening Balance must be a number." };
+  const n = typeof raw === "number" ? raw : toNumber(String(raw).replace(/,/g, "").trim());
   if (!Number.isFinite(n)) return { error: "Opening Balance must be a number." };
   if (Math.abs(n) > MAX_OPENING_ABS) return { error: "Opening Balance is too large." };
   return { value: Math.round(n * 100) / 100 };
@@ -895,7 +898,7 @@ function register(router) {
       if (!requireCurrencyAccess(user, res, c.currency)) return;
       if (c.status !== "active") return badRequest(res, "This account is deactivated — reactivate it before making new transactions.");
       let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
-      const amount = Number(body.amount);
+      const amount = toNumber(body.amount);
       const currency = c.currency; // an account only ever transacts in its own currency now
       if (body.currency && body.currency !== currency) return badRequest(res, `This account is ${currency} — amounts must be in ${currency}.`);
       if (!isValidAmount(amount)) return badRequest(res, "Enter a positive amount.");
@@ -995,7 +998,7 @@ function register(router) {
       if (!c) { itemErrors.push({ index, error: "Account not found." }); continue; }
       if (!hasCurrencyAccess(user, c.currency)) { itemErrors.push({ index, error: `Your role does not have access to ${c.currency} accounts.` }); continue; }
       if (c.status !== "active") { itemErrors.push({ index, error: `${c.account_number} is deactivated — reactivate it before making new transactions.` }); continue; }
-      const amount = Number(item.amount);
+      const amount = toNumber(item.amount);
       const currency = c.currency;
       if (item.currency && item.currency !== currency) { itemErrors.push({ index, error: `This account is ${currency} — amounts must be in ${currency}.` }); continue; }
       if (!isValidAmount(amount)) { itemErrors.push({ index, error: "Enter a positive amount." }); continue; }

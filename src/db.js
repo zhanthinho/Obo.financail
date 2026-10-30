@@ -150,7 +150,10 @@ function all(sql, params = []) {
 // file lock gave each company before.
 function tx(fn) {
   const d = currentDb();
-  const lockName = `finman_tx_${d.scope.prefix}`;
+  // FULL SYSTEM AUDIT round: MySQL named locks are server-wide, not
+  // per-database — the name now includes the database, so two installations
+  // sharing one MySQL server (e.g. a staging copy) never block each other.
+  const lockName = `finman_tx_${require("crypto").createHash("sha1").update(`${String(process.env.DB_NAME || "").trim()}|${d.scope.prefix}`).digest("hex").slice(0, 40)}`;
   const got = d.prepare("SELECT GET_LOCK(?, 30) AS ok").get(lockName);
   if (!got || got.ok !== 1) {
     const e = new Error("Another save for this company is still running — please try again.");

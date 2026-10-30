@@ -195,7 +195,11 @@ function resolvedPermsPayload(userRow) {
 function bearerPayload(req) {
   const header = req.headers["authorization"] || "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : null;
-  return auth.verify(token);
+  const payload = auth.verify(token);
+  // FULL SYSTEM AUDIT round: a session ended with "Sign out" stays ended,
+  // even if a copy of its token is replayed (src/session-revocation.js).
+  if (payload && require("./session-revocation").isRevoked(token)) return null;
+  return payload;
 }
 
 // SECURITY AUDIT round: a session that signed in with a published default

@@ -4,6 +4,12 @@ const { sendJSON, sendCSV, notFound, badRequest, readJSONBody } = require("../ht
 const { requireAuth, requirePerm } = require("../rbac");
 const { getCurrentRate, getCurrentSaleRate, getCurrentDailySlshRate, saveRateHistory, addAudit } = require("../domain");
 const { validateRates } = require("../exchange-calc");
+const { toNumber } = require("../util");
+// FULL SYSTEM AUDIT round: a rate is a real number between 0 and 1e9 — the
+// same ceiling the exchange routes already enforce, so a saved rate can never
+// be one that every new exchange then refuses.
+const MAX_RATE = 1e9;
+const rateOk = (n) => Number.isFinite(n) && n > 0 && n <= MAX_RATE;
 const { toCSV } = require("../csv");
 
 const PAIR_LABELS = { USD_SLSH: "USD → SLSH" };
@@ -145,23 +151,26 @@ function register(router) {
     const user = requireAuth(req, res); if (!user) return;
     if (!requirePerm(user, res, "rates.create")) return;
     let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
-    const dailyRate = Number(body.dailyRate);
-    const saleRate = Number(body.saleRate);
-    if (!dailyRate || dailyRate <= 0) return badRequest(res, "Provide a positive numeric Daily Rate (SLSH per 1 USD).");
-    if (!saleRate || saleRate <= 0) return badRequest(res, "Provide a positive numeric Sale Rate (SLSH per 1 USD).");
+    const dailyRate = toNumber(body.dailyRate);
+    const saleRate = toNumber(body.saleRate);
+    if (!rateOk(dailyRate)) return badRequest(res, "Provide a positive numeric Daily Rate (SLSH per 1 USD).");
+    if (!rateOk(saleRate)) return badRequest(res, "Provide a positive numeric Sale Rate (SLSH per 1 USD).");
     // DAILY SLSH RATE round: optional, record-only — unlike Daily/Sale Rate
     // above, this is never required (an installation that never fills it in
     // behaves exactly as it always has).
     let dailySlshRate;
     if (body.dailySlshRate !== undefined && body.dailySlshRate !== "" && body.dailySlshRate !== null) {
-      dailySlshRate = Number(body.dailySlshRate);
-      if (!dailySlshRate || dailySlshRate <= 0) return badRequest(res, "Daily SLSH Rate must be a positive number.");
+      dailySlshRate = toNumber(body.dailySlshRate);
+      if (!rateOk(dailySlshRate)) return badRequest(res, "Daily SLSH Rate must be a positive number.");
     }
     // GLOBAL RATE & PROFIT round: optional Cost / Buy / Sell rates.
     const rateErr = validateRates(body);
     if (rateErr) return badRequest(res, rateErr);
-    const opt = (v) => (v === undefined || v === null || v === "" ? undefined : Number(v));
+    const opt = (v) => (v === undefined || v === null || v === "" ? undefined : toNumber(v));
     const costRate = opt(body.costRate), buyRate = opt(body.buyRate), sellRate = opt(body.sellRate);
+    for (const [label, v] of [["Cost Rate", costRate], ["Buy Rate USD-SLSH", buyRate], ["Sell Rate SLSH-USD", sellRate]]) {
+      if (v !== undefined && !rateOk(v)) return badRequest(res, `${label} must be a positive number.`);
+    }
     const currencyPair = body.currencyPair && PAIR_LABELS[body.currencyPair] ? body.currencyPair : "USD_SLSH";
     const note = typeof body.note === "string" && body.note.trim() ? body.note.trim() : null;
     const saved = saveRateHistory({ dailyRate, saleRate, dailySlshRate, costRate, buyRate, sellRate, note, user, currencyPair });

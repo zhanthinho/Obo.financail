@@ -1,5 +1,5 @@
 "use strict";
-const { isValidAmount } = require("../util");
+const { isValidAmount, toNumber } = require("../util");
 const { all, get, run, tx } = require("../db");
 const { sendJSON, sendCSV, sendPDF, badRequest, notFound, readJSONBody } = require("../http-helpers");
 const { requireAuth, requirePerm, can, allowedCurrencies, requireCurrencyAccess } = require("../rbac");
@@ -213,7 +213,7 @@ function register(router) {
     if (!requireCurrencyAccess(user, res, entry.currency)) return;
     if (rejectIfLinked(res, entry)) return;
     let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
-    const amount = body.amount !== undefined ? Number(body.amount) : entry.amount;
+    const amount = body.amount !== undefined ? toNumber(body.amount) : entry.amount;
     if (!isValidAmount(amount)) return badRequest(res, "Amount must be a positive number.");
     const notes = body.notes !== undefined ? body.notes : entry.notes;
     const date = body.date !== undefined ? body.date : entry.date;

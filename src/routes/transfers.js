@@ -1,5 +1,5 @@
 "use strict";
-const { isValidAmount } = require("../util");
+const { isValidAmount, toNumber, moneyExceeds } = require("../util");
 const { all, get, run, tx } = require("../db");
 const { sendJSON, badRequest, notFound, readJSONBody, sendPDF } = require("../http-helpers");
 const { requireAuth, requirePerm, allowedCurrencies, requireCurrencyAccess } = require("../rbac");
@@ -73,7 +73,7 @@ function register(router) {
     const user = requireAuth(req, res); if (!user) return;
     if (!requirePerm(user, res, "accountsManage")) return;
     let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
-    const amount = Number(body.amount);
+    const amount = toNumber(body.amount);
     if (!body.fromAccountId || !body.toAccountId) return badRequest(res, "Both a source and a destination account are required.");
     if (body.fromAccountId === body.toAccountId) return badRequest(res, "Source and destination accounts must be different.");
     if (!isValidAmount(amount)) return badRequest(res, "Enter a positive amount.");
@@ -99,7 +99,7 @@ function register(router) {
     // new, Transfer-specific rule the spec calls for explicitly; it does not
     // change that existing policy anywhere else.
     const availableBalance = currency === "USD" ? fromAccount.balance_usd : fromAccount.balance_slsh;
-    if (amount > availableBalance) {
+    if (moneyExceeds(amount, availableBalance)) {
       return badRequest(res, `Insufficient balance in the source account. Available: ${fmtMoney(availableBalance, currency)}. You can transfer up to ${fmtMoney(availableBalance, currency)}.`);
     }
     const paymentDate = resolvePaymentDate(body.paymentDate);
@@ -109,19 +109,32 @@ function register(router) {
     const id = uid("tr");
     const referenceNumber = nextTransferReference();
 
-    tx(() => {
-      run(
-        `INSERT INTO transfers (id, date, created_at, from_account_id, to_account_id, currency, amount, notes, reference, staff_id, staff_name, status, reference_number)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,'active',?)`,
-        [id, txDate, createdAt, fromAccount.id, toAccount.id, currency, amount, body.notes || null, body.reference || null, user.id, user.name, referenceNumber]
-      );
-      run("INSERT INTO account_ledger (id, client_id, type, currency, amount, balance_after, notes, staff_id, staff_name, date, created_at, source_type, source_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-        [uid("ldg"), fromAccount.id, "withdrawal", currency, amount, 0, `Transfer to ${toAccount.name} (${toAccount.account_number})`, user.id, user.name, txDate, createdAt, "transfer", id]);
-      rebuildAccountBalance(fromAccount.id, currency);
-      run("INSERT INTO account_ledger (id, client_id, type, currency, amount, balance_after, notes, staff_id, staff_name, date, created_at, source_type, source_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-        [uid("ldg"), toAccount.id, "deposit", currency, amount, 0, `Transfer from ${fromAccount.name} (${fromAccount.account_number})`, user.id, user.name, txDate, createdAt, "transfer", id]);
-      rebuildAccountBalance(toAccount.id, currency);
-    });
+    try {
+      tx(() => {
+        // FULL SYSTEM AUDIT round: the balance is checked again inside the
+        // transaction (under the company's write lock), so two transfers sent
+        // at the same moment can't both spend the same money.
+        const fresh = get("SELECT balance_usd, balance_slsh FROM clients WHERE id = ?", [fromAccount.id]);
+        const freshBalance = currency === "USD" ? fresh.balance_usd : fresh.balance_slsh;
+        if (moneyExceeds(amount, freshBalance)) {
+          throw new TransferMutationError(400, `Insufficient balance in the source account. Available: ${fmtMoney(freshBalance, currency)}. You can transfer up to ${fmtMoney(freshBalance, currency)}.`);
+        }
+        run(
+          `INSERT INTO transfers (id, date, created_at, from_account_id, to_account_id, currency, amount, notes, reference, staff_id, staff_name, status, reference_number)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,'active',?)`,
+          [id, txDate, createdAt, fromAccount.id, toAccount.id, currency, amount, body.notes || null, body.reference || null, user.id, user.name, referenceNumber]
+        );
+        run("INSERT INTO account_ledger (id, client_id, type, currency, amount, balance_after, notes, staff_id, staff_name, date, created_at, source_type, source_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+          [uid("ldg"), fromAccount.id, "withdrawal", currency, amount, 0, `Transfer to ${toAccount.name} (${toAccount.account_number})`, user.id, user.name, txDate, createdAt, "transfer", id]);
+        rebuildAccountBalance(fromAccount.id, currency);
+        run("INSERT INTO account_ledger (id, client_id, type, currency, amount, balance_after, notes, staff_id, staff_name, date, created_at, source_type, source_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+          [uid("ldg"), toAccount.id, "deposit", currency, amount, 0, `Transfer from ${fromAccount.name} (${fromAccount.account_number})`, user.id, user.name, txDate, createdAt, "transfer", id]);
+        rebuildAccountBalance(toAccount.id, currency);
+      });
+    } catch (e) {
+      if (e instanceof TransferMutationError) return sendJSON(res, e.status, { error: e.message });
+      throw e;
+    }
     addAudit(user, "Transfer recorded", `${fmtMoney(amount, currency)} from ${fromAccount.name} to ${toAccount.name}`);
     sendJSON(res, 201, { transfer: rowToJSON(get("SELECT * FROM transfers WHERE id = ?", [id])) });
   });
@@ -191,7 +204,7 @@ function register(router) {
     const existingTransfer = get("SELECT currency FROM transfers WHERE id = ?", [params.id]);
     if (existingTransfer && !requireCurrencyAccess(user, res, existingTransfer.currency)) return;
     let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
-    const amount = Number(body.amount);
+    const amount = toNumber(body.amount);
     if (!body.fromAccountId || !body.toAccountId) return badRequest(res, "Both a source and a destination account are required.");
     if (body.fromAccountId === body.toAccountId) return badRequest(res, "Source and destination accounts must be different.");
     if (!isValidAmount(amount)) return badRequest(res, "Enter a positive amount.");
@@ -234,7 +247,7 @@ function register(router) {
         // still includes the very withdrawal being replaced.
         const freshFrom = get("SELECT * FROM clients WHERE id = ?", [newFromAccount.id]);
         const availableBalance = newCurrency === "USD" ? freshFrom.balance_usd : freshFrom.balance_slsh;
-        if (amount > availableBalance) {
+        if (moneyExceeds(amount, availableBalance)) {
           throw new TransferMutationError(400, `Insufficient balance in the source account. Available: ${fmtMoney(availableBalance, newCurrency)}. You can transfer up to ${fmtMoney(availableBalance, newCurrency)}.`);
         }
 

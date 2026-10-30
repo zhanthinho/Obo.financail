@@ -1,5 +1,5 @@
 "use strict";
-const { isValidAmount, MAX_AMOUNT } = require("../util");
+const { isValidAmount, MAX_AMOUNT, toNumber } = require("../util");
 const { all, get, run, tx } = require("../db");
 const { sendJSON, badRequest, notFound, sendCSV, sendPDF, sendXLSX, readJSONBody } = require("../http-helpers");
 const { requireAuth, requirePerm, can, allowedCurrencies } = require("../rbac");
@@ -71,7 +71,7 @@ function resolveExchangeCashAccount(cashAccountId, expectedCurrency, label) {
 // null = not supplied; false = supplied but not a positive number.
 function parseCostRate(v) {
   if (v === undefined || v === null || v === "") return null;
-  const n = Number(v);
+  const n = toNumber(v);
   return Number.isFinite(n) && n > 0 && n <= 1e9 ? n : false;
 }
 function txCostRate(t, lookup) {
@@ -156,26 +156,37 @@ function register(router) {
     }
     if (!requirePerm(user, res, "exchangeCreate")) return;
     let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
-    const given = Number(body.amountGiven);
+    const given = toNumber(body.amountGiven);
+    // FULL SYSTEM AUDIT round: an unknown currency ("EUR", "", 123) used to
+    // be recorded silently as a USD -> SLSH exchange. Left out, it still
+    // means USD (as before); anything else must be exactly USD or SLSH.
+    if (body.currencyGiven !== undefined && body.currencyGiven !== null && body.currencyGiven !== "USD" && body.currencyGiven !== "SLSH") {
+      return badRequest(res, "currencyGiven must be USD or SLSH.");
+    }
     const currencyGiven = body.currencyGiven === "SLSH" ? "SLSH" : "USD";
     if (!body.clientName || !isValidAmount(given)) return badRequest(res, "clientName and a positive amountGiven are required.");
     const currencyReceived = currencyGiven === "USD" ? "SLSH" : "USD";
     // GLOBAL RATE & PROFIT round: with no rate typed, the direction's own
     // rate applies (Buy Rate for USD -> SLSH, Sell Rate for SLSH -> USD),
     // falling back to the Daily Rate until those are set.
-    const rate = body.rateUsed !== undefined && body.rateUsed !== "" && body.rateUsed !== null ? Number(body.rateUsed) : defaultRateFor(currencyGiven, getCurrentRates());
+    const rate = body.rateUsed !== undefined && body.rateUsed !== "" && body.rateUsed !== null ? toNumber(body.rateUsed) : defaultRateFor(currencyGiven, getCurrentRates());
     if (!rate || rate <= 0 || !Number.isFinite(rate) || rate > 1e9) return badRequest(res, "Rate must be a positive number.");
     // COST RATE OVERRIDE round: a Cost Rate typed for THIS exchange only
     // (Quick Exchange -> Rate details); otherwise the company's current one.
     const costOverride = parseCostRate(body.costRate);
     if (costOverride === false) return badRequest(res, "Cost Rate must be a positive number.");
     const costRate = costOverride !== null ? costOverride : getCurrentCostRate();
+    // FULL SYSTEM AUDIT round: an unreadable date was a 500 (RangeError).
+    if (body.date && Number.isNaN(new Date(body.date).getTime())) return badRequest(res, "Enter a valid date.");
     const txDate = body.date ? new Date(body.date).toISOString() : nowISO();
     let received = body.amountReceived !== undefined && body.amountReceived !== "" && body.amountReceived !== null
-      ? Number(body.amountReceived)
+      ? toNumber(body.amountReceived)
       : convert(given, currencyGiven, currencyReceived, rate);
     received = currencyReceived === "USD" ? Math.round(received * 100) / 100 : Math.round(received);
     if (!Number.isFinite(received) || received < 0 || received > MAX_AMOUNT) return badRequest(res, "The received amount must be a valid number within range.");
+    // FULL SYSTEM AUDIT round: an exchange where the customer receives
+    // nothing (typed 0, or a tiny amount that rounds to 0) is refused.
+    if (received === 0) return badRequest(res, "The amount received comes to zero — enter a larger amount.");
     // SALE RATE / EXCHANGE PROFIT round: `profitUsd` stays an editable
     // override (the Money Exchange form still shows and accepts it), but
     // when the caller doesn't explicitly supply one it's no longer
@@ -187,9 +198,9 @@ function register(router) {
     // margin (src/exchange-calc.js) in USD at this exchange's Cost Rate —
     // Sell-side Profit or Buy-side Cost Rate Difference — 0 with no Cost Rate.
     const margin = computeMargin({ currencyGiven, amountGiven: given, amountReceived: received, rate, costRate });
-    const profitUsd = body.profitUsd !== undefined && body.profitUsd !== null && body.profitUsd !== ""
-      ? Number(body.profitUsd) || 0
-      : (margin ? margin.usd : 0);
+    const profitTyped = body.profitUsd !== undefined && body.profitUsd !== null && body.profitUsd !== "";
+    if (profitTyped && !(Number.isFinite(toNumber(body.profitUsd)) && Math.abs(toNumber(body.profitUsd)) <= MAX_AMOUNT)) return badRequest(res, "Profit must be a valid number.");
+    const profitUsd = profitTyped ? toNumber(body.profitUsd) : (margin ? margin.usd : 0);
 
     // ACCOUNT PICKER DIRECTNESS round: From Account and Receiving Account
     // are now two independent picks made directly in the Exchange form
@@ -375,26 +386,37 @@ function register(router) {
     }
     let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
 
-    const given = Number(body.amountGiven);
+    const given = toNumber(body.amountGiven);
+    // FULL SYSTEM AUDIT round: an unknown currency ("EUR", "", 123) used to
+    // be recorded silently as a USD -> SLSH exchange. Left out, it still
+    // means USD (as before); anything else must be exactly USD or SLSH.
+    if (body.currencyGiven !== undefined && body.currencyGiven !== null && body.currencyGiven !== "USD" && body.currencyGiven !== "SLSH") {
+      return badRequest(res, "currencyGiven must be USD or SLSH.");
+    }
     const currencyGiven = body.currencyGiven === "SLSH" ? "SLSH" : "USD";
     if (!body.clientName || !isValidAmount(given)) return badRequest(res, "clientName and a positive amountGiven are required.");
     const currencyReceived = currencyGiven === "USD" ? "SLSH" : "USD";
-    const rate = body.rateUsed !== undefined && body.rateUsed !== "" && body.rateUsed !== null ? Number(body.rateUsed) : defaultRateFor(currencyGiven, getCurrentRates());
+    const rate = body.rateUsed !== undefined && body.rateUsed !== "" && body.rateUsed !== null ? toNumber(body.rateUsed) : defaultRateFor(currencyGiven, getCurrentRates());
     if (!rate || rate <= 0 || !Number.isFinite(rate) || rate > 1e9) return badRequest(res, "Rate must be a positive number.");
     let received = body.amountReceived !== undefined && body.amountReceived !== "" && body.amountReceived !== null
-      ? Number(body.amountReceived)
+      ? toNumber(body.amountReceived)
       : convert(given, currencyGiven, currencyReceived, rate);
     received = currencyReceived === "USD" ? Math.round(received * 100) / 100 : Math.round(received);
     if (!Number.isFinite(received) || received < 0 || received > MAX_AMOUNT) return badRequest(res, "The received amount must be a valid number within range.");
+    // FULL SYSTEM AUDIT round: an exchange where the customer receives
+    // nothing (typed 0, or a tiny amount that rounds to 0) is refused.
+    if (received === 0) return badRequest(res, "The amount received comes to zero — enter a larger amount.");
     // SALE RATE / EXCHANGE PROFIT round: same override-with-fallback as
     // the create route above — an explicit body.profitUsd always wins,
     // otherwise the edited amounts/rate are re-run through the current
     // Sale Rate spread rather than silently keeping whatever profit the
     // row happened to have before the edit.
-    const profitOverride = body.profitUsd !== undefined && body.profitUsd !== null && body.profitUsd !== ""
-      ? Number(body.profitUsd) || 0 : null;
+    const profitTyped = body.profitUsd !== undefined && body.profitUsd !== null && body.profitUsd !== "";
+    if (profitTyped && !(Number.isFinite(toNumber(body.profitUsd)) && Math.abs(toNumber(body.profitUsd)) <= MAX_AMOUNT)) return badRequest(res, "Profit must be a valid number.");
+    const profitOverride = profitTyped ? toNumber(body.profitUsd) : null;
     const costOverride = parseCostRate(body.costRate);
     if (costOverride === false) return badRequest(res, "Cost Rate must be a positive number.");
+    if (body.date && Number.isNaN(new Date(body.date).getTime())) return badRequest(res, "Enter a valid date.");
 
     // Same account-resolution and validation as creating a new exchange
     // (currency-separation rule included: the account must match its side's

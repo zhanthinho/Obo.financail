@@ -247,6 +247,19 @@ function register(router) {
     sendJSON(res, 200, { token, user: { ...sessionUser(user, company, null), mustChangePassword: mustChange } });
   });
 
+  // FULL SYSTEM AUDIT round: server-side sign-out. The token presented is
+  // recorded as ended, so a copy of it can't be used again (company and
+  // Super Admin sessions alike). Other sessions of the same user — another
+  // computer, another browser — are not affected.
+  router.post("/api/auth/logout", (req, res) => {
+    const header = req.headers["authorization"] || "";
+    const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+    const payload = authLib.verify(token);
+    if (!payload) return sendJSON(res, 401, { error: "Missing or invalid authentication token." });
+    require("../session-revocation").revoke(token, payload.exp);
+    sendJSON(res, 200, { ok: true });
+  });
+
   router.get("/api/auth/me", (req, res) => {
     // A Super Admin with no company selected yet only has the platform console.
     const header = req.headers["authorization"] || "";

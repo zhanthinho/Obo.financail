@@ -1,5 +1,5 @@
 "use strict";
-const { isValidAmount, isFiniteMoney } = require("../util");
+const { isValidAmount, isFiniteMoney, toNumber } = require("../util");
 // CASH IN HAND round — company-owned cash accounts (bank / mobile money /
 // physical cash), fully separate from the customer-facing `clients` /
 // `account_ledger` / `transfers` / `exchange_transactions` tables (see the
@@ -232,7 +232,7 @@ function register(router) {
     const user = requireAuth(req, res); if (!user) return;
     if (!requirePerm(user, res, "rateManage")) return;
     let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
-    const rate = Number(body.rate);
+    const rate = toNumber(body.rate);
     if (!rate || rate <= 0) return badRequest(res, "Provide a positive numeric rate (SLSH per 1 USD).");
     saveCashRateHistory({ rate, note: body.note, user });
     addAudit(user, "Cash Account rate updated", `Cash Account exchange rate set to 1 USD = SLSH ${rate.toLocaleString("en-US")}`);
@@ -372,7 +372,7 @@ function register(router) {
     if (!type) return badRequest(res, "A valid Account Type is required.");
     const currency = body.currency === "SLSH" ? "SLSH" : body.currency === "USD" ? "USD" : null;
     if (!currency) return badRequest(res, "Currency must be USD or SLSH.");
-    const opening = body.openingBalance !== undefined && body.openingBalance !== "" && body.openingBalance !== null ? Number(body.openingBalance) : 0;
+    const opening = body.openingBalance !== undefined && body.openingBalance !== "" && body.openingBalance !== null ? toNumber(body.openingBalance) : 0;
     if (Number.isNaN(opening)) return badRequest(res, "Opening Balance must be a number.");
     if (!isFiniteMoney(opening)) return badRequest(res, "Opening Balance is too large.");
     const id = uid("cash");
@@ -474,7 +474,7 @@ function register(router) {
     if (!a) return notFound(res, "Cash account not found.");
     if (a.status !== "active") return badRequest(res, `${a.name} is deactivated — reactivate it before recording a credit.`);
     let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
-    const amount = Number(body.amount);
+    const amount = toNumber(body.amount);
     if (!isValidAmount(amount)) return badRequest(res, "Enter a positive amount.");
     const paymentDate = resolvePaymentDate(body.date);
     if (paymentDate === null) return badRequest(res, "Enter a valid date.");
@@ -497,7 +497,7 @@ function register(router) {
     if (!a) return notFound(res, "Cash account not found.");
     if (a.status !== "active") return badRequest(res, `${a.name} is deactivated — reactivate it before recording a debit.`);
     let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
-    const amount = Number(body.amount);
+    const amount = toNumber(body.amount);
     if (!isValidAmount(amount)) return badRequest(res, "Enter a positive amount.");
     // CASH IN HAND NEGATIVE BALANCE round: a Cash in Hand account may now go
     // negative from a withdrawal, exactly like the customer-accounts debt
@@ -558,7 +558,7 @@ function register(router) {
     if (!existing) return notFound(res, "Entry not found.");
     if (rejectIfLinked(res, existing)) return;
     let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
-    const amount = body.amount !== undefined ? Number(body.amount) : existing.amount;
+    const amount = body.amount !== undefined ? toNumber(body.amount) : existing.amount;
     if (!isValidAmount(amount)) return badRequest(res, "Enter a positive amount.");
     const paymentDate = body.date !== undefined ? resolvePaymentDate(body.date) : existing.date;
     if (paymentDate === null) return badRequest(res, "Enter a valid date.");
@@ -607,7 +607,7 @@ function register(router) {
     const user = requireAuth(req, res); if (!user) return;
     if (!requirePerm(user, res, "cash.transfer")) return;
     let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
-    const amount = Number(body.amount);
+    const amount = toNumber(body.amount);
     if (!body.fromCashAccountId || !body.toCashAccountId) return badRequest(res, "Both a source and a destination cash account are required.");
     if (body.fromCashAccountId === body.toCashAccountId) return badRequest(res, "Source and destination accounts must be different.");
     if (!isValidAmount(amount)) return badRequest(res, "Enter a positive amount.");
@@ -686,7 +686,7 @@ function register(router) {
     const user = requireAuth(req, res); if (!user) return;
     if (!requirePerm(user, res, "cash.exchange")) return;
     let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
-    const given = Number(body.amountGiven);
+    const given = toNumber(body.amountGiven);
     if (!body.fromCashAccountId || !body.toCashAccountId) return badRequest(res, "Both a source and a destination cash account are required.");
     if (!isValidAmount(given)) return badRequest(res, "Enter a positive amount.");
     const fromA = get("SELECT * FROM cash_accounts WHERE id = ?", [body.fromCashAccountId]);
@@ -698,7 +698,7 @@ function register(router) {
     if (fromA.currency === toA.currency) return badRequest(res, "A Cash Exchange must be between a USD account and a SLSH account — use Cash Transfer for same-currency moves.");
     // CASH IN HAND NEGATIVE BALANCE round: see the withdraw route above —
     // the source account is allowed to go negative, same as Accounts.
-    const rate = body.rateUsed !== undefined && body.rateUsed !== "" && body.rateUsed !== null ? Number(body.rateUsed) : getCurrentCashRate();
+    const rate = body.rateUsed !== undefined && body.rateUsed !== "" && body.rateUsed !== null ? toNumber(body.rateUsed) : getCurrentCashRate();
     if (!rate || rate <= 0) return badRequest(res, "Rate must be a positive number.");
     let received = body.amountReceived !== undefined && body.amountReceived !== "" && body.amountReceived !== null
       ? Number(body.amountReceived)

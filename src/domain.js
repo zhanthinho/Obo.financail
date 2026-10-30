@@ -1,6 +1,6 @@
 "use strict";
 const { get, all, run } = require("./db");
-const { uid, nowISO, todayStr, convert, formatPersonName, chronoSortKey } = require("./util");
+const { uid, nowISO, todayStr, convert, formatPersonName, chronoSortKey, cleanMoney } = require("./util");
 
 // RATE MANAGEMENT UNIFICATION round: Daily Rate and Sale Rate now both live
 // in the one unified `rate_history` table (schema.sql) — each save writes
@@ -434,7 +434,7 @@ function rebuildAccountBalance(clientId, currency) {
   });
   let balance = 0;
   for (const e of entries) {
-    balance += e.type === "deposit" ? e.amount : -e.amount;
+    balance = cleanMoney(balance + (e.type === "deposit" ? e.amount : -e.amount));
     run("UPDATE account_ledger SET balance_after = ? WHERE id = ?", [balance, e.id]);
   }
   const field = currency === "USD" ? "balance_usd" : "balance_slsh";
@@ -466,7 +466,7 @@ function rebuildCashAccountBalance(cashAccountId) {
   });
   let balance = 0;
   for (const e of entries) {
-    balance += e.type === "deposit" ? e.amount : -e.amount;
+    balance = cleanMoney(balance + (e.type === "deposit" ? e.amount : -e.amount));
     run("UPDATE cash_ledger SET balance_after = ? WHERE id = ?", [balance, e.id]);
   }
   const lastActivity = entries.length ? entries[entries.length - 1].date : null;

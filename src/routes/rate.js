@@ -1,4 +1,5 @@
 "use strict";
+const { toNumber } = require("../util");
 const { all } = require("../db");
 const { sendJSON, badRequest, readJSONBody } = require("../http-helpers");
 const { requireAuth, requirePerm } = require("../rbac");
@@ -37,7 +38,8 @@ function register(router) {
     const user = requireAuth(req, res); if (!user) return;
     if (!requirePerm(user, res, "rates.updateDaily")) return;
     let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
-    const rate = Number(body.rate);
+    const rate = toNumber(body.rate);
+    if (!(Number.isFinite(rate) && rate <= 1e9)) return badRequest(res, "Provide a positive numeric rate (SLSH per 1 USD).");
     if (!rate || rate <= 0) return badRequest(res, "Provide a positive numeric rate (SLSH per 1 USD).");
     saveRateHistory({ dailyRate: rate, user });
     addAudit(user, "Rate updated", `Exchange rate set to 1 USD = SLSH ${rate.toLocaleString("en-US")}`);

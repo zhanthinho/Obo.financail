@@ -14,7 +14,7 @@ const schema = require("./schema");
 const FORMAT = "finman-mysql-backup";
 const VERSION = 1;
 // Platform bookkeeping tables that are never part of a backup.
-const NOT_BACKED_UP = new Set(["backups", "backup_chunks", "migration_runs"]);
+const NOT_BACKED_UP = new Set(["backups", "backup_chunks", "migration_runs", "revoked_sessions"]);
 
 function encodeValue(v) {
   if (v === undefined) return null;

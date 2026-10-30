@@ -1,5 +1,5 @@
 "use strict";
-const { isValidAmount } = require("../util");
+const { isValidAmount, toNumber } = require("../util");
 // LOAN/DEBT feature — built alongside Cash in Hand since every loan is
 // money LEAVING a specific Cash Account into a customer's hands. Deliberately
 // its own table (cash_loans/cash_loan_payments in schema.sql), never
@@ -79,7 +79,7 @@ function register(router) {
     const cashAccount = get("SELECT * FROM cash_accounts WHERE id = ?", [body.cashAccountId]);
     if (!cashAccount) return notFound(res, "Cash account not found.");
     if (cashAccount.status !== "active") return badRequest(res, `${cashAccount.name} is deactivated.`);
-    const amount = Number(body.amount);
+    const amount = toNumber(body.amount);
     if (!isValidAmount(amount)) return badRequest(res, "Enter a positive loan amount.");
     // CASH IN HAND NEGATIVE BALANCE round: a loan disbursement may take the
     // paying Cash in Hand account negative, same as a plain Cash in Hand
@@ -123,7 +123,7 @@ function register(router) {
     if (!cashAccount) return notFound(res, "Cash account not found.");
     if (cashAccount.status !== "active") return badRequest(res, `${cashAccount.name} is deactivated.`);
     if (cashAccount.currency !== loan.currency) return badRequest(res, `This loan is in ${loan.currency} — repayments must go into a ${loan.currency} cash account.`);
-    const amount = Number(body.amount);
+    const amount = toNumber(body.amount);
     if (!isValidAmount(amount)) return badRequest(res, "Enter a positive repayment amount.");
     if (round2(amount) > round2(loan.outstanding_amount) + 0.005) {
       return badRequest(res, `Repayment exceeds the outstanding balance of ${fmtMoney(loan.outstanding_amount, loan.currency)}.`);

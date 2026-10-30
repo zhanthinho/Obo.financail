@@ -109,6 +109,32 @@ function isFiniteMoney(n) {
   return typeof n === "number" && Number.isFinite(n) && Math.abs(n) <= MAX_AMOUNT;
 }
 
+// FULL SYSTEM AUDIT round: a number field from a request body. Only a real
+// JSON number or a plain numeric string ("12", "12.5", "-3", "1e3") counts;
+// anything else — true, [5], {}, "12abc", "" — becomes NaN so the normal
+// validation refuses it. (Number(true) is 1 and Number([5]) is 5, so a
+// malformed request used to be saved as a real amount.)
+const NUMERIC_STRING = /^\s*[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?\s*$/;
+function toNumber(v) {
+  if (typeof v === "number") return v;
+  if (typeof v === "string" && NUMERIC_STRING.test(v)) return Number(v);
+  return NaN;
+}
+// FULL SYSTEM AUDIT round: running balances are sums of binary floating-point
+// amounts, so 0.1 + 0.2 - 0.3 came out as 0.0000000000000000555 instead of 0
+// (and 0.3 - 0.1 as 0.19999999999999998, so a transfer of the full "0.20"
+// shown on screen was refused as more than the balance). Rounding each step
+// to 8 decimals removes that noise while keeping every real fraction the
+// system records (e.g. a USD amount converted from SLSH).
+function cleanMoney(n) {
+  const v = Math.round((Number(n) || 0) * 1e8) / 1e8;
+  return v === 0 ? 0 : v; // never -0
+}
+// "a is more than b" for money, ignoring floating-point noise.
+function moneyExceeds(a, b) {
+  return cleanMoney(a) - cleanMoney(b) > 1e-8;
+}
+
 // NEWEST-FIRST round: one ordering rule for every transaction list — the
 // latest entry is always first. Uses chronoSortKey (so a same-day bare date
 // is placed by its real insertion time), then the id as a final tie-break
@@ -123,4 +149,4 @@ function newestFirst(rows, dateOf = (r) => r.date, createdOf = (r) => r.created_
   });
 }
 
-module.exports = { uid, nowISO, todayStr, convert, fmtMoney, formatPersonName, resolvePaymentDate, chronoSortKey, newestFirst, MAX_AMOUNT, isValidAmount, isFiniteMoney };
+module.exports = { uid, nowISO, todayStr, convert, fmtMoney, formatPersonName, resolvePaymentDate, chronoSortKey, newestFirst, MAX_AMOUNT, isValidAmount, isFiniteMoney, toNumber, cleanMoney, moneyExceeds };

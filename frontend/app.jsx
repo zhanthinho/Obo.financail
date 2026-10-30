@@ -4371,6 +4371,11 @@ function App() {
     try { localStorage.setItem(TOKEN_KEY, tok); localStorage.setItem(USER_KEY, JSON.stringify(u)); } catch (e) {}
   }
   function logout() {
+    // FULL SYSTEM AUDIT round: end the session on the server too, so a copy
+    // of this token can't be reused. Fire-and-forget: signing out on this
+    // screen never waits for (or depends on) the network.
+    const ending = token || (() => { try { return localStorage.getItem(TOKEN_KEY); } catch (e) { return null; } })();
+    if (ending) { try { fetch("/api/auth/logout", { method: "POST", headers: { Authorization: `Bearer ${ending}` }, keepalive: true }).catch(() => {}); } catch (e) { /* ignore */ } }
     setToken(null); setUser(null); setView("dashboard");
     try { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY); } catch (e) {}
   }
