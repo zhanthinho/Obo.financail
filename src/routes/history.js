@@ -3,7 +3,7 @@ const { all, get } = require("../db");
 const { sendJSON, sendCSV, sendPDF, sendXLSX } = require("../http-helpers");
 const { requireAuth, requirePerm } = require("../rbac");
 const { getCompanySettings, getDefaultPdfTemplate, getDefaultExcelTemplate, quotationPaymentSummary, addAudit } = require("../domain");
-const { fmtMoney } = require("../util");
+const { fmtMoney, chronoSortKey } = require("../util");
 const { toCSV } = require("../csv");
 const { renderReportPDF, renderTransactionStatementPDF } = require("../pdf");
 const { buildTransactionStatementWorkbook } = require("../xlsx-documents");
@@ -67,7 +67,7 @@ function queryHistory(query) {
     const where = clauses.length ? "WHERE " + clauses.join(" AND ") : "";
     const rows = all(`SELECT t.*, c.account_type AS client_account_type, c.contact AS client_phone, c.currency AS client_currency FROM exchange_transactions t LEFT JOIN clients c ON c.id = t.client_id ${where}`, params);
     entries.push(...rows.map((t) => ({
-      id: t.id, recordType: "exchange", reference: t.reference_number || t.id.slice(0, 10), date: normalizeHistoryDate(t.date),
+      id: t.id, sortKey: chronoSortKey(t.date, t.created_at), recordType: "exchange", reference: t.reference_number || t.id.slice(0, 10), date: normalizeHistoryDate(t.date),
       // IMPORTANT: accountCurrency for an exchange must come from the
       // transaction's own currency_given column, NEVER from the client's
       // static clients.currency field. A walk-in client (typed name, no
@@ -161,7 +161,7 @@ function queryHistory(query) {
       return remaining;
     }
     entries.push(...rows.map((l) => ({
-      id: l.id, recordType: "quotation", ledgerType: l.type,
+      id: l.id, sortKey: chronoSortKey(l.date, l.created_at), recordType: "quotation", ledgerType: l.type,
       // Every quotation-tagged ledger row is distinguished ONLY by its own
       // source_type from here on — see historyTypeLabel below — never
       // guessed from the quotation's current (and constantly-changing)
@@ -206,7 +206,7 @@ function queryHistory(query) {
       params
     );
     entries.push(...rows.map((t) => ({
-      id: t.id, recordType: "transfer", reference: t.reference_number || t.id.slice(0, 10), date: normalizeHistoryDate(t.date),
+      id: t.id, sortKey: chronoSortKey(t.date, t.created_at), recordType: "transfer", reference: t.reference_number || t.id.slice(0, 10), date: normalizeHistoryDate(t.date),
       accountName: t.from_name || "—", accountType: t.from_account_type || "customer", accountCurrency: t.from_currency || t.currency, phone: t.from_phone || "",
       amountSummary: `${fmtMoney(t.amount, t.currency)} -> ${t.to_name || "—"}`,
       status: t.status, staffOrCreator: t.staff_name, staffId: t.staff_id, accountId: t.from_account_id, counterpartAccountId: t.to_account_id, notes: t.notes,
@@ -231,7 +231,7 @@ function queryHistory(query) {
       params
     );
     entries.push(...rows.map((l) => ({
-      id: l.id, recordType: "ledger", ledgerType: l.type, reference: l.reference_number || l.id.slice(0, 10), date: normalizeHistoryDate(l.date),
+      id: l.id, sortKey: chronoSortKey(l.date, l.created_at), recordType: "ledger", ledgerType: l.type, reference: l.reference_number || l.id.slice(0, 10), date: normalizeHistoryDate(l.date),
       accountName: l.client_name || "—", accountType: l.client_account_type || "customer", accountCurrency: l.client_currency || l.currency, phone: l.client_phone || "",
       amountSummary: fmtMoney(l.amount, l.currency),
       status: null, staffOrCreator: l.staff_name, staffId: l.staff_id, accountId: l.client_id, notes: l.notes,
@@ -252,7 +252,8 @@ function queryHistory(query) {
       (e.notes || "").toLowerCase().includes(search)
     );
   }
-  entries.sort((a, b) => b.date.localeCompare(a.date));
+  // NEWEST-FIRST round: latest entry first; same-day entries by real insert time, then id.
+  entries.sort((a, b) => (a.sortKey === b.sortKey ? (a.id < b.id ? 1 : a.id > b.id ? -1 : 0) : (a.sortKey < b.sortKey ? 1 : -1)));
   return entries;
 }
 

@@ -98,7 +98,7 @@ function register(router) {
     // SECURITY AUDIT round: permanently deleted accounts keep their row (with
     // its last balance) for history, but their ledger is gone — they must
     // not count towards today's totals, same as every other summary.
-    const recentLedger = all("SELECT l.*, c.name as client_name, c.account_number FROM account_ledger l JOIN clients c ON c.id = l.client_id WHERE c.deleted_at IS NULL ORDER BY l.date DESC LIMIT 8");
+    const recentLedger = all("SELECT l.*, c.name as client_name, c.account_number FROM account_ledger l JOIN clients c ON c.id = l.client_id WHERE c.deleted_at IS NULL ORDER BY l.date DESC, l.created_at DESC, l.id DESC LIMIT 8");
     sendJSON(res, 200, {
       totalAccounts: totals.n || 0, totalCustomers: totals.customers || 0, totalCompanies: totals.companies || 0,
       totalBalanceUSD: totals.usd || 0, totalBalanceSLSH: totals.slsh || 0,

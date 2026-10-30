@@ -14,7 +14,7 @@ const {
   addAudit, getCurrentCashRate, getExplicitCashRate, saveCashRateHistory, rebuildCashAccountBalance,
   nextCashLedgerReference, nextCashTransferReference, nextCashExchangeReference,
 } = require("../domain");
-const { uid, nowISO, fmtMoney, convert, resolvePaymentDate } = require("../util");
+const { uid, nowISO, fmtMoney, convert, resolvePaymentDate, newestFirst } = require("../util");
 
 class CashMutationError extends Error {
   constructor(status, message) { super(message); this.status = status; }
@@ -547,6 +547,7 @@ function register(router) {
     // order; it never changes the relative order of any two rows that don't
     // already tie on both date and created_at.
     const rows = all(`SELECT * FROM cash_ledger ${where} ORDER BY date DESC, created_at DESC, id DESC`, p);
+    newestFirst(rows);
     sendJSON(res, 200, { entries: rows.map(ledgerToJSON) });
   });
 
@@ -597,7 +598,8 @@ function register(router) {
     if (query.cashAccountId) { clauses.push("(from_cash_account_id = ? OR to_cash_account_id = ?)"); p.push(query.cashAccountId, query.cashAccountId); }
     if (query.status && query.status !== "all") { clauses.push("status = ?"); p.push(query.status); }
     const where = clauses.length ? "WHERE " + clauses.join(" AND ") : "";
-    const rows = all(`SELECT * FROM cash_transfers ${where} ORDER BY date DESC`, p);
+    const rows = all(`SELECT * FROM cash_transfers ${where} ORDER BY date DESC, created_at DESC, id DESC`, p);
+    newestFirst(rows);
     sendJSON(res, 200, { transfers: rows.map(cashTransferToJSON) });
   });
 
@@ -675,7 +677,8 @@ function register(router) {
     if (query.cashAccountId) { clauses.push("(from_cash_account_id = ? OR to_cash_account_id = ?)"); p.push(query.cashAccountId, query.cashAccountId); }
     if (query.status && query.status !== "all") { clauses.push("status = ?"); p.push(query.status); }
     const where = clauses.length ? "WHERE " + clauses.join(" AND ") : "";
-    const rows = all(`SELECT * FROM cash_exchanges ${where} ORDER BY date DESC`, p);
+    const rows = all(`SELECT * FROM cash_exchanges ${where} ORDER BY date DESC, created_at DESC, id DESC`, p);
+    newestFirst(rows);
     sendJSON(res, 200, { exchanges: rows.map(cashExchangeToJSON) });
   });
 

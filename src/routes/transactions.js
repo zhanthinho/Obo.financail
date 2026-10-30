@@ -108,7 +108,7 @@ function queryTransactions(user, query) {
     params.push(query.currency);
   }
   const where = clauses.length ? "WHERE " + clauses.join(" AND ") : "";
-  return all(`SELECT * FROM exchange_transactions ${where} ORDER BY date DESC`, params);
+  return all(`SELECT * FROM exchange_transactions ${where} ORDER BY date DESC, id DESC`, params);
 }
 
 function register(router) {

@@ -25,7 +25,7 @@ const { all, get } = require("../db");
 const { sendJSON, sendCSV, sendPDF, badRequest, readJSONBody } = require("../http-helpers");
 const { requireAuth, requirePerm, can } = require("../rbac");
 const { getCompanySettings, getCurrentRate, addAudit, getDefaultPdfTemplate } = require("../domain");
-const { uid, nowISO, todayStr, convert } = require("../util");
+const { uid, nowISO, todayStr, convert, newestFirst } = require("../util");
 const { toCSV } = require("../csv");
 const { renderReportPDF } = require("../pdf");
 
@@ -129,13 +129,13 @@ function exchangeRows(from, to, accountId) {
   const clauses = ["status = 'active'", "date(date) >= date(?)", "date(date) <= date(?)"];
   const params = [from, to];
   if (accountId) { clauses.push("(client_id = ? OR from_account_id = ? OR to_account_id = ?)"); params.push(accountId, accountId, accountId); }
-  return all(`SELECT * FROM exchange_transactions WHERE ${clauses.join(" AND ")} ORDER BY date DESC`, params);
+  return all(`SELECT * FROM exchange_transactions WHERE ${clauses.join(" AND ")} ORDER BY date DESC, id DESC`, params);
 }
 function transferRows(from, to, accountId) {
   const clauses = ["status = 'active'", "date(date) >= date(?)", "date(date) <= date(?)"];
   const params = [from, to];
   if (accountId) { clauses.push("(from_account_id = ? OR to_account_id = ?)"); params.push(accountId, accountId); }
-  return all(`SELECT * FROM transfers WHERE ${clauses.join(" AND ")} ORDER BY date DESC`, params);
+  return all(`SELECT * FROM transfers WHERE ${clauses.join(" AND ")} ORDER BY date DESC, created_at DESC, id DESC`, params);
 }
 function quotationRows(from, to, status, accountId) {
   const clauses = ["date(created_at) >= date(?)", "date(created_at) <= date(?)"];
@@ -354,11 +354,13 @@ function buildDashboard(user, query) {
   // --- recent tables (spec sections 21-24) ---
   const RECENT_LIMIT = 10;
   payload.recentTransactions = [
-    ...plainLedger.map((l) => ({ id: l.id, date: l.date, reference: l.reference_number, type: l.type === "deposit" ? "Credit" : "Debit", accountId: l.client_id, currency: l.currency, amount: l.amount, note: l.notes || "", status: null })),
+    ...plainLedger.map((l) => ({ id: l.id, _createdAt: l.created_at, date: l.date, reference: l.reference_number, type: l.type === "deposit" ? "Credit" : "Debit", accountId: l.client_id, currency: l.currency, amount: l.amount, note: l.notes || "", status: null })),
     ...exchanges.map((e) => ({ id: e.id, date: e.date, reference: e.reference_number, type: "Exchange", accountId: e.client_id, currency: e.currency_given, amount: e.amount_given, note: e.notes || "", status: e.status })),
-    ...transfers.map((t) => ({ id: t.id, date: t.date, reference: t.reference_number, type: "Transfer", accountId: t.from_account_id, currency: t.currency, amount: t.amount, note: t.notes || "", status: t.status })),
-  ].sort((a, b) => b.date.localeCompare(a.date)).slice(0, RECENT_LIMIT);
-  payload.recentPayments = plainLedger.slice().sort((a, b) => b.date.localeCompare(a.date)).slice(0, RECENT_LIMIT)
+    ...transfers.map((t) => ({ id: t.id, _createdAt: t.created_at, date: t.date, reference: t.reference_number, type: "Transfer", accountId: t.from_account_id, currency: t.currency, amount: t.amount, note: t.notes || "", status: t.status })),
+  ];
+  newestFirst(payload.recentTransactions, (r) => r.date, (r) => r._createdAt);
+  payload.recentTransactions = payload.recentTransactions.slice(0, RECENT_LIMIT).map(({ _createdAt, ...r }) => r);
+  payload.recentPayments = newestFirst(plainLedger.slice()).slice(0, RECENT_LIMIT)
     .map((l) => ({ id: l.id, date: l.date, reference: l.reference_number, accountId: l.client_id, currency: l.currency, amount: l.amount, type: l.type }));
   if (quotationsGate) {
     payload.recentQuotations = quotations.slice(0, RECENT_LIMIT)

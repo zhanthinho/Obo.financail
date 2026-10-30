@@ -4,7 +4,7 @@ const { all, get, run, tx } = require("../db");
 const { sendJSON, badRequest, notFound, readJSONBody, sendPDF } = require("../http-helpers");
 const { requireAuth, requirePerm, allowedCurrencies, requireCurrencyAccess } = require("../rbac");
 const { addAudit, rebuildAccountBalance, nextTransferReference, getCompanySettings, getDefaultPdfTemplate } = require("../domain");
-const { uid, nowISO, fmtMoney, resolvePaymentDate } = require("../util");
+const { uid, nowISO, fmtMoney, resolvePaymentDate, newestFirst } = require("../util");
 const { renderTransferReceiptPDF } = require("../pdf");
 
 // Thrown from inside an Update/Delete transaction for an expected,
@@ -48,7 +48,8 @@ function register(router) {
     if (query.to) { clauses.push("date(date) <= date(?)"); sqlParams.push(query.to); }
     if (query.status && query.status !== "all") { clauses.push("status = ?"); sqlParams.push(query.status); }
     const where = clauses.length ? "WHERE " + clauses.join(" AND ") : "";
-    const rows = all(`SELECT * FROM transfers ${where} ORDER BY date DESC`, sqlParams);
+    const rows = all(`SELECT * FROM transfers ${where} ORDER BY date DESC, created_at DESC, id DESC`, sqlParams);
+    newestFirst(rows);
     sendJSON(res, 200, { transfers: rows.map(rowToJSON) });
   });
 

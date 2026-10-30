@@ -10,7 +10,7 @@ const { all, get, run, tx } = require("../db");
 const { sendJSON, badRequest, notFound, readJSONBody } = require("../http-helpers");
 const { requireAuth, requirePerm } = require("../rbac");
 const { addAudit, rebuildCashAccountBalance, nextLoanReference, nextLoanPaymentReference, nextCashLedgerReference } = require("../domain");
-const { uid, nowISO, fmtMoney, resolvePaymentDate } = require("../util");
+const { uid, nowISO, fmtMoney, resolvePaymentDate, newestFirst } = require("../util");
 const { accountBasic } = require("./cash");
 
 class LoanMutationError extends Error {
@@ -54,7 +54,8 @@ function register(router) {
     if (query.status && query.status !== "all") { clauses.push("status = ?"); p.push(query.status); }
     if (query.search) { clauses.push("(client_name LIKE ? OR reference_number LIKE ?)"); p.push(`%${query.search}%`, `%${query.search}%`); }
     const where = clauses.length ? "WHERE " + clauses.join(" AND ") : "";
-    const rows = all(`SELECT * FROM cash_loans ${where} ORDER BY date DESC`, p);
+    const rows = all(`SELECT * FROM cash_loans ${where} ORDER BY date DESC, created_at DESC, id DESC`, p);
+    newestFirst(rows);
     sendJSON(res, 200, { loans: rows.map(loanToJSON) });
   });
 

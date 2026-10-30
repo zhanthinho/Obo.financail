@@ -109,4 +109,18 @@ function isFiniteMoney(n) {
   return typeof n === "number" && Number.isFinite(n) && Math.abs(n) <= MAX_AMOUNT;
 }
 
-module.exports = { uid, nowISO, todayStr, convert, fmtMoney, formatPersonName, resolvePaymentDate, chronoSortKey, MAX_AMOUNT, isValidAmount, isFiniteMoney };
+// NEWEST-FIRST round: one ordering rule for every transaction list — the
+// latest entry is always first. Uses chronoSortKey (so a same-day bare date
+// is placed by its real insertion time), then the id as a final tie-break
+// (ids start with a base36 timestamp, see uid() above, so a later id is a
+// later insert). Sorts in place and returns the array.
+function newestFirst(rows, dateOf = (r) => r.date, createdOf = (r) => r.created_at, idOf = (r) => r.id) {
+  return rows.sort((a, b) => {
+    const ka = chronoSortKey(dateOf(a), createdOf(a)), kb = chronoSortKey(dateOf(b), createdOf(b));
+    if (ka !== kb) return ka < kb ? 1 : -1;
+    const ia = String(idOf(a) || ""), ib = String(idOf(b) || "");
+    return ia < ib ? 1 : ia > ib ? -1 : 0;
+  });
+}
+
+module.exports = { uid, nowISO, todayStr, convert, fmtMoney, formatPersonName, resolvePaymentDate, chronoSortKey, newestFirst, MAX_AMOUNT, isValidAmount, isFiniteMoney };

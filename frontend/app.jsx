@@ -2342,27 +2342,54 @@ function FootAmounts({ usd, slsh }) {
 }
 
 /* ---------- Reusable click-to-sort table headers, used across every table in the app ---------- */
+// NEWEST-FIRST round: date columns compare chronologically, not as plain
+// strings — a bare "YYYY-MM-DD" borrows the row's real insert time
+// (createdAt), and a backend-provided `sortKey` (Transaction History) wins
+// for `date`. Ties fall back to the id (ids begin with a base36 timestamp,
+// so a later id is a later insert). Clicking a date column starts at
+// newest-first, so the latest transaction is always the top row.
+const DATE_SORT_KEYS = new Set(["date", "createdAt", "at", "deactivatedAt", "day", "sortDate", "paidAt", "lastLogin", "voidedAt"]);
+function chronoSortValue(row, key) {
+  if (key === "date" && row.sortKey) return String(row.sortKey);
+  const v = row[key];
+  if (v == null || v === "") return "";
+  const s = String(v);
+  const created = row.createdAt ? String(row.createdAt) : "";
+  if (s.length === 10 && created.length > 10) return s + created.slice(10);
+  return s;
+}
 function useSortableRows(rows, defaultKey, defaultDir) {
   const [sortKey, setSortKey] = useState(defaultKey || null);
   const [sortDir, setSortDir] = useState(defaultDir || "asc");
   const toggleSort = useCallback((key) => {
     setSortKey((prevKey) => {
       if (prevKey === key) { setSortDir((d) => (d === "asc" ? "desc" : "asc")); return key; }
-      setSortDir("asc");
+      setSortDir(DATE_SORT_KEYS.has(key) ? "desc" : "asc");
       return key;
     });
   }, []);
   const sorted = useMemo(() => {
     if (!sortKey) return rows;
+    const isDate = DATE_SORT_KEYS.has(sortKey);
+    const dir = sortDir === "asc" ? 1 : -1;
     const copy = [...rows];
     copy.sort((a, b) => {
-      let av = a[sortKey], bv = b[sortKey];
-      if (typeof av === "string") av = av.toLowerCase();
-      if (typeof bv === "string") bv = bv.toLowerCase();
-      if (av == null) av = "";
-      if (bv == null) bv = "";
-      if (av < bv) return sortDir === "asc" ? -1 : 1;
-      if (av > bv) return sortDir === "asc" ? 1 : -1;
+      let av, bv;
+      if (isDate) { av = chronoSortValue(a, sortKey); bv = chronoSortValue(b, sortKey); }
+      else {
+        av = a[sortKey]; bv = b[sortKey];
+        if (typeof av === "string") av = av.toLowerCase();
+        if (typeof bv === "string") bv = bv.toLowerCase();
+        if (av == null) av = "";
+        if (bv == null) bv = "";
+      }
+      if (av < bv) return -dir;
+      if (av > bv) return dir;
+      if (isDate) {
+        const ia = String(a.id || ""), ib = String(b.id || "");
+        if (ia < ib) return -dir;
+        if (ia > ib) return dir;
+      }
       return 0;
     });
     return copy;
@@ -2631,7 +2658,11 @@ function usePagination(rows, { initialPageSize = 10 } = {}) {
   const firstIdx = total === 0 ? 0 : (safePage - 1) * pageSize + 1;
   const lastIdx = total === 0 ? 0 : Math.min(safePage * pageSize, total);
   const setPageSize = useCallback((n) => { setPageSizeRaw(n); setPage(1); }, []);
-  return { page: safePage, setPage, pageSize, setPageSize, pageRows, total, firstIdx, lastIdx, totalPages };
+  // ROW NUMBERS FROM THE BOTTOM round: the "#" column counts up from the
+  // bottom row (oldest = 1), so the newest entry at the top carries the
+  // highest number — same as a paper ledger.
+  const rowNo = useCallback((i) => total - (firstIdx + i) + 1, [total, firstIdx]);
+  return { page: safePage, setPage, pageSize, setPageSize, pageRows, total, firstIdx, lastIdx, totalPages, rowNo };
 }
 function pagerBtnStyle(disabled, active) {
   return {
@@ -6171,7 +6202,7 @@ function ExchangeModule({ call, dl, preview, print, notify, perm, user, rate, sa
                     // the bug this round fixes.
                     <tr key={t.id} style={{ ...(t.status === "voided" ? { opacity: 0.55 } : null), cursor: "pointer" }}
                       onClick={() => setViewingTx(t)}>
-                      <td style={densityStyle(tdMono, density)}>{exchangePg.firstIdx + i}</td>
+                      <td style={densityStyle(tdMono, density)}>{exchangePg.rowNo(i)}</td>
                       {columns.map((c) => <td key={c.key} style={tableCellStyle(c, density)}>{c.render(t)}</td>)}
                       <td style={densityStyle(td, density)} onClick={(e) => e.stopPropagation()}>
                         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -7090,7 +7121,7 @@ function QuotationsModule({ call, dl, preview, print, notify, perm, user, rate, 
               {columns.map((c) => <SortTh key={c.key} label={c.label} field={c.sortField} {...quoteSort} onSort={quoteSort.toggleSort} />)}
               <SortTh label="Action" />
             </tr></thead>
-            <tbody>{quotePg.pageRows.map((q, i) => renderQuotationRow(q, quotePg.firstIdx + i - 1))}</tbody>
+            <tbody>{quotePg.pageRows.map((q, i) => renderQuotationRow(q, quotePg.rowNo(i) - 1))}</tbody>
             <tfoot>
               <tr>
                 <td style={tdFoot}></td>
@@ -9440,7 +9471,7 @@ function AccountDetailModal({ call, dl, preview, print, notify, perm, accountId,
                     {txColumns.map((c) => {
                       const tdD = densityStyle(td, txDensity), tdMonoD = densityStyle(tdMono, txDensity);
                       switch (c.key) {
-                        case "idx": return <td key={c.key} style={tdMonoD}>{activityPg.firstIdx + i}</td>;
+                        case "idx": return <td key={c.key} style={tdMonoD}>{activityPg.rowNo(i)}</td>;
                         case "date": return (
                           <td key={c.key} style={tdD}>
                             <div>{fmtDate(r.date)}</div>
@@ -9926,7 +9957,7 @@ function DepositsWithdrawalsModule({ currency, call, dl, preview, notify, perm, 
                     // convention). The account name inside the row stays its
                     // own separate, stopPropagation'd link to the ACCOUNT.
                     <tr key={e.id} onClick={() => setViewingEntry(e)} style={{ cursor: "pointer" }}>
-                      <td style={densityStyle(tdMono, density)}>{dwPg.firstIdx + i}</td>
+                      <td style={densityStyle(tdMono, density)}>{dwPg.rowNo(i)}</td>
                       {columns.map((c) => <td key={c.key} style={tableCellStyle(c, density)}>{c.render(e)}</td>)}
                       <td style={densityStyle(td, density)} onClick={(ev) => ev.stopPropagation()}>
                         <div style={{ display: "flex", gap: 6 }}>
@@ -9999,7 +10030,7 @@ function DepositsWithdrawalsModule({ currency, call, dl, preview, notify, perm, 
                         // Edit/Delete here either way, matching this
                         // drill-down's existing read-only design.
                         <tr key={e.id} onClick={() => setViewingEntry(e)} style={{ cursor: "pointer" }}>
-                          <td style={tdMono}>{dailyPg.firstIdx + i}</td>
+                          <td style={tdMono}>{dailyPg.rowNo(i)}</td>
                           <td style={td}><DateTimeCell value={e.date} /></td>
                           <td style={td}><Pill tone={e.type === "deposit" ? "green" : "red"}>{e.type === "deposit" ? "Credit" : "Debit"}</Pill></td>
                           <td style={td}><b>{toTitleCase(e.accountName)}</b> <span style={{ color: C.slate, fontFamily: FONT_MONO, fontSize: 11.5 }}>{e.accountNumber}</span></td>
@@ -11312,7 +11343,7 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
             <tbody>
               {historyPg.pageRows.map((e, i) => (
                 <tr key={`${e.recordType}-${e.id}`} onClick={() => setDetailEntry(e)} style={{ cursor: "pointer" }}>
-                  <td style={densityStyle(tdMono, density)}>{historyPg.firstIdx + i}</td>
+                  <td style={densityStyle(tdMono, density)}>{historyPg.rowNo(i)}</td>
                   {columns.map((c) => <td key={c.key} style={tableCellStyle(c, density)}>{c.render(e)}</td>)}
                 </tr>
               ))}
@@ -14328,7 +14359,7 @@ function ExpensesModule({ call, dl, notify, hasRaw, token }) {
                         const [tone, label] = EXPENSE_STATUS_PILL[e.status] || ["slate", e.status];
                         return (
                           <tr key={e.id} onClick={() => setViewId(e.id)} style={{ cursor: "pointer", opacity: e.status === "cancelled" ? 0.7 : 1 }}>
-                            <td style={{ ...td, color: C.slate }}>{(list.page - 1) * list.pageSize + i + 1}</td>
+                            <td style={{ ...td, color: C.slate }}>{list.total - ((list.page - 1) * list.pageSize + i)}</td>
                             <td style={td}>{fmtDate(e.date)}</td>
                             <td style={{ ...td, fontFamily: FONT_MONO, fontSize: 11.5 }} translate="no">{e.referenceNumber}</td>
                             <td style={td}>{e.categoryName}</td>
@@ -15659,7 +15690,7 @@ function CashAccountDetailPage({ call, dl, notify, perm, hasRaw, cashAccountId, 
                     : null;
                   return (
                     <tr key={e.id}>
-                      <td style={tdMono}>{movePg.firstIdx + i}</td>
+                      <td style={tdMono}>{movePg.rowNo(i)}</td>
                       <td style={td}><DateTimeCell value={e.date} /></td>
                       <td style={td}><Pill tone={badge.tone}>{badge.label}</Pill></td>
                       <td style={td}>

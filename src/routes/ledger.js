@@ -4,7 +4,7 @@ const { all, get, run, tx } = require("../db");
 const { sendJSON, sendCSV, sendPDF, badRequest, notFound, readJSONBody } = require("../http-helpers");
 const { requireAuth, requirePerm, can, allowedCurrencies, requireCurrencyAccess } = require("../rbac");
 const { getCompanySettings, getDefaultPdfTemplate, addAudit, rebuildAccountBalance, rebuildCashAccountBalance } = require("../domain");
-const { todayStr } = require("../util");
+const { todayStr, newestFirst } = require("../util");
 const { toCSV } = require("../csv");
 const { renderReportPDF, renderLedgerReceiptPDF } = require("../pdf");
 // PAYMENT / CASH IN HAND INTEGRATION round: a Payment's linked Cash in Hand
@@ -62,9 +62,10 @@ function queryLedger(query, allowed) {
   const where = clauses.length ? "WHERE " + clauses.join(" AND ") : "";
   const rows = all(
     `SELECT l.*, c.name AS account_name, c.account_number, c.account_type
-     FROM account_ledger l JOIN clients c ON c.id = l.client_id ${where} ORDER BY l.date DESC`,
+     FROM account_ledger l JOIN clients c ON c.id = l.client_id ${where} ORDER BY l.date DESC, l.created_at DESC, l.id DESC`,
     params
   );
+  newestFirst(rows);
   return rows.map((l) => ({
     id: l.id, type: l.type, currency: l.currency, amount: l.amount, balanceAfter: l.balance_after,
     notes: l.notes, staffName: l.staff_name, date: l.date,
