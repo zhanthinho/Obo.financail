@@ -103,7 +103,7 @@ function register(router) {
     const rows = all("SELECT * FROM rate_history ORDER BY at DESC").map((r) => shapeRow(r, latestAt));
     const csvRows = rows.map((r) => [r.at, r.currencyPairLabel, r.dailyRate ?? "", r.saleRate ?? "", r.dailySlshRate ?? "", r.difference ?? "", r.costRate ?? "", r.buyRate ?? "", r.sellRate ?? "", r.status, r.setByName, r.note || ""]);
     addAudit(user, "Rate history exported (CSV)", `${rows.length} entries`);
-    sendCSV(res, "obo-rate-history.csv", toCSV(["Date", "Currency Pair", "Daily Rate", "Sale Rate", "Daily SLSH Rate", "Rate Difference", "Cost Rate", "Buy Rate", "Sell Rate", "Status", "Updated By", "Note"], csvRows));
+    sendCSV(res, "obo-rate-history.csv", toCSV(["Date", "Currency Pair", "Daily Rate", "Sale Rate", "Daily SLSH Rate", "Rate Difference", "Cost Rate", "Buy Rate USD-SLSH", "Sell Rate SLSH-USD", "Status", "Updated By", "Note"], csvRows));
   });
 
   router.get("/api/rate-history/:id", (req, res, params) => {
@@ -165,7 +165,7 @@ function register(router) {
     const currencyPair = body.currencyPair && PAIR_LABELS[body.currencyPair] ? body.currencyPair : "USD_SLSH";
     const note = typeof body.note === "string" && body.note.trim() ? body.note.trim() : null;
     const saved = saveRateHistory({ dailyRate, saleRate, dailySlshRate, costRate, buyRate, sellRate, note, user, currencyPair });
-    addAudit(user, "Exchange rates updated", `Daily Rate set to 1 USD = SLSH ${dailyRate.toLocaleString("en-US")}, Sale Rate set to 1 USD = SLSH ${saleRate.toLocaleString("en-US")}${dailySlshRate ? `, Daily SLSH Rate set to 1 SLSH = USD ${dailySlshRate.toLocaleString("en-US")}` : ""}${costRate ? `, Cost Rate ${costRate.toLocaleString("en-US")}` : ""}${buyRate ? `, Buy Rate ${buyRate.toLocaleString("en-US")}` : ""}${sellRate ? `, Sell Rate ${sellRate.toLocaleString("en-US")}` : ""}${note ? ` — ${note}` : ""}`);
+    addAudit(user, "Exchange rates updated", `Daily Rate set to 1 USD = SLSH ${dailyRate.toLocaleString("en-US")}, Sale Rate set to 1 USD = SLSH ${saleRate.toLocaleString("en-US")}${dailySlshRate ? `, Daily SLSH Rate set to 1 SLSH = USD ${dailySlshRate.toLocaleString("en-US")}` : ""}${costRate ? `, Cost Rate ${costRate.toLocaleString("en-US")}` : ""}${buyRate ? `, Buy Rate USD-SLSH ${buyRate.toLocaleString("en-US")}` : ""}${sellRate ? `, Sell Rate SLSH-USD ${sellRate.toLocaleString("en-US")}` : ""}${note ? ` — ${note}` : ""}`);
     sendJSON(res, 200, saved);
   });
 }

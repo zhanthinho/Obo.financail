@@ -6,8 +6,8 @@
 //
 // Rates are SLSH per 1 USD:
 //   Cost Rate — what a dollar is worth to the company (its valuation rate)
-//   Buy Rate  — the company BUYS dollars from a customer (customer gives USD)
-//   Sell Rate — the company SELLS dollars to a customer (customer gives SLSH)
+//   Buy Rate USD-SLSH  — the company BUYS dollars from a customer (customer gives USD)
+//   Sell Rate SLSH-USD — the company SELLS dollars to a customer (customer gives SLSH)
 //
 //   Sell (customer gives SLSH):  Profit               = (Sell − Cost) × USD   [SLSH]
 //   Buy  (customer gives USD):   Cost Rate Difference = (Cost − Buy)  × USD   [SLSH]
@@ -27,7 +27,7 @@ const round = (n, dp) => { const f = 10 ** dp; return Math.round((Number(n) + Nu
 function sideOf(currencyGiven) { return currencyGiven === "USD" ? SIDE_BUY : SIDE_SELL; }
 
 // The customer rate a NEW exchange uses by default for its direction:
-// Buy Rate for USD -> SLSH, Sell Rate for SLSH -> USD, falling back to the
+// Buy Rate USD-SLSH for USD -> SLSH, Sell Rate SLSH-USD for SLSH -> USD, falling back to the
 // Daily Rate only while the direction's own rate has never been set.
 function defaultRateFor(currencyGiven, rates) {
   const r = rates || {};
@@ -76,7 +76,7 @@ function rateSpreads({ costRate, buyRate, sellRate }) {
 
 // Validation for a set of rates (Manage Rates). Returns an error message or null.
 function validateRates({ costRate, buyRate, sellRate }) {
-  for (const [name, v] of [["Cost Rate", costRate], ["Buy Rate", buyRate], ["Sell Rate", sellRate]]) {
+  for (const [name, v] of [["Cost Rate", costRate], ["Buy Rate USD-SLSH", buyRate], ["Sell Rate SLSH-USD", sellRate]]) {
     if (v === undefined || v === null || v === "") continue;
     if (!pos(v)) return `${name} must be a positive number.`;
   }
