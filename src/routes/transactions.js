@@ -68,6 +68,12 @@ function resolveExchangeCashAccount(cashAccountId, expectedCurrency, label) {
 // stored on the row since this round; for an older row, the Cost (or Sale)
 // Rate that applied on its own date (display only, the stored profit is
 // never rewritten). `margin` comes from the shared calculation.
+// null = not supplied; false = supplied but not a positive number.
+function parseCostRate(v) {
+  if (v === undefined || v === null || v === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 && n <= 1e9 ? n : false;
+}
 function txCostRate(t, lookup) {
   if (t.cost_rate != null) return { costRate: t.cost_rate, costRateSource: "stored" };
   const r = lookup ? lookup(t.date) : costRateAt(t.date);
@@ -159,7 +165,11 @@ function register(router) {
     // falling back to the Daily Rate until those are set.
     const rate = body.rateUsed !== undefined && body.rateUsed !== "" && body.rateUsed !== null ? Number(body.rateUsed) : defaultRateFor(currencyGiven, getCurrentRates());
     if (!rate || rate <= 0 || !Number.isFinite(rate) || rate > 1e9) return badRequest(res, "Rate must be a positive number.");
-    const costRate = getCurrentCostRate();
+    // COST RATE OVERRIDE round: a Cost Rate typed for THIS exchange only
+    // (Quick Exchange -> Rate details); otherwise the company's current one.
+    const costOverride = parseCostRate(body.costRate);
+    if (costOverride === false) return badRequest(res, "Cost Rate must be a positive number.");
+    const costRate = costOverride !== null ? costOverride : getCurrentCostRate();
     const txDate = body.date ? new Date(body.date).toISOString() : nowISO();
     let received = body.amountReceived !== undefined && body.amountReceived !== "" && body.amountReceived !== null
       ? Number(body.amountReceived)
@@ -383,6 +393,8 @@ function register(router) {
     // row happened to have before the edit.
     const profitOverride = body.profitUsd !== undefined && body.profitUsd !== null && body.profitUsd !== ""
       ? Number(body.profitUsd) || 0 : null;
+    const costOverride = parseCostRate(body.costRate);
+    if (costOverride === false) return badRequest(res, "Cost Rate must be a positive number.");
 
     // Same account-resolution and validation as creating a new exchange
     // (currency-separation rule included: the account must match its side's
@@ -457,7 +469,7 @@ function register(router) {
         const txDate = body.date ? new Date(body.date).toISOString() : t.date;
         // GLOBAL RATE & PROFIT round: an edit keeps the exchange's OWN Cost
         // Rate (stored, or the one that applied on its date) — never today's.
-        const editCostRate = t.cost_rate;
+        const editCostRate = costOverride !== null ? costOverride : t.cost_rate;
         const valuedAt = editCostRate != null ? editCostRate : costRateAt(t.date);
         const editMargin = computeMargin({ currencyGiven, amountGiven: given, amountReceived: received, rate, costRate: valuedAt });
         const profitUsd = profitOverride !== null ? profitOverride

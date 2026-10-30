@@ -122,6 +122,18 @@ async function apiChecks() {
     assert(b.amountReceived === 250 && b.marginSlsh === 50000, JSON.stringify(b));
     ctx.sellTx = a;
   });
+  await check("a Cost Rate typed for one exchange is used and stored for that exchange only", async () => {
+    const t = (await api("/api/transactions", { method: "POST", token: ctx.admin, body: { clientName: "Walk-in", amountGiven: 100, currencyGiven: "USD", costRate: 11400 } })).json.transaction;
+    assert(t.costRate === 11400 && t.marginSlsh === 10000 && near(t.profitUsd, 10000 / 11400, 1e-6), JSON.stringify(t));
+    const d = (await api("/api/rate", { token: ctx.admin })).json;
+    assert(d.costRate === 11500, `company Cost Rate changed to ${d.costRate}`);
+    for (const bad of [-1, 0, "abc"]) {
+      const r = await api("/api/transactions", { method: "POST", token: ctx.admin, body: { clientName: "Walk-in", amountGiven: 100, currencyGiven: "USD", costRate: bad } });
+      assert(r.status === 400, `costRate ${bad} -> ${r.status}`);
+    }
+    const e = await api(`/api/transactions/${t.id}`, { method: "PATCH", token: ctx.admin, body: { clientName: "Walk-in", amountGiven: 100, currencyGiven: "USD", rateUsed: 11300, costRate: 11450 } });
+    assert(e.status === 200 && e.json.transaction.costRate === 11450 && e.json.transaction.marginSlsh === 15000, JSON.stringify(e.json));
+  });
   await check("Test 4 (API): a customer rate equal to the Cost Rate -> 0", async () => {
     const t = (await api("/api/transactions", { method: "POST", token: ctx.admin, body: { clientName: "Walk-in", amountGiven: 100, currencyGiven: "USD", rateUsed: 11500 } })).json.transaction;
     assert(t.marginSlsh === 0 && t.profitUsd === 0, JSON.stringify(t));
@@ -218,6 +230,13 @@ async function browserChecks() {
       assert(/\+\$1\.74/.test(t) && /\+SLSH 20,000/.test(await p.locator(".gk-qx-margin-slsh").innerText()), t);
       assert(!(await p.locator("#qx-ratedetails").count()), "rate details should start closed (optional)");
       assert(/Cost Rate Difference/.test(await p.locator("[data-margin-side=buy]").innerText()), "label");
+    });
+    await check("Quick Exchange: Cost Rate can be changed for this exchange in Rate details", async () => {
+      await p.click('button[aria-controls="qx-ratedetails"]');
+      await p.fill("#qx-cost", "11400"); await p.waitForTimeout(200);
+      assert(/\+\$0\.88/.test(await p.locator(".gk-qx-margin").innerText()) && /\+SLSH 10,000/.test(await p.locator(".gk-qx-margin-slsh").innerText()), await p.locator(".gk-qx-margin").innerText());
+      await p.fill("#qx-cost", ""); await p.waitForTimeout(200);
+      assert(/\+\$1\.74/.test(await p.locator(".gk-qx-margin").innerText()), "blank should return to the current Cost Rate");
     });
     await check("Quick Exchange, Sell $100: Profit +SLSH 20,000; switching direction updates it", async () => {
       await p.click('button[aria-label="Reverse exchange direction"]');

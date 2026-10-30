@@ -2177,5 +2177,8 @@
  "Buy Rate USD-SLSH: the company buys USD. Sell Rate SLSH-USD: the company sells USD. Cost Rate: what one dollar is worth to the company.": "Buy Rate USD-SLSH: shirkaddu waxay iibsanaysaa USD. Sell Rate SLSH-USD: shirkaddu waxay iibinaysaa USD. Cost Rate: qiimaha hal dollar ee shirkadda.",
  "Rate details (optional)": "Faahfaahinta sicirka (ikhtiyaari)",
  "Buy USD-SLSH ": "Buy USD-SLSH ",
- "Sell SLSH-USD ": "Sell SLSH-USD "
+ "Sell SLSH-USD ": "Sell SLSH-USD ",
+ "Cost Rate must be a positive number.": "Cost Rate waa inuu noqdaa tiro togan.",
+ "Blank = current Cost Rate.": "Bannaan = Cost Rate-ka hadda.",
+ "Blank = this exchange's Cost Rate.": "Bannaan = Cost Rate-ka sarrifkan."
 }

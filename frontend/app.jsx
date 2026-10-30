@@ -6652,7 +6652,11 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
   const side = sideOf(currencyGiven); // "buy" (customer gives USD) | "sell" (customer gives SLSH)
   const directionRate = defaultRateFor(currencyGiven, { buyRate: ratesCtx.buyRate, sellRate: ratesCtx.sellRate, dailyRate: rate });
   const directionRateLabel = side === "buy" ? (ratesCtx.buyRate ? "Buy Rate USD-SLSH" : "Daily Rate") : (ratesCtx.sellRate ? "Sell Rate SLSH-USD" : "Daily Rate");
-  const costRate = editingTx ? (editingTx.costRate ?? null) : (ratesCtx.costRate ?? null);
+  // COST RATE OVERRIDE round: blank = the company's current Cost Rate (or,
+  // when editing, the exchange's own); typed = used for THIS exchange only.
+  const [costRateUsed, setCostRateUsed] = useState("");
+  const baseCostRate = editingTx ? (editingTx.costRate ?? null) : (ratesCtx.costRate ?? null);
+  const costRate = costRateUsed !== "" ? (Number(costRateUsed) > 0 ? Number(costRateUsed) : null) : baseCostRate;
   const effectiveRate = rateUsed !== "" ? Number(rateUsed) : directionRate;
   // ONE calculation, shared by the result cards and the summary card.
   const auto = amountGiven && effectiveRate ? convert(Number(amountGiven), currencyGiven, curReceived, effectiveRate) : 0;
@@ -6724,7 +6728,8 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
   const amountError = (triedSubmit || amountBlurred) && !(amountNum > 0) ? "Enter an amount greater than 0." : null;
   const rateError = !(effectiveRate > 0) ? "No exchange rate is set. Set the Buy and Sell Rate SLSH-USDs in Manage Rates." : null;
   const accountError = triedSubmit && trackMode === "account" && !fromAccountId && !toAccountId ? "Pick at least one account, or switch to Walk-in Customer." : null;
-  const canSave = amountNum > 0 && effectiveRate > 0 && !(trackMode === "account" && !fromAccountId && !toAccountId) && !busy;
+  const costInvalid = costRateUsed !== "" && !(Number(costRateUsed) > 0);
+  const canSave = !costInvalid && amountNum > 0 && effectiveRate > 0 && !(trackMode === "account" && !fromAccountId && !toAccountId) && !busy;
 
   async function submit() {
     setTriedSubmit(true);
@@ -6736,6 +6741,7 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
         amountReceived: amountReceived === "" ? undefined : Number(amountReceived), profitUsd: profitTouched ? profitNum : undefined, notes,
         date: dateTouched ? (date ? new Date(date).toISOString() : undefined) : new Date().toISOString(),
         rateUsed: rateUsed === "" ? undefined : Number(rateUsed),
+        costRate: costRateUsed === "" ? undefined : Number(costRateUsed),
         cashOutAccountId: cashOutAccountId || undefined, cashInAccountId: cashInAccountId || undefined,
       });
     } finally { setSubmitting(false); }
@@ -6900,7 +6906,15 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
                 {rateDetailsOpen && (
                   <div id="qx-ratedetails" className="gk-qx-ratetiles" style={{ marginTop: 8 }}>
                     <div className="gk-qx-tile"><span><NavIcon name={side === "buy" ? "trendDown" : "trendUp"} size={13} />{side === "buy" ? "Buy Rate USD-SLSH" : "Sell Rate SLSH-USD"}</span><b>{fmtRate(side === "buy" ? ratesCtx.buyRate : ratesCtx.sellRate)}</b></div>
-                    <div className="gk-qx-tile"><span><NavIcon name="landmark" size={13} />{editingTx ? "Cost Rate (this exchange)" : "Cost Rate"}</span><b>{fmtRate(costRate)}</b></div>
+                    <div className="gk-qx-tile">
+                      <label htmlFor="qx-cost" style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10.5, fontWeight: 600, color: C.slate }}><NavIcon name="landmark" size={13} />Cost Rate (this exchange)</label>
+                      <MoneyInput id="qx-cost" value={costRateUsed} placeholder={baseCostRate ? String(baseCostRate) : "—"} disabled={busy} onChange={(e) => setCostRateUsed(e.target.value.replace(/^-/, ""))}
+                        aria-invalid={costRateUsed !== "" && !(Number(costRateUsed) > 0)}
+                        style={{ fontFamily: FONT_MONO, fontWeight: 700, fontSize: 14, padding: "4px 6px", height: 30, boxSizing: "border-box" }} />
+                      {costRateUsed !== "" && baseCostRate && Number(costRateUsed) !== Number(baseCostRate)
+                        ? <button type="button" onClick={() => setCostRateUsed("")} style={{ background: "none", border: "none", color: EX.primary, textDecoration: "underline", cursor: "pointer", fontSize: 10.5, padding: 0, textAlign: "left" }}><span>Use {editingTx ? "this exchange's" : "current"} Cost Rate ({fmtRate(baseCostRate)})</span></button>
+                        : <span style={{ fontSize: 10.5, fontWeight: 400 }}>Blank = {editingTx ? "this exchange's" : "current"} Cost Rate.</span>}
+                    </div>
                     <div className="gk-qx-tile"><span><NavIcon name="compareArrows" size={13} />{side === "sell" ? "Profit per $1" : "Difference per $1"}</span><b style={{ color: perUsd > 0 ? EX.success : perUsd < 0 ? EX.danger : C.ink }}>{perUsd === null ? "—" : fmtSignedSlsh(perUsd)}</b></div>
                   </div>
                 )}

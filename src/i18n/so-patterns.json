@@ -278,5 +278,7 @@
  "{0} exchange(s) have no Cost Rate — shown in USD only.": "{0} sarrif ma laha Cost Rate — USD oo kaliya ayaa lagu muujiyay.",
  "{0} exchange(s) have no Cost Rate — not included in the SLSH figure.": "{0} sarrif ma laha Cost Rate — kuma jiraan tirada SLSH.",
  "Buy USD-SLSH ": "Buy USD-SLSH ",
- "Sell SLSH-USD ": "Sell SLSH-USD "
+ "Sell SLSH-USD ": "Sell SLSH-USD ",
+ "Use current Cost Rate ({0})": "Isticmaal Cost Rate-ka hadda ({0})",
+ "Use this exchange's Cost Rate ({0})": "Isticmaal Cost Rate-ka sarrifkan ({0})"
 }
