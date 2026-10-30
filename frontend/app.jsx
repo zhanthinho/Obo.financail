@@ -286,6 +286,23 @@ const THEME_CSS = `
   .gk-bulk-mint-input:focus { border-color: var(--c-navy) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-navy) 14%, transparent); }
   .gk-bulk-mint-input::placeholder { color: var(--c-slate); opacity: 0.85; }
 
+  /* COLLAPSIBLE NOTES round: every optional Notes field (OptionalNotes) is a
+     compact, closed section until the user opens it. Brand accents follow the
+     active Brand Theme (--c-navy), like every other form control. */
+  .gk-notes { border: 1px solid var(--c-line); border-radius: 8px; background: color-mix(in srgb, var(--c-paper) 65%, var(--c-card)); min-width: 0; max-width: 100%; box-sizing: border-box; transition: border-color .15s ease; }
+  .gk-notes[data-open="true"] { border-color: color-mix(in srgb, var(--c-navy) 35%, var(--c-line)); background: var(--c-card); }
+  .gk-notes-head { display: flex; align-items: center; gap: 7px; width: 100%; min-width: 0; box-sizing: border-box; background: none; border: 0; border-radius: 8px; padding: 7px 10px; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 600; line-height: 1.3; color: var(--c-ink); text-align: left; }
+  .gk-notes-head:hover:not(:disabled) { background: color-mix(in srgb, var(--c-navy) 5%, transparent); }
+  .gk-notes-head:focus-visible { outline: 2px solid var(--c-navy); outline-offset: -2px; }
+  .gk-notes-head:disabled { cursor: default; opacity: .7; }
+  .gk-notes-icon { color: var(--c-navy); display: inline-flex; flex-shrink: 0; }
+  .gk-notes-label { flex-shrink: 0; white-space: nowrap; }
+  .gk-notes-preview { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--c-slate); font-weight: 400; }
+  .gk-notes-chev { margin-left: auto; color: var(--c-slate); display: inline-flex; flex-shrink: 0; transition: transform .18s ease; }
+  .gk-notes[data-open="true"] .gk-notes-chev { transform: rotate(180deg); color: var(--c-navy); }
+  .gk-notes-body { padding: 0 10px 10px; animation: gk-notes-in .18s ease-out both; }
+  @keyframes gk-notes-in { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
   }
@@ -1788,6 +1805,54 @@ function MoneyInput({ value, onChange, placeholder, ...rest }) {
   );
 }
 const TextArea = (p) => <textarea {...p} style={{ ...inputStyle, resize: "vertical", minHeight: 60, ...(p.style || {}) }} />;
+// COLLAPSIBLE NOTES round: the ONE optional-notes control used by every
+// form in the system. Closed by default ("Add Note (optional)") so the
+// textarea takes no space until it's wanted; opens on its own when the record
+// already has a note, so a saved note never looks lost. Collapsing only hides
+// the field — the value stays in the form's own state and is submitted as
+// before (no API, column or validation change). While closed with text, the
+// header shows a one-line preview of it.
+let optionalNotesSeq = 0;
+function OptionalNotes({ value, onChange, label = "Add Note (optional)", filledLabel = "Note (optional)", placeholder, multiline = true, maxLength, disabled, id, inputClassName, inputStyle: extraStyle, rows }) {
+  const text = value == null ? "" : String(value);
+  const has = text.trim() !== "";
+  const [open, setOpen] = useState(has);
+  const idRef = useRef(null);
+  if (!idRef.current) idRef.current = id || `gk-notes-${++optionalNotesSeq}`;
+  const fieldRef = useRef(null);
+  const wasHas = useRef(has);
+  const focusNext = useRef(false);
+  useEffect(() => {
+    const typing = typeof document !== "undefined" && document.activeElement === fieldRef.current;
+    // A note filled in from outside (a record or draft loaded into the form)
+    // opens the section; the form clearing itself (not the user deleting
+    // text) closes it again for the next new entry.
+    if (has && !wasHas.current && !typing) setOpen(true);
+    if (!has && wasHas.current && !typing) setOpen(false);
+    wasHas.current = has;
+  }, [has]);
+  useEffect(() => { if (open && focusNext.current) { focusNext.current = false; fieldRef.current && fieldRef.current.focus(); } }, [open]);
+  const bodyId = `${idRef.current}-body`;
+  const toggle = () => { setOpen((o) => { if (!o) focusNext.current = true; return !o; }); };
+  const common = { id: idRef.current, ref: fieldRef, value: text, onChange, disabled, maxLength, placeholder, className: inputClassName, "aria-label": has ? filledLabel : label };
+  return (
+    <div className="gk-notes" data-open={open ? "true" : "false"} data-has-note={has ? "true" : "false"}>
+      <button type="button" className="gk-notes-head" onClick={toggle} aria-expanded={open} aria-controls={bodyId}>
+        <span className="gk-notes-icon"><NavIcon name="fileText" size={14} /></span>
+        <span className="gk-notes-label">{has ? filledLabel : label}</span>
+        {!open && has ? <span className="gk-notes-preview" translate="no">{text}</span> : null}
+        <span className="gk-notes-chev"><NavIcon name="chevronDown" size={15} /></span>
+      </button>
+      {open && (
+        <div id={bodyId} className="gk-notes-body">
+          {multiline
+            ? <textarea {...common} rows={rows || 3} style={{ ...inputStyle, resize: "vertical", minHeight: 60, ...(extraStyle || {}) }} />
+            : <input {...common} style={{ ...inputStyle, ...(extraStyle || {}) }} />}
+        </div>
+      )}
+    </div>
+  );
+}
 function SearchInput(p) {
   return (
     <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
@@ -3350,7 +3415,7 @@ function CompanyFormModal({ initial, call, notify, onClose, onSaved }) {
           <Field label="Website"><Input value={f.website} onChange={set("website")} /></Field>
           <Field label="Address"><Input value={f.address} onChange={set("address")} /></Field>
         </div>
-        <Field label="Notes"><textarea value={f.notes} onChange={set("notes")} rows={2} style={{ ...inputStyle, resize: "vertical" }} /></Field>
+        <OptionalNotes value={f.notes} onChange={set("notes")} rows={2} />
         {!editing && (
           <div style={{ border: `1px solid ${EMERALD.line}`, background: EMERALD.tint, borderRadius: 8, padding: 14 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: C.ink }}>First Company Admin <span style={{ fontWeight: 500, color: C.slate }}>(optional — you can assign one later)</span></div>
@@ -5014,7 +5079,7 @@ function ManageRatesModal({ call, notify, rate, saleRate, dailySlshRate, onSaved
           <Field label="Example amount (USD)"><MoneyInput value={exampleUsd} onChange={(e) => setExampleUsd(e.target.value.replace(/^-/, ""))} /></Field>
         </div>
       </div>
-      <Field label="Note (optional)"><Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Today's market rate" /></Field>
+      <OptionalNotes value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Today's market rate" multiline={false} />
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
         <Btn tone="ghost" onClick={onClose}>Cancel</Btn>
         <Btn tone="primary" onClick={submit} disabled={saving}>{saving ? "Saving…" : "Save Rates"}</Btn>
@@ -6965,8 +7030,7 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
                   <div style={{ fontSize: 11, color: C.slate, marginTop: 4 }}>{dateTouched ? "Recorded with the date & time above." : "Left as is, the exact time of saving is used."}</div>
                 </div>
                 <div>
-                  <label htmlFor="qx-notes" style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, fontWeight: 600, color: C.ink, marginBottom: 4 }}><NavIcon name="fileText" size={14} style={{ color: EX.primary }} />Reference / Notes</label>
-                  <Input id="qx-notes" value={notes} disabled={busy} onChange={(e) => setNotes(e.target.value)} />
+                  <OptionalNotes id="qx-notes" value={notes} disabled={busy} onChange={(e) => setNotes(e.target.value)} multiline={false} />
                   <div style={{ fontSize: 11, color: C.slate, marginTop: 4 }}>{editingTx ? `Reference: ${editingTx.referenceNumber || "—"}` : "A reference number is assigned automatically on save."}</div>
                 </div>
                 <div>
@@ -7732,7 +7796,7 @@ function QuotationPaymentModal({ quotation: q, onClose, onSubmit }) {
         </Field>
       </div>
       <Field label="Reference / Transaction Note (optional)"><Input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="e.g. wire ref, receipt #" /></Field>
-      <Field label="Notes (optional)"><TextArea value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
+      <OptionalNotes value={notes} onChange={(e) => setNotes(e.target.value)} />
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
         <Btn tone="ghost" onClick={onClose}>Cancel</Btn>
         <Btn tone="deposit" onClick={submit} disabled={!canSubmit}>{saving ? "Recording…" : "Record Payment"}</Btn>
@@ -8164,7 +8228,7 @@ function QuotationEditor({ initial, rate, call, notify, userColumnPrefs, systemC
           <Field label="Address"><Input value={clientAddress} onChange={(e) => setClientAddress(e.target.value)} /></Field>
           <Field label="Valid until"><Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} /></Field>
         </div>
-        <Field label="Notes"><TextArea value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
+        <OptionalNotes value={notes} onChange={(e) => setNotes(e.target.value)} />
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
           <Btn tone="ghost" onClick={onCancel} disabled={saving}>Cancel</Btn>
           <Btn tone="primary" disabled={saving} onClick={async () => {
@@ -8480,7 +8544,7 @@ function QuotationEditor({ initial, rate, call, notify, userColumnPrefs, systemC
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
         <Field label="Tax %" width={140}><Input type="number" value={taxPercent} onChange={(e) => setTaxPercent(e.target.value)} /></Field>
-        <Field label="Notes"><TextArea value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
+        <OptionalNotes value={notes} onChange={(e) => setNotes(e.target.value)} />
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
         <Field label="Discount %" width={140}><Input type="number" value={discountPercent} onChange={(e) => setDiscountPercent(e.target.value)} /></Field>
@@ -10426,7 +10490,7 @@ function EditLedgerEntryModal({ entry, onClose, onSubmit }) {
           </div>
         )}
         <Field label="Reference"><Input value={reference} onChange={(e) => setReference(e.target.value)} /></Field>
-        <Field label="Notes"><TextArea value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
+        <OptionalNotes value={notes} onChange={(e) => setNotes(e.target.value)} />
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
         <Btn tone="ghost" onClick={onClose}>Cancel</Btn>
@@ -10599,7 +10663,7 @@ function NewLedgerMoveModal({ currency, call, onClose, onSubmit, presetAccount, 
             </Field>
             <Field label="Reference (optional)" hint="A human-chosen reference — e.g. a loan or invoice number"><Input value={reference} onChange={(e) => setReference(e.target.value)} /></Field>
           </div>
-          <div style={{ marginTop: 12 }}><Field label="Notes (optional)"><TextArea value={notes} onChange={(e) => setNotes(e.target.value)} /></Field></div>
+          <div style={{ marginTop: 12 }}><OptionalNotes value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
           {formError && <div style={{ marginTop: 12, fontSize: 12.5, color: C.red, background: C.redBg, border: `1px solid ${C.red}`, borderRadius: 6, padding: "8px 10px" }}>{formError}</div>}
         </>
       )}
@@ -10895,9 +10959,7 @@ function BulkTransactionWorkspace({ currency, call, notify, user, onBack }) {
                 </Field>
               </div>
               <div style={{ marginTop: 10 }}>
-                <Field label="Notes (optional)">
-                  <TextArea className="gk-bulk-mint-input" style={{ border: `1.5px solid ${C.line}`, borderRadius: 7, background: C.card, minHeight: 64 }} value={notes} onChange={(e) => setNotes(e.target.value)} />
-                </Field>
+                <OptionalNotes inputClassName="gk-bulk-mint-input" inputStyle={{ border: `1.5px solid ${C.line}`, borderRadius: 7, background: C.card, minHeight: 64 }} value={notes} onChange={(e) => setNotes(e.target.value)} />
               </div>
 
               {formError && <div style={{ marginTop: 12, fontSize: 12.5, color: C.red, background: C.redBg, border: `1px solid ${C.red}`, borderRadius: 6, padding: "8px 10px" }}>{formError}</div>}
@@ -11202,7 +11264,7 @@ function TransferModal({ currency, call, onClose, onSubmit, presetFromAccount, e
         <Field label="Payment Date" hint="Defaults to today — change it to record a back- or post-dated transfer."><Input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} /></Field>
       </div>
       <div style={{ marginTop: 12 }}><Field label="Reference (optional)" hint="An external invoice/wire reference, if any — separate from this Transfer's own ID."><Input value={reference} onChange={(e) => setReference(e.target.value)} /></Field></div>
-      <div style={{ marginTop: 12 }}><Field label="Notes (optional)"><TextArea value={notes} onChange={(e) => setNotes(e.target.value)} /></Field></div>
+      <div style={{ marginTop: 12 }}><OptionalNotes value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 18 }}>
         <Btn tone="ghost" onClick={onClose} disabled={saving}>Cancel</Btn>
         <Btn tone="transfer" disabled={!canReview || saving} onClick={() => setStep("review")}>
@@ -14144,7 +14206,7 @@ function CashAccountFormModal({ account, onClose, onSubmit }) {
         </div>
         {!account && <Field label="Opening Balance" hint="Immediately becomes part of this currency's Cash Account total"><MoneyInput value={openingBalance} onChange={(e) => setOpeningBalance(e.target.value)} placeholder="0" /></Field>}
         <Field label="Reference (optional)"><Input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Internal account/reference number" /></Field>
-        <Field label="Notes (optional)"><TextArea value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
+        <OptionalNotes value={notes} onChange={(e) => setNotes(e.target.value)} />
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 18 }}>
         <Btn tone="ghost" onClick={onClose}>Cancel</Btn>
@@ -14176,7 +14238,7 @@ function CashMoveModal({ mode, account, onClose, onSubmit }) {
         <div style={{ fontSize: 12.5, color: C.slate }}>Current balance: <span style={{ fontFamily: FONT_MONO, fontWeight: 700, color: C.ink }}>{fmtMoney(account.balance, account.currency)}</span></div>
         <Field label={`Amount (${account.currency})`}><MoneyInput value={amount} onChange={(e) => setAmount(e.target.value)} autoFocus /></Field>
         <Field label="Date"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
-        <Field label="Description (optional)"><Input value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
+        <OptionalNotes value={description} onChange={(e) => setDescription(e.target.value)} label="Add Description (optional)" filledLabel="Description (optional)" multiline={false} />
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 18 }}>
         <Btn tone="ghost" onClick={onClose}>Cancel</Btn>
@@ -14208,7 +14270,7 @@ function EditCashMovementModal({ entry, onClose, onSubmit }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <Field label={`Amount (${entry.currency})`}><MoneyInput value={amount} onChange={(e) => setAmount(e.target.value)} autoFocus /></Field>
         <Field label="Date"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
-        <Field label="Description (optional)"><Input value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
+        <OptionalNotes value={description} onChange={(e) => setDescription(e.target.value)} label="Add Description (optional)" filledLabel="Description (optional)" multiline={false} />
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 18 }}>
         <Btn tone="ghost" onClick={onClose}>Cancel</Btn>
@@ -14249,7 +14311,7 @@ function CashTransferFormModal({ accounts, onClose, onSubmit }) {
         </Select></Field>
         <Field label={`Amount${fromAcc ? ` (${fromAcc.currency})` : ""}`}><MoneyInput value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
         <Field label="Date"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
-        <Field label="Notes (optional)"><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
+        <OptionalNotes value={notes} onChange={(e) => setNotes(e.target.value)} multiline={false} />
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 18 }}>
         <Btn tone="ghost" onClick={onClose}>Cancel</Btn>
@@ -14309,7 +14371,7 @@ function CashExchangeFormModal({ accounts, rate, onClose, onSubmit }) {
         <Field label={`Amount Given${fromAcc ? ` (${fromAcc.currency})` : ""}`}><MoneyInput value={amountGiven} onChange={(e) => setAmountGiven(e.target.value)} /></Field>
         {estimatedReceived != null && <div style={{ fontSize: 12.5, color: C.slate }}>Estimated received at {rateUsed !== "" ? "the rate above" : "current rate"}: <span style={{ fontFamily: FONT_MONO, fontWeight: 700, color: C.ink }}>{fmtMoney(estimatedReceived, toAcc.currency)}</span></div>}
         <Field label="Date"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
-        <Field label="Notes (optional)"><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
+        <OptionalNotes value={notes} onChange={(e) => setNotes(e.target.value)} multiline={false} />
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 18 }}>
         <Btn tone="ghost" onClick={onClose}>Cancel</Btn>
@@ -14347,7 +14409,7 @@ function LoanFormModal({ call, accounts, onClose, onSubmit }) {
         </Select></Field>
         <Field label={`Loan Amount${cashAccount ? ` (${cashAccount.currency})` : ""}`}><MoneyInput value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
         <Field label="Date"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
-        <Field label="Notes (optional)"><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
+        <OptionalNotes value={notes} onChange={(e) => setNotes(e.target.value)} multiline={false} />
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 18 }}>
         <Btn tone="ghost" onClick={onClose}>Cancel</Btn>
@@ -14383,7 +14445,7 @@ function LoanRepayModal({ loan, accounts, onClose, onSubmit }) {
         </Select></Field>
         <Field label={`Amount (${loan.currency})`}><MoneyInput value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
         <Field label="Date"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
-        <Field label="Notes (optional)"><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
+        <OptionalNotes value={notes} onChange={(e) => setNotes(e.target.value)} multiline={false} />
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 18 }}>
         <Btn tone="ghost" onClick={onClose}>Cancel</Btn>
@@ -14417,7 +14479,7 @@ function CashRateEditModal({ call, notify, rate, onSaved, onClose }) {
       <div style={{ fontSize: 12, color: C.slate, marginBottom: 14 }}>Used for Cash Account's own Cash Exchanges and Net Cash Account conversion — separate from the company-wide Daily/Sale Rate used elsewhere in the system.</div>
       <Field label="Rate (SLSH per 1 USD)" width={210}><MoneyInput autoFocus value={rateVal} onChange={(e) => setRateVal(e.target.value)} /></Field>
       <div style={{ marginTop: 12 }}>
-        <Field label="Note (optional)"><Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Today's market rate" /></Field>
+        <OptionalNotes value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Today's market rate" multiline={false} />
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
         <Btn tone="ghost" onClick={onClose}>Cancel</Btn>
@@ -14873,7 +14935,7 @@ function ExpenseFormModal({ call, notify, meta, expense, onClose, onSaved }) {
             {fieldErr("attachment")}
           </Field>
           <div style={{ gridColumn: "1 / -1" }}>
-            <Field label="Notes"><TextArea value={f.notes} maxLength={2000} onChange={(e) => set("notes", e.target.value)} placeholder="Optional" /></Field>
+            <OptionalNotes value={f.notes} maxLength={2000} onChange={(e) => set("notes", e.target.value)} />
           </div>
         </div>
         {formError && <div role="alert" style={{ background: C.redBg, color: C.red, borderRadius: 5, padding: "8px 11px", fontSize: 12.5, marginTop: 12 }}>{formError}</div>}

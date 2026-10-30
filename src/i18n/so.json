@@ -2180,5 +2180,7 @@
  "Sell SLSH-USD ": "Sell SLSH-USD ",
  "Cost Rate must be a positive number.": "Cost Rate waa inuu noqdaa tiro togan.",
  "Blank = current Cost Rate.": "Bannaan = Cost Rate-ka hadda.",
- "Blank = this exchange's Cost Rate.": "Bannaan = Cost Rate-ka sarrifkan."
+ "Blank = this exchange's Cost Rate.": "Bannaan = Cost Rate-ka sarrifkan.",
+ "Add Note (optional)": "Ku dar Qoraal (ikhtiyaari)",
+ "Add Description (optional)": "Ku dar Faahfaahin (ikhtiyaari)"
 }
