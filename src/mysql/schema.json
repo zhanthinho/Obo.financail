@@ -2954,6 +2954,15 @@
      "isCompanyId": false
     },
     {
+     "name": "paid_ledger_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
      "name": "profit_usd",
      "sqliteType": "REAL",
      "notNull": true,
@@ -3149,6 +3158,15 @@
      "unique": false,
      "columns": [
       "date"
+     ],
+     "where": null,
+     "expression": null
+    },
+    {
+     "name": "uq_tx_paid_ledger",
+     "unique": true,
+     "columns": [
+      "paid_ledger_id"
      ],
      "where": null,
      "expression": null

@@ -1,4 +1,5 @@
 "use strict";
+const payments = require("../payments");
 const { isValidAmount, toNumber } = require("../util");
 const { all, get, run, tx } = require("../db");
 const { sendJSON, badRequest, notFound, readJSONBody, sendPDF, sendXLSX, sendCSV } = require("../http-helpers");
@@ -898,58 +899,21 @@ function register(router) {
       if (!requireCurrencyAccess(user, res, c.currency)) return;
       if (c.status !== "active") return badRequest(res, "This account is deactivated — reactivate it before making new transactions.");
       let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
-      const amount = toNumber(body.amount);
-      const currency = c.currency; // an account only ever transacts in its own currency now
-      if (body.currency && body.currency !== currency) return badRequest(res, `This account is ${currency} — amounts must be in ${currency}.`);
-      if (!isValidAmount(amount)) return badRequest(res, "Enter a positive amount.");
-      // PAYMENT DATE (PAYMENT & TRANSFER UPGRADE round): defaults to today,
-      // but the user can back/post-date it — that becomes the transaction's
-      // real ACCOUNTING date (what every balance/statement/report already
-      // sorts and totals by). `created_at` below is set once, here, to the
-      // real system clock, and is never touched again by any later edit —
-      // that's the separate, permanent "when was this actually entered"
-      // record financial auditing needs.
-      const paymentDate = resolvePaymentDate(body.paymentDate);
-      if (paymentDate === null) return badRequest(res, "Enter a valid Payment Date.");
-
-      // PAYMENT / CASH IN HAND INTEGRATION round: every Payment now names the
-      // exact company Cash Account the money physically came from/went to.
-      // Required only when at least one active Cash in Hand account exists
-      // for this currency — an installation with none configured yet behaves
-      // exactly as before this round (cashAccountId stays null throughout).
-      if (!body.cashAccountId && hasActiveCashAccountsFor(currency)) {
-        return badRequest(res, "Please select a Cash Account.");
-      }
-      const { cashAccount, error: cashError } = validatePaymentCashAccount(body.cashAccountId, currency, type, amount);
-      if (cashError) return badRequest(res, cashError);
-
+      // MARK AS PAID round: validation and posting now live in src/payments.js,
+      // shared with Quick Exchange -> Mark as Paid, so both create exactly the
+      // same kind of Payment. Behaviour here is unchanged: amount, Payment Date
+      // (back/post-dating allowed; created_at is the real clock), the Cash
+      // Account rule, the account_ledger row, its mirrored cash leg and the
+      // chronological balance rebuild.
+      const { plan, error: payError } = payments.preparePayment({
+        account: c, type, amount: body.amount, currency: body.currency, paymentDate: body.paymentDate,
+        cashAccountId: body.cashAccountId, notes: body.notes, reference: body.reference,
+      });
+      if (payError) return badRequest(res, payError);
+      const { amount, currency, cashAccount } = plan;
       const createdAt = nowISO();
       const result = tx(() => {
-        // balance_after is written as a placeholder (0) here and then
-        // recomputed for real, in true chronological order, by
-        // rebuildAccountBalance below — required now that Payment Date can be
-        // backdated/post-dated: a naive "current balance ± amount" would be
-        // wrong (and would leave every later-dated row's own balance_after
-        // stale) the moment this entry doesn't land at the end of the
-        // account's date-ordered history. Same approach POST /api/transfers
-        // already uses for exactly this reason.
-        const ledgerId = uid("ldg");
-        run("INSERT INTO account_ledger (id, client_id, type, currency, amount, balance_after, notes, staff_id, staff_name, date, created_at, reference_number, cash_account_id, reference) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-          [ledgerId, c.id, type, currency, amount, 0, body.notes || null, user.id, user.name, paymentDate, createdAt, nextLedgerReference(type), cashAccount ? cashAccount.id : null, body.reference || null]);
-        rebuildAccountBalance(c.id, currency);
-        // Mirrored Cash in Hand leg — SAME direction as the customer-side
-        // entry (a customer deposit means money physically came IN; a
-        // customer withdrawal means it physically went OUT), fully traceable
-        // back to this Payment via source_type/source_id.
-        if (cashAccount) {
-          postPaymentCashLeg({
-            cashAccount, type, amount, date: paymentDate, createdAt,
-            staffId: user.id, staffName: user.name, reference: body.reference || null,
-            counterpartyClientId: c.id, counterpartyLabel: c.name,
-            description: `${type === "deposit" ? "Payment from" : "Payment to"} ${c.name}`,
-            sourceId: ledgerId,
-          });
-        }
+        payments.postPayment(plan, user, createdAt);
         return get("SELECT * FROM clients WHERE id = ?", [c.id]);
       });
 

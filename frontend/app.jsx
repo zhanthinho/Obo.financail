@@ -289,6 +289,21 @@ const THEME_CSS = `
   /* COLLAPSIBLE NOTES round: every optional Notes field (OptionalNotes) is a
      compact, closed section until the user opens it. Brand accents follow the
      active Brand Theme (--c-navy), like every other form control. */
+  /* MARK AS PAID round */
+  .gk-qx-paid { margin-top: 12px; border: 1px solid var(--c-line); border-radius: 10px; background: var(--c-card); padding: 10px 12px; }
+  .gk-qx-paid[data-on="true"] { border-color: color-mix(in srgb, var(--c-navy) 40%, var(--c-line)); background: color-mix(in srgb, var(--c-navy) 4%, var(--c-card)); }
+  .gk-qx-paid-toggle { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--c-ink); cursor: pointer; }
+  .gk-qx-paid-toggle input { width: 16px; height: 16px; accent-color: var(--c-navy); cursor: pointer; }
+  .gk-qx-paid-toggle input:disabled { cursor: not-allowed; }
+  .gk-qx-paid-body { display: flex; flex-direction: column; gap: 7px; margin-top: 10px; }
+  .gk-qx-paid-row { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--c-slate); }
+  .gk-qx-paid-row b { color: var(--c-ink); text-align: right; min-width: 0; overflow-wrap: anywhere; }
+  .gk-qx-paid-note { font-size: 11px; color: var(--c-slate); background: var(--c-paper); border-radius: 6px; padding: 6px 8px; }
+  .gk-qx-paid-label { display: block; font-size: 11.5px; font-weight: 600; color: var(--c-ink); margin: 4px 0 4px; }
+  .gk-qx-paid-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .gk-qx-paid-hint { font-size: 11px; color: var(--c-slate); margin-top: 3px; }
+  .gk-qx-paid-err { font-size: 11px; color: #DC2626; margin-top: 3px; }
+  @media (max-width: 420px) { .gk-qx-paid-grid { grid-template-columns: 1fr; } }
   /* CUSTOMER TRANSACTION SELECTOR round */
   .gk-qx-viewtx { display: inline-flex; align-items: center; gap: 5px; font: inherit; font-size: 11px; font-weight: 600; color: var(--c-navy); background: color-mix(in srgb, var(--c-navy) 7%, transparent); border: 1px solid color-mix(in srgb, var(--c-navy) 30%, transparent); border-radius: 999px; padding: 3px 4px 3px 9px; cursor: pointer; }
   .gk-qx-viewtx:hover:not(:disabled) { background: color-mix(in srgb, var(--c-navy) 12%, transparent); }
@@ -6334,7 +6349,7 @@ function ExchangeModule({ call, dl, preview, print, notify, perm, user, rate, sa
             catch (e) { notify(e.message, true); }
             finally { setUpdating(false); }
           } else {
-            try { await call("/api/transactions", { method: "POST", body }); notify("Transaction recorded."); setAddOpen(false); onConsumeExchangePrefill?.(); reload(); }
+            try { const d = await call("/api/transactions", { method: "POST", body }); const pay = d && d.transaction && d.transaction.payment; notify(pay ? `Exchange recorded and marked as paid — Credit ${pay.referenceNumber}.` : "Transaction recorded."); setAddOpen(false); onConsumeExchangePrefill?.(); reload(); }
             catch (e) { notify(e.message, true); }
           }
         }}
@@ -6636,6 +6651,11 @@ function ExchangeDetailView({ tx, onBack, onOpenAccountView, onReceipt, onEdit, 
           {tx.cashInAccount && <DetailRow icon="cash" label="Cash In To" value={tx.cashInAccount.name} />}
           <DetailRow icon="document" label="Status" value={tx.status === "voided" ? `Voided${tx.voidReason ? ` — ${tx.voidReason}` : ""}` : "Active"} />
           <DetailRow icon="users" label="Staff" value={tx.staffName || "—"} />
+          {tx.paidLedgerId && (
+            <DetailRow icon="checkCircle2" label="Paid (Credit)" value={tx.payment && !tx.payment.deleted
+              ? `${tx.payment.referenceNumber || ""} · ${fmtMoney(tx.payment.amount, tx.payment.currency)}${tx.payment.account ? ` · ${toTitleCase(tx.payment.account.name)}` : ""}${tx.payment.cashAccount ? ` · ${tx.payment.cashAccount.name}` : ""}`
+              : "The linked Credit was deleted"} />
+          )}
           <DetailRow icon="document" label="Notes" value={tx.notes || "—"} />
         </div>
       </div>
@@ -6884,6 +6904,14 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
   const [fundModalOpen, setFundModalOpen] = useState(false);
   const [fundCount, setFundCount] = useState(null); // eligible credits on the From Account
   const [fundNotice, setFundNotice] = useState("");
+  // MARK AS PAID round: optional ordinary Credit recorded with the exchange.
+  const [markPaid, setMarkPaid] = useState(false);
+  const [payCashId, setPayCashId] = useState("");
+  const [payRef, setPayRef] = useState("");
+  const [payDate, setPayDate] = useState(""); // blank = the exchange's own date
+  const [payNotes, setPayNotes] = useState("");
+  const [payCashAccounts, setPayCashAccounts] = useState(null); // null = loading/not loaded
+  const [payCashError, setPayCashError] = useState("");
   const busy = saving || submitting;
 
   const curReceived = currencyGiven === "USD" ? "SLSH" : "USD";
@@ -6950,9 +6978,33 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
     }
   }, [fromAccountId, currencyGiven, trackMode]); // eslint-disable-line react-hooks/exhaustive-deps
   function applyFunds(items, total) {
+    setMarkPaid(false);
     setFundSel({ accountId: fromAccountId, currency: currencyGiven, items, total });
     setAmountGiven(String(total)); setAmountBlurred(true); setAmountReceived("");
     setFundNotice(""); setFundModalOpen(false);
+  }
+  // Mark as Paid needs a From Account (the Credit goes on the account the
+  // money comes from) and the right to record Payments; it is only offered
+  // when recording a new exchange.
+  const canMarkPaid = !editingTx && trackMode === "account" && !!fromAccount && !!perm?.("accountsManage");
+  useEffect(() => { if (markPaid && !canMarkPaid) setMarkPaid(false); }, [markPaid, canMarkPaid]);
+  useEffect(() => {
+    if (!markPaid) return undefined;
+    let live = true;
+    setPayCashAccounts(null); setPayCashError("");
+    call("/api/cash/accounts/for-payment" + qs({ currency: currencyGiven }))
+      .then((d) => {
+        if (!live) return;
+        const list = d.accounts || [];
+        setPayCashAccounts(list);
+        setPayCashId((id) => (id && list.some((a) => a.id === id) ? id : list.length === 1 ? list[0].id : ""));
+      })
+      .catch((e) => { if (live) { setPayCashAccounts([]); setPayCashError(e.message || "Could not load the Cash Accounts."); } });
+    return () => { live = false; };
+  }, [markPaid, currencyGiven, call]);
+  function toggleMarkPaid(on) {
+    setMarkPaid(on);
+    if (on && fundSel) { setFundSel(null); setFundNotice("The selected transactions were cleared — a paid exchange is paid by its own new Credit."); }
   }
   function changeAmount(v) {
     setAmountGiven(v);
@@ -6999,7 +7051,9 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
   const rateError = !(effectiveRate > 0) ? "No exchange rate is set. Set the Buy and Sell Rate SLSH-USDs in Manage Rates." : null;
   const accountError = triedSubmit && trackMode === "account" && !fromAccountId && !toAccountId ? "Pick at least one account, or switch to Walk-in Customer." : null;
   const costInvalid = costRateUsed !== "" && !(Number(costRateUsed) > 0);
-  const canSave = !costInvalid && amountNum > 0 && effectiveRate > 0 && !(trackMode === "account" && !fromAccountId && !toAccountId) && !busy;
+  const payCashMissing = markPaid && Array.isArray(payCashAccounts) && payCashAccounts.length > 0 && !payCashId;
+  const payLoading = markPaid && payCashAccounts === null;
+  const canSave = !costInvalid && !payCashMissing && !payLoading && amountNum > 0 && effectiveRate > 0 && !(trackMode === "account" && !fromAccountId && !toAccountId) && !busy;
 
   async function submit() {
     setTriedSubmit(true);
@@ -7014,6 +7068,8 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
         costRate: costRateUsed === "" ? undefined : Number(costRateUsed),
         cashOutAccountId: cashOutAccountId || undefined, cashInAccountId: cashInAccountId || undefined,
         fundSelections: fundSel ? fundSel.items.map((i) => ({ ledgerId: i.ledgerId, amount: i.amount })) : undefined,
+        markPaid: markPaid || undefined,
+        payment: markPaid ? { cashAccountId: payCashId || undefined, reference: payRef.trim() || undefined, paymentDate: payDate || undefined, notes: payNotes.trim() || undefined } : undefined,
       });
     } finally { setSubmitting(false); }
   }
@@ -7298,6 +7354,46 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
               {sumRow("trendUp", marginLabel, shownUsd === null ? "—" : fmtSignedUsd(shownUsd), { color: shownUsd > 0 ? "#6EE7B7" : shownUsd < 0 ? "#FCA5A5" : "#fff" })}
             </div>
           </div>
+          {!editingTx && (
+            <div className="gk-qx-paid" data-on={markPaid ? "true" : "false"}>
+              <label className="gk-qx-paid-toggle" title={canMarkPaid ? undefined : !perm?.("accountsManage") ? "Your role can't record Payments." : "Choose a From Account (Track in Account) to mark the exchange as paid."}>
+                <input type="checkbox" id="qx-markpaid" checked={markPaid} disabled={busy || !canMarkPaid} onChange={(e) => toggleMarkPaid(e.target.checked)} />
+                <span>Mark as Paid (Create Credit)</span>
+              </label>
+              {!canMarkPaid && <div className="gk-qx-paid-hint">{!perm?.("accountsManage") ? "Your role can't record Payments." : "Needs a From Account (Track in Account)."}</div>}
+              {markPaid && (
+                <div className="gk-qx-paid-body">
+                  <div className="gk-qx-paid-row"><span>Credit to</span><b>{fromAccount ? `${toTitleCase(fromAccount.name)}${fromAccount.accountNumber ? ` · ${fromAccount.accountNumber}` : ""}` : "—"}</b></div>
+                  <div className="gk-qx-paid-row"><span>Credit amount</span><b style={{ fontFamily: FONT_MONO }}>{amountNum > 0 ? fmtMoney(amountNum, currencyGiven) : "—"}</b></div>
+                  <div className="gk-qx-paid-row"><span>Receiving Account</span><b>{toAccount ? `${toTitleCase(toAccount.name)} · ${fmtMoney(effectiveReceived, curReceived)}` : "— (none)"}</b></div>
+                  <div className="gk-qx-paid-note"><span>The customer's {currencyGiven} is recorded as a Credit on the From Account and goes into the Cash Account below; the exchange then pays the {curReceived} into the Receiving Account — nothing is counted twice.</span></div>
+                  <label htmlFor="qx-pay-cash" className="gk-qx-paid-label">Cash In To (Cash Account)</label>
+                  {payCashAccounts === null ? <div className="gk-qx-paid-hint">Loading…</div>
+                    : payCashError ? <div className="gk-qx-paid-err">{payCashError}</div>
+                    : payCashAccounts.length === 0 ? <div className="gk-qx-paid-hint">No active {currencyGiven} Cash Accounts — the Credit is recorded without one.</div>
+                    : (
+                      <Select id="qx-pay-cash" value={payCashId} disabled={busy} onChange={(e) => setPayCashId(e.target.value)} aria-invalid={payCashMissing}>
+                        <option value="">Select a Cash Account…</option>
+                        {payCashAccounts.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)} — {a.currency}</option>)}
+                      </Select>
+                    )}
+                  {payCashMissing && triedSubmit && <div className="gk-qx-paid-err">Choose the Cash Account the money went into.</div>}
+                  <div className="gk-qx-paid-grid">
+                    <div>
+                      <label htmlFor="qx-pay-ref" className="gk-qx-paid-label">Payment Reference</label>
+                      <Input id="qx-pay-ref" value={payRef} disabled={busy} maxLength={120} onChange={(e) => setPayRef(e.target.value)} placeholder="Exchange reference" />
+                    </div>
+                    <div>
+                      <label htmlFor="qx-pay-date" className="gk-qx-paid-label">Payment Date</label>
+                      <Input id="qx-pay-date" type="date" value={payDate} disabled={busy} onChange={(e) => setPayDate(e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="gk-qx-paid-hint">Blank date = the exchange's date. Blank reference = the exchange's reference number.</div>
+                  <OptionalNotes value={payNotes} onChange={(e) => setPayNotes(e.target.value)} disabled={busy} />
+                </div>
+              )}
+            </div>
+          )}
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
             <button type="button" disabled={!canSave} onClick={submit} aria-busy={busy} className="gk-exw-save-btn"
               style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 16px", borderRadius: 10, border: "none", background: EX.primary, color: "#fff", fontWeight: 700, fontSize: 14, cursor: canSave ? "pointer" : "not-allowed", opacity: canSave ? 1 : 0.55 }}>

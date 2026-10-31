@@ -1,4 +1,5 @@
 "use strict";
+const payments = require("../payments");
 const fundAlloc = require("../fund-allocation");
 const { isValidAmount, MAX_AMOUNT, toNumber } = require("../util");
 const { all, get, run, tx } = require("../db");
@@ -100,6 +101,8 @@ function rowToJSON(t, includeProfit, lookup) {
     // the (optional) picker was left unset.
     cashOutAccountId: t.cash_out_account_id, cashOutAccount: cashAccountBasic(t.cash_out_account_id),
     cashInAccountId: t.cash_in_account_id, cashInAccount: cashAccountBasic(t.cash_in_account_id),
+    // MARK AS PAID round: the ordinary Credit recorded with this exchange.
+    paidLedgerId: t.paid_ledger_id || null,
   };
 }
 
@@ -148,7 +151,7 @@ function register(router) {
     const rows = queryTransactions(user, query);
     const lookup = includeProfit ? costRateLookup() : null;
     const sources = fundAlloc.allocationsFor(rows.map((t) => t.id));
-    sendJSON(res, 200, { transactions: rows.map((t) => ({ ...rowToJSON(t, includeProfit, lookup), fundSources: sources.get(t.id) || [] })) });
+    sendJSON(res, 200, { transactions: rows.map((t) => ({ ...rowToJSON(t, includeProfit, lookup), fundSources: sources.get(t.id) || [], payment: t.paid_ledger_id ? payments.paymentSummary(t.paid_ledger_id) : null })) });
   });
 
   // CUSTOMER TRANSACTION SELECTOR round: the credits of ONE account that can
@@ -254,6 +257,33 @@ function register(router) {
     if (body.fundSelections !== undefined && body.fundSelections !== null && !Array.isArray(body.fundSelections)) return badRequest(res, "fundSelections must be a list.");
     if (fundSelections && !fromAccount) return badRequest(res, "Selected transactions need a From Account.");
 
+    // MARK AS PAID round: "Mark as Paid (Create Credit)" records that the
+    // customer actually handed over the money they are exchanging. It is a
+    // separate, ordinary Credit (src/payments.js — the same service the
+    // Payments module uses) of the AMOUNT GIVEN, in the CURRENCY GIVEN, on
+    // the FROM ACCOUNT, into the chosen Cash Account. The exchange itself is
+    // recorded exactly as without it (its withdrawal from the From Account
+    // and its deposit into the Receiving Account are unchanged), so:
+    //   From Account:      + given (Credit)  − given (exchange)  = unchanged
+    //   Receiving Account: + received (exchange only — never counted twice)
+    //   Cash In To:        + given (the cash physically received)
+    const markPaid = body.markPaid === true;
+    let paymentPlan = null;
+    if (body.markPaid !== undefined && body.markPaid !== null && typeof body.markPaid !== "boolean") return badRequest(res, "markPaid must be true or false.");
+    if (markPaid) {
+      if (!fromAccount) return badRequest(res, "Mark as Paid needs a From Account — the Credit is recorded on the account the money comes from.");
+      if (fundSelections) return badRequest(res, "An exchange paid now can't also be paid from earlier transactions — choose one.");
+      if (!requirePerm(user, res, "accountsManage")) return;
+      const p = body.payment && typeof body.payment === "object" && !Array.isArray(body.payment) ? body.payment : {};
+      const prepared = payments.preparePayment({
+        account: fromAccount, type: "deposit", amount: given, currency: currencyGiven,
+        paymentDate: p.paymentDate !== undefined && p.paymentDate !== null && p.paymentDate !== "" ? p.paymentDate : txDate,
+        cashAccountId: p.cashAccountId, notes: p.notes, reference: p.reference,
+      });
+      if (prepared.error) return badRequest(res, `Payment: ${prepared.error}`);
+      paymentPlan = prepared.plan;
+    }
+
     // EXCHANGE WORKSPACE round: optional Cash in Hand linkage (spec section
     // 7/10) — Cash Out From must hold currencyGiven, Cash In To must hold
     // currencyReceived. Resolved and validated before anything is written,
@@ -277,11 +307,21 @@ function register(router) {
     try {
       tx(() => {
         if (fundSelections) allocations = fundAlloc.validateSelections(fundSelections, fromAccount, given);
+        let paidLedgerId = null;
+        if (paymentPlan) {
+          if (!paymentPlan.reference) paymentPlan.reference = referenceNumber; // the exchange's own reference by default
+          if (!paymentPlan.notes) paymentPlan.notes = `Payment for exchange ${referenceNumber}`;
+          paidLedgerId = payments.postPayment(paymentPlan, user, nowISO());
+          if (process.env.FINMAN_TEST_FAULT === "exchange-after-payment") throw new Error("Simulated failure after the payment was written (test only).");
+          // The exchange is paid from this very Credit (CUSTOMER TRANSACTION
+          // SELECTOR round), so it never uses up the customer's older credits.
+          allocations = [{ ledgerId: paidLedgerId, amount: given }];
+        }
         run(
           `INSERT INTO exchange_transactions
-           (id, date, client_id, client_name, from_account_id, to_account_id, amount_given, currency_given, amount_received, currency_received, rate_used, cost_rate, profit_usd, staff_id, staff_name, status, notes, void_reason, voided_by, voided_at, reference_number, cash_out_account_id, cash_in_account_id)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'active',?,NULL,NULL,NULL,?,?,?)`,
-          [id, txDate, clientId, resolvedClientName, fromAccount ? fromAccount.id : null, toAccount ? toAccount.id : null, given, currencyGiven, received, currencyReceived, rate, costRate, profitUsd, user.id, user.name, body.notes || null, referenceNumber, cashOutAccount ? cashOutAccount.id : null, cashInAccount ? cashInAccount.id : null]
+           (id, date, client_id, client_name, from_account_id, to_account_id, amount_given, currency_given, amount_received, currency_received, rate_used, cost_rate, profit_usd, staff_id, staff_name, status, notes, void_reason, voided_by, voided_at, reference_number, cash_out_account_id, cash_in_account_id, paid_ledger_id)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'active',?,NULL,NULL,NULL,?,?,?,?)`,
+          [id, txDate, clientId, resolvedClientName, fromAccount ? fromAccount.id : null, toAccount ? toAccount.id : null, given, currencyGiven, received, currencyReceived, rate, costRate, profitUsd, user.id, user.name, body.notes || null, referenceNumber, cashOutAccount ? cashOutAccount.id : null, cashInAccount ? cashInAccount.id : null, paidLedgerId]
         );
         if (fromAccount) {
           run("INSERT INTO account_ledger (id, client_id, type, currency, amount, balance_after, notes, staff_id, staff_name, date, source_type, source_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -318,10 +358,12 @@ function register(router) {
     const linkNote = fromAccount ? (toAccount ? ` — moved ${fmtMoney(given, currencyGiven)} from ${fromAccount.name} into linked account ${toAccount.name}` : ` — debited ${fmtMoney(given, currencyGiven)} from ${fromAccount.name}'s account`) : "";
     const cashNote = cashOutAccount || cashInAccount ? ` (Cash Account: ${cashOutAccount ? cashOutAccount.name : "—"} -> ${cashInAccount ? cashInAccount.name : "—"})` : "";
     addAudit(user, "Transaction recorded", `${resolvedClientName}: ${given} ${currencyGiven} -> ${received} ${currencyReceived}${linkNote}${cashNote}`);
-    const allocNote = allocations ? ` — paid from ${allocations.length} selected transaction(s)` : "";
-    if (allocNote) addAudit(user, "Exchange funds selected", `${referenceNumber}${allocNote}`);
-    const created = rowToJSON(get("SELECT * FROM exchange_transactions WHERE id = ?", [id]), can(user, "profit.viewExchange"));
+    if (fundSelections && allocations) addAudit(user, "Exchange funds selected", `${referenceNumber} — paid from ${allocations.length} selected transaction(s)`);
+    const createdRow = get("SELECT * FROM exchange_transactions WHERE id = ?", [id]);
+    if (paymentPlan) addAudit(user, "Exchange marked as paid", `${referenceNumber} — Credit ${fmtMoney(given, currencyGiven)} to ${fromAccount.name}${paymentPlan.cashAccount ? ` (${paymentPlan.cashAccount.name})` : ""}`);
+    const created = rowToJSON(createdRow, can(user, "profit.viewExchange"));
     created.fundSources = fundAlloc.allocationsFor([id]).get(id) || [];
+    created.payment = payments.paymentSummary(createdRow.paid_ledger_id);
     sendJSON(res, 201, { transaction: created });
   });
 

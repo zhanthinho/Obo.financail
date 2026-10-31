@@ -250,6 +250,7 @@ CREATE TABLE IF NOT EXISTS exchange_transactions (
   currency_received TEXT NOT NULL CHECK(currency_received IN ('USD','SLSH')),
   rate_used REAL NOT NULL,
   cost_rate REAL, -- GLOBAL RATE & PROFIT round: the Cost Rate this exchange was valued at
+  paid_ledger_id TEXT, -- MARK AS PAID round: the ordinary Credit (account_ledger) recorded with this exchange
   profit_usd REAL NOT NULL DEFAULT 0,
   staff_id TEXT NOT NULL REFERENCES users(id),
   staff_name TEXT NOT NULL,

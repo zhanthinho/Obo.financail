@@ -290,5 +290,10 @@
  "of {0}": "ka mid ah {0}",
  "Only {0} is left on this transaction.": "Kaliya {0} ayaa ka hadhay macaamilkan.",
  "From {0} selected transaction(s):": "Laga bixiyay {0} macaamil oo la doortay:",
- "{0} has only {1} {2} left — refresh the list and select again.": "{0} waxaa ka hadhay {1} {2} oo keliya — cusboonaysii liiska oo mar kale dooro."
+ "{0} has only {1} {2} left — refresh the list and select again.": "{0} waxaa ka hadhay {1} {2} oo keliya — cusboonaysii liiska oo mar kale dooro.",
+ "No active {0} Cash Accounts — the Credit is recorded without one.": "Ma jiro Cash Account {0} ah oo firfircoon — Credit-ka waxaa lagu diiwaangeliyaa la'aantiis.",
+ "The customer's {0} is recorded as a Credit on the From Account and goes into the Cash Account below; the exchange then pays the {1} into the Receiving Account — nothing is counted twice.": "{0}-ga macmiilka waxaa lagu diiwaangeliyaa Credit ahaan From Account-ka, wuxuuna galaa Cash Account-ka hoose; kadib sarrifku {1}-ga wuxuu gelinayaa Receiving Account-ka — waxba laba jeer laguma xisaabiyo.",
+ "Exchange recorded and marked as paid — Credit {0}.": "Sarrifka waa la diiwaangeliyay oo waxaa lagu calaamadeeyay la bixiyay — Credit {0}.",
+ "Payment: {0}": "Lacag-bixin: {0}",
+ "Payment for exchange {0}": "Lacag-bixinta sarrifka {0}"
 }
