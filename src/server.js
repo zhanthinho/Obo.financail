@@ -52,20 +52,10 @@ function tryBootstrap() {
     return false;
   }
 }
-function startBootstrap() {
-  tryBootstrap();
-  if (!ready) {
-    const retry = setInterval(() => { if (tryBootstrap()) clearInterval(retry); }, 15000);
-    retry.unref();
-  }
-}
-// SERVER-TO-SERVER TRANSFER (src/server-transfer.js): when MIGRATE_FROM_URL
-// is set, a fresh install first copies the source installation's database,
-// BEFORE the app opens it. Unset (the normal case): starts immediately.
-if (process.env.MIGRATE_FROM_URL) {
-  require("./server-transfer").pullFromEnv().finally(startBootstrap);
-} else {
-  startBootstrap();
+tryBootstrap();
+if (!ready) {
+  const retry = setInterval(() => { if (tryBootstrap()) clearInterval(retry); }, 15000);
+  retry.unref();
 }
 
 // Errors that mean "the database is unreachable right now" (answered 503).
@@ -103,7 +93,6 @@ require("./routes/dataReset").register(router);
 require("./routes/loans").register(router);
 require("./routes/expenses").register(router);
 require("./routes/platform").register(router);
-require("./server-transfer").register(router);
 
 // MYSQL round: the health check makes a real round-trip to MySQL (bounded by
 // a short timeout) — 200 only when the app can actually serve data.

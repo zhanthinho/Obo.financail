@@ -36,7 +36,6 @@
     "test:data-reset": "node test/data-reset.js",
     "test:header": "node test/header.js",
     "test:copy-to-online": "node test/copy-to-online.js",
-    "test:server-transfer": "node test/server-transfer.js",
     "test:quick-exchange": "node test/quick-exchange.js",
     "test:exchange-margin": "node test/exchange-margin.js",
     "test:optional-notes": "node test/optional-notes.js",
