@@ -235,12 +235,37 @@ async function run(routes) {
     assert(d.status === 403 && (p.status === 403 || p.status === 400), `delete ${d.status}, patch ${p.status}`);
   });
 
+  await check("nobody can raise their own role or permissions", async () => {
+    const roles = (await api("/api/roles", { token: aAdmin })).json.roles;
+    const users = (await api("/api/users", { token: aAdmin })).json.users;
+    const adminRole = roles.find((r) => r.key === "admin"), sup = roles.find((r) => r.isSuperAdmin || r.key === "super_admin");
+    const bad = [];
+    for (const u of ["xasan.cali", "faadumo.warsame", "cabdi.maxamed", "ilhan.nuur", "sahra.ismail"]) {
+      const t = (await login(u, PW)).token; const me = users.find((x) => x.username === u);
+      for (const [label, p, m, body] of [
+        ["own role -> Admin", `/api/users/${me.id}`, "PATCH", { roleId: adminRole.id }],
+        ["own permissions", `/api/users/${me.id}/permissions`, "PATCH", { grant: ["users.managePermissions", "settings.update"] }],
+        ["edit the Admin role", `/api/roles/${adminRole.id}`, "PATCH", { permissions: ["users.view"] }],
+        ...(sup ? [["own role -> Super Admin", `/api/users/${me.id}`, "PATCH", { roleId: sup.id }]] : []),
+      ]) {
+        const r = await api(p, { method: m, token: t, body });
+        if (r.status < 300) bad.push(`${u}: ${label} -> ${r.status}`);
+      }
+    }
+    const meA = users.find((x) => x.username === "amina.yusuf");
+    if (sup) { const r = await api(`/api/users/${meA.id}`, { method: "PATCH", token: aAdmin, body: { roleId: sup.id } }); if (r.status < 300) bad.push(`admin -> Super Admin ${r.status}`); }
+    assert(!bad.length, bad.join(" | "));
+  });
+
   console.log("\nCross-company sweep (Company A using Company B's record ids)");
   const before = await snapshotB(ctx.sb, getStatic);
   const idBody = (id) => {
     const o = { name: "probe", amount: 1, amountGiven: 1, currency: "USD", currencyGiven: "USD", reason: "probe", notes: "probe", description: "probe", date: new Date().toISOString().slice(0, 10) };
     for (const k of ["id", "accountId", "clientId", "clientAccountId", "receivingAccountId", "fromAccountId", "toAccountId", "cashAccountId", "fromCashAccountId", "toCashAccountId", "quotationId", "loanId", "categoryId", "roleId", "userId", "transactionId", "templateId", "expenseId", "entryId", "paymentId"]) o[k] = id;
     o.companyId = "CMP-0002"; o.items = [{ accountId: id, type: "deposit", amount: 1 }];
+    // AUDIT round 2: the newer exchange options carry ids too.
+    o.fundSelections = [{ ledgerId: id, amount: 1 }]; o.markPaid = true; o.payment = { cashAccountId: id };
+    o.clientName = "probe"; o.receivingAccountId = id; o.cashOutAccountId = id; o.cashInAccountId = id;
     return o;
   };
   const leaks = [];
@@ -254,6 +279,16 @@ async function run(routes) {
     for (const r of getStatic) {
       const res = await api(`${r.pattern}?companyId=CMP-0002&company_id=CMP-0002&cid=CMP-0002`, { token: aAdmin, headers: { "X-Company-Id": "CMP-0002" } });
       if (hasMark(res.text)) leaks.push(`GET ${r.pattern} (company id in query/header)`);
+    }
+    // AUDIT round 2: ids passed as QUERY parameters too (e.g.
+    // /api/transactions/fund-sources?accountId=…, statements, filters).
+    const qKeys = ["accountId", "clientId", "cashAccountId", "quotationId", "loanId", "staffId", "id"];
+    for (const r of getStatic) {
+      for (const id of onlyB.slice(0, 25)) {
+        const q = qKeys.map((k) => `${k}=${encodeURIComponent(id)}`).join("&");
+        const res = await api(`${r.pattern}?${q}`, { token: aAdmin });
+        if (hasMark(res.text)) { leaks.push(`GET ${r.pattern}?…=${id}`); break; }
+      }
     }
     assert(!leaks.length, leaks.slice(0, 10).join(" | "));
   });
