@@ -685,6 +685,11 @@ const THEME_CSS = `
 
   .gk-login-input-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #5b7d8c; pointer-events: none; display: flex; transition: color 180ms ease; }
   .gk-login-input { transition: box-shadow 180ms ease, border-color 180ms ease, background 180ms ease; }
+  /* The login fields always have a white background, so their text must stay
+     dark even when the app follows a dark system theme (where C.ink is light). */
+  .gk-login-input, [data-theme="dark"] .gk-login-input { color: #0F2A36 !important; caret-color: #0F2A36; -webkit-text-fill-color: #0F2A36; color-scheme: light; }
+  .gk-login-input::placeholder { color: #7A949F !important; -webkit-text-fill-color: #7A949F; opacity: 1; }
+  .gk-login-input:-webkit-autofill, .gk-login-input:-webkit-autofill:focus { -webkit-text-fill-color: #0F2A36; box-shadow: 0 0 0 1000px #fff inset; }
   .gk-login-input:focus { outline: none; border-color: ${C.cyan} !important; box-shadow: 0 0 0 3px color-mix(in srgb, ${C.cyan} 20%, transparent); background: #fff !important; }
   .gk-login-input-wrap[data-focused="true"] .gk-login-input-icon { color: ${C.navy}; }
   .gk-login-eye { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; padding: 4px; margin: 0; cursor: pointer; color: #5b7d8c; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: color 150ms ease, background 150ms ease; }
