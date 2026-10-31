@@ -1,4 +1,6 @@
 "use strict";
+// Every company table the app defines (grows when a round adds a table).
+const TENANT_TABLE_COUNT = require("../src/mysql/schema").tableNames("tenant").length;
 // MYSQL round — tests of the one-time SQLite -> MySQL migration
 // (scripts/migrate-sqlite-to-mysql.js). Builds a realistic OLD installation
 // with the legacy SQLite code (control database + primary company + a second
@@ -134,7 +136,7 @@ async function main() {
     const r = tool(["--source", path.join(src, "geeska.sqlite"), "--out", out, "--dry-run"], db1.env);
     assert(r.code === 0, r.out);
     assert(/upgrade changed no data/.test(r.out), "an up-to-date installation must show no upgrade changes");
-    assert(/DRY RUN finished/.test(r.out) && /CMP-0002/.test(r.out) && /33 table\(s\) to copy/.test(r.out), r.out.slice(-600));
+    assert(/DRY RUN finished/.test(r.out) && /CMP-0002/.test(r.out) && new RegExp(`${TENANT_TABLE_COUNT} table\\(s\\) to copy`).test(r.out), r.out.slice(-600));
     const h = openScope(db1.env, { control: true });
     try { assert(h.raw("SELECT COUNT(*) AS n FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE()")[0].n === 0, "dry-run created tables"); } finally { h.close(); }
   });
@@ -185,7 +187,7 @@ async function main() {
     const n0 = h.prepare("SELECT COUNT(*) AS n FROM account_ledger").get().n;
     h.close();
     const r = tool(["--source", path.join(src, "geeska.sqlite"), "--out", out, "--execute"], db1.env);
-    assert(r.code === 0 && /0 table\(s\) to copy, 33 already done/.test(r.out), r.out.slice(-600));
+    assert(r.code === 0 && new RegExp(`0 table\\(s\\) to copy, ${TENANT_TABLE_COUNT} already done`).test(r.out), r.out.slice(-600));
     const h2 = openScope(db1.env, { companyId: "CMP-0001" });
     try { assert(h2.prepare("SELECT COUNT(*) AS n FROM account_ledger").get().n === n0, "duplicated rows"); } finally { h2.close(); }
   });
