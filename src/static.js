@@ -28,7 +28,11 @@ function serveStatic(publicDir) {
         return res.end("Not found");
       }
       const ext = path.extname(filePath);
-      res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream" });
+      // index.html is always revalidated (it names the current versioned
+      // bundle); everything else may be cached normally.
+      const headers = { "Content-Type": MIME[ext] || "application/octet-stream" };
+      if (ext === ".html") headers["Cache-Control"] = "no-cache";
+      res.writeHead(200, headers);
       res.end(data);
     });
     return true;

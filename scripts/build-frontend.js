@@ -27,5 +27,19 @@ esbuild
     target: ["chrome100", "firefox100", "safari15"],
     logLevel: "info",
   })
-  .then(() => console.log("Frontend bundled -> public/app.bundle.js"))
+  .then(() => {
+    // CACHE BUSTING: the hosting edge caches /app.bundle.js for a month, so
+    // index.html (never cached) points at /app.bundle.js?v=<content hash>.
+    // A new build = a new URL, and every browser loads the new code at once.
+    const fs = require("fs");
+    const crypto = require("crypto");
+    const pub = path.join(__dirname, "..", "public");
+    const hash = crypto.createHash("sha256").update(fs.readFileSync(path.join(pub, "app.bundle.js"))).digest("hex").slice(0, 12);
+    const indexFile = path.join(pub, "index.html");
+    const html = fs.readFileSync(indexFile, "utf8");
+    const next = html.replace(/<script src="\/app\.bundle\.js(\?v=[a-f0-9]+)?"><\/script>/, `<script src="/app.bundle.js?v=${hash}"></script>`);
+    if (next === html && !html.includes(`?v=${hash}`)) throw new Error("index.html has no <script src=\"/app.bundle.js\"> tag to version.");
+    fs.writeFileSync(indexFile, next);
+    console.log(`Frontend bundled -> public/app.bundle.js (index.html -> ?v=${hash})`);
+  })
   .catch(() => process.exit(1));
