@@ -805,3 +805,21 @@ CREATE TABLE IF NOT EXISTS expense_attachments (
   uploaded_by_name TEXT,
   uploaded_at TEXT NOT NULL
 );
+
+-- CUSTOMER TRANSACTION SELECTOR round: which customer credits (account_ledger
+-- deposits) an exchange was paid from, chosen in Quick Exchange -> View
+-- Transactions. Debits without a row here use credits oldest-first (FIFO).
+CREATE TABLE IF NOT EXISTS exchange_fund_allocations (
+  id TEXT PRIMARY KEY,
+  exchange_id TEXT NOT NULL,
+  ledger_id TEXT NOT NULL,
+  client_id TEXT NOT NULL,
+  currency TEXT NOT NULL CHECK(currency IN ('USD','SLSH')),
+  amount REAL NOT NULL CHECK(amount > 0),
+  created_by_id TEXT,
+  created_by_name TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_exchange_fund_alloc_exchange ON exchange_fund_allocations(exchange_id);
+CREATE INDEX IF NOT EXISTS idx_exchange_fund_alloc_ledger ON exchange_fund_allocations(ledger_id);
+CREATE INDEX IF NOT EXISTS idx_exchange_fund_alloc_client ON exchange_fund_allocations(client_id);

@@ -40,7 +40,8 @@
     "test:exchange-margin": "node test/exchange-margin.js",
     "test:optional-notes": "node test/optional-notes.js",
     "test:route-sweep": "node test/route-sweep.js",
-    "test:audit-fixes": "node test/audit-fixes.js"
+    "test:audit-fixes": "node test/audit-fixes.js",
+    "test:fund-selector": "node test/fund-selector.js"
   },
   "dependencies": {
     "exceljs": "^4.4.0",

@@ -289,6 +289,19 @@ const THEME_CSS = `
   /* COLLAPSIBLE NOTES round: every optional Notes field (OptionalNotes) is a
      compact, closed section until the user opens it. Brand accents follow the
      active Brand Theme (--c-navy), like every other form control. */
+  /* CUSTOMER TRANSACTION SELECTOR round */
+  .gk-qx-viewtx { display: inline-flex; align-items: center; gap: 5px; font: inherit; font-size: 11px; font-weight: 600; color: var(--c-navy); background: color-mix(in srgb, var(--c-navy) 7%, transparent); border: 1px solid color-mix(in srgb, var(--c-navy) 30%, transparent); border-radius: 999px; padding: 3px 4px 3px 9px; cursor: pointer; }
+  .gk-qx-viewtx:hover:not(:disabled) { background: color-mix(in srgb, var(--c-navy) 12%, transparent); }
+  .gk-qx-viewtx:focus-visible { outline: 2px solid var(--c-navy); outline-offset: 1px; }
+  .gk-qx-viewtx:disabled { opacity: .55; cursor: not-allowed; }
+  .gk-qx-viewtx-count { min-width: 18px; text-align: center; background: var(--c-navy); color: #fff; border-radius: 999px; padding: 0 6px; font-size: 10.5px; line-height: 16px; }
+  @media (max-width: 640px) {
+    .gk-fund-table thead { display: none; }
+    .gk-fund-table, .gk-fund-table tbody, .gk-fund-table tr, .gk-fund-table td { display: block; width: 100% !important; box-sizing: border-box; }
+    .gk-fund-table tr { border-bottom: 1px solid var(--c-line); padding: 6px 0; }
+    .gk-fund-table td { border: 0 !important; padding: 3px 14px !important; text-align: left !important; max-width: none !important; white-space: normal !important; }
+    .gk-fund-table td[data-label]::before { content: attr(data-label); display: inline-block; min-width: 86px; font-size: 10.5px; font-weight: 700; color: var(--c-slate); text-transform: uppercase; }
+  }
   .gk-notes { border: 1px solid var(--c-line); border-radius: 8px; background: color-mix(in srgb, var(--c-paper) 65%, var(--c-card)); min-width: 0; max-width: 100%; box-sizing: border-box; transition: border-color .15s ease; }
   .gk-notes[data-open="true"] { border-color: color-mix(in srgb, var(--c-navy) 35%, var(--c-line)); background: var(--c-card); }
   .gk-notes-head { display: flex; align-items: center; gap: 7px; width: 100%; min-width: 0; box-sizing: border-box; background: none; border: 0; border-radius: 8px; padding: 7px 10px; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 600; line-height: 1.3; color: var(--c-ink); text-align: left; }
@@ -6681,6 +6694,155 @@ function QxFieldError({ children }) {
   if (!children) return null;
   return <div role="alert" style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, color: EX.danger, marginTop: 6 }}><NavIcon name="circleAlert" size={13} />{children}</div>;
 }
+// CUSTOMER TRANSACTION SELECTOR round: Quick Exchange -> Track in Account ->
+// "View Transactions". Lists the From Account's credits that still have money
+// left (worked out by the server, src/fund-allocation.js), lets the user tick
+// one or more — taking all or part of each — and hands the selection back to
+// the form. Nothing here is trusted by the server: it checks every selected
+// credit and amount again when the exchange is saved.
+const fundFloor = (n, currency) => (currency === "USD" ? Math.floor(Number(n) * 100 + 1e-6) / 100 : Math.floor(Number(n) + 1e-6));
+function FundSourcesModal({ call, account, currency, initial, onClose, onUse }) {
+  const [search, setSearch] = useState("");
+  const [debounced, setDebounced] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [type, setType] = useState("");
+  const [page, setPage] = useState(1);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [reload, setReload] = useState(0);
+  // ledgerId -> { row, amount: string }
+  const [sel, setSel] = useState(() => new Map((initial || []).map((i) => [i.ledgerId, { row: i.row, amount: String(i.amount) }])));
+  useEffect(() => { const t = setTimeout(() => setDebounced(search), 250); return () => clearTimeout(t); }, [search]);
+  useEffect(() => { setPage(1); }, [debounced, from, to, type]);
+  useEffect(() => {
+    let live = true;
+    setLoading(true); setError("");
+    call("/api/transactions/fund-sources" + qs({ accountId: account.id, search: debounced || undefined, from: from || undefined, to: to || undefined, type: type || undefined, page, pageSize: 25 }))
+      .then((d) => { if (live) setData(d); })
+      .catch((e) => { if (live) setError(e.message || "Could not load the transactions."); })
+      .finally(() => { if (live) setLoading(false); });
+    return () => { live = false; };
+  }, [call, account.id, debounced, from, to, type, page, reload]);
+
+  const toggle = (row) => setSel((m) => {
+    const n = new Map(m);
+    if (n.has(row.ledgerId)) n.delete(row.ledgerId);
+    else n.set(row.ledgerId, { row, amount: String(fundFloor(row.available, currency)) });
+    return n;
+  });
+  const setAmount = (id, v) => setSel((m) => { const n = new Map(m); const e = n.get(id); if (e) n.set(id, { ...e, amount: v.replace(/^-/, "") }); return n; });
+  const items = [...sel.values()];
+  const itemError = (e) => {
+    const a = Number(e.amount);
+    if (!(a > 0)) return "Enter an amount above 0.";
+    if (a - e.row.available > 1e-8) return `Only ${fmtMoney(e.row.available, currency)} is left on this transaction.`;
+    return null;
+  };
+  const invalid = items.some(itemError);
+  const total = items.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const totalRounded = currency === "USD" ? Math.round(total * 100) / 100 : Math.round(total);
+  const canUse = items.length > 0 && !invalid && totalRounded > 0;
+  const rows = data ? data.rows : [];
+  const th = { padding: "8px 10px", textAlign: "left", fontSize: 11, fontWeight: 700, color: C.slate, textTransform: "uppercase", letterSpacing: 0.3, whiteSpace: "nowrap", borderBottom: `1px solid ${C.line}` };
+  const td = { padding: "8px 10px", fontSize: 12.5, borderBottom: `1px solid ${C.line}`, verticalAlign: "middle" };
+
+  return (
+    <Modal title={`Customer Transactions (${currency})`} subtitle="Select customer transactions to use for exchange." onClose={onClose} width={980} flush>
+      <div className="gk-fund-modal" style={{ display: "flex", flexDirection: "column", minHeight: 0, flex: 1 }}>
+        <div style={{ padding: "12px 20px", borderBottom: `1px solid ${C.line}`, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "flex-end" }}>
+          <div style={{ flex: "1 1 220px", minWidth: 0 }}><Field label="Search"><SearchInput placeholder="Reference, note or date…" value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Search transactions" /></Field></div>
+          <Field label="From" width={150}><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From date" /></Field>
+          <Field label="To" width={150}><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} aria-label="To date" /></Field>
+          <Field label="Type" width={170}><Select value={type} onChange={(e) => setType(e.target.value)} aria-label="Transaction type"><option value="">All types</option>{(data?.types || []).map((t) => <option key={t} value={t}>{t}</option>)}</Select></Field>
+        </div>
+        <div style={{ padding: "8px 20px", display: "flex", flexWrap: "wrap", gap: 14, fontSize: 12, color: C.slate, borderBottom: `1px solid ${C.line}` }}>
+          <span><b style={{ color: C.ink }}>{account.name}</b>{account.accountNumber ? ` · ${account.accountNumber}` : ""}</span>
+          {data && <span>Account balance: <b style={{ color: C.ink, fontFamily: FONT_MONO }}>{fmtMoney(data.account.balance, currency)}</b></span>}
+          {data && <span>Available in {data.eligibleCount} transaction(s): <b style={{ color: EX.primary, fontFamily: FONT_MONO }}>{fmtMoney(data.totalAvailable, currency)}</b></span>}
+        </div>
+        <div style={{ flex: 1, minHeight: 160, overflow: "auto" }}>
+          {loading && !data ? <div style={{ padding: 30 }}><Spinner label="Loading transactions…" /></div>
+            : error ? (
+              <div role="alert" style={{ margin: 20, padding: "10px 12px", borderRadius: 8, background: C.redBg, color: C.red, fontSize: 12.5, display: "flex", gap: 10, alignItems: "center", justifyContent: "space-between" }}>
+                <span>{error}</span><Btn size="sm" tone="ghost" onClick={() => setReload((n) => n + 1)}>Try again</Btn>
+              </div>
+            ) : rows.length === 0 ? (
+              <div style={{ padding: "34px 20px", textAlign: "center", color: C.slate, fontSize: 12.5 }}>
+                <div style={{ display: "inline-flex", color: EX.primary, marginBottom: 6 }}><NavIcon name="fileText" size={22} /></div>
+                <div>{data && data.eligibleCount > 0 ? "No transactions match these filters." : "This account has no transactions with money left to exchange."}</div>
+              </div>
+            ) : (
+              <table className="gk-fund-table" style={{ width: "100%", borderCollapse: "collapse", opacity: loading ? 0.6 : 1 }}>
+                <thead><tr>
+                  <th style={{ ...th, width: 36 }} aria-label="Select"></th>
+                  <th style={th}>Date</th><th style={th}>Type</th><th style={th}>Reference</th><th style={th}>Note</th>
+                  <th style={{ ...th, textAlign: "right" }}>{currency} Amount</th><th style={{ ...th, textAlign: "right" }}>Available</th><th style={{ ...th, textAlign: "right" }}>Use</th>
+                </tr></thead>
+                <tbody>
+                  {rows.map((r) => {
+                    const picked = sel.get(r.ledgerId);
+                    const err = picked ? itemError(picked) : null;
+                    return (
+                      <tr key={r.ledgerId} data-ledger-id={r.ledgerId} style={{ background: picked ? EX.usdBg : undefined }}>
+                        <td style={td}><input type="checkbox" checked={!!picked} onChange={() => toggle(r)} aria-label={`Select ${r.reference || r.type} ${fmtMoney(r.available, currency)}`} style={{ accentColor: "var(--c-navy)", width: 16, height: 16, cursor: "pointer" }} /></td>
+                        <td style={{ ...td, whiteSpace: "nowrap" }} data-label="Date">{fmtDate(r.date)}</td>
+                        <td style={td} data-label="Type">{r.type}</td>
+                        <td style={{ ...td, fontFamily: FONT_MONO, whiteSpace: "nowrap" }} data-label="Reference" translate="no">{r.reference || "—"}</td>
+                        <td style={{ ...td, maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: C.slate }} data-label="Note" title={r.note} translate="no">{r.note || "—"}</td>
+                        <td style={{ ...td, textAlign: "right", fontFamily: FONT_MONO }} data-label="Amount">{fmtMoney(r.amount, currency)}</td>
+                        <td style={{ ...td, textAlign: "right", fontFamily: FONT_MONO, fontWeight: 700, color: EX.primary }} data-label="Available">
+                          {fmtMoney(r.available, currency)}
+                          {r.consumed > 1e-8 && <div style={{ fontSize: 10.5, fontWeight: 500, color: C.slate }}><span>{fmtMoney(r.consumed, currency)} used</span></div>}
+                        </td>
+                        <td style={{ ...td, textAlign: "right", width: 130 }} data-label="Use">
+                          {picked ? (
+                            <>
+                              <MoneyInput value={picked.amount} onChange={(e) => setAmount(r.ledgerId, e.target.value)} aria-label={`Amount to use from ${r.reference || r.type}`} aria-invalid={!!err} style={{ fontFamily: FONT_MONO, textAlign: "right", padding: "4px 6px" }} />
+                              {err && <div style={{ fontSize: 10.5, color: C.red, marginTop: 2, textAlign: "left" }}>{err}</div>}
+                            </>
+                          ) : <span style={{ color: C.slate }}>—</span>}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+        </div>
+        {data && data.pages > 1 && (
+          <div style={{ padding: "8px 20px", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8, fontSize: 12, color: C.slate, borderTop: `1px solid ${C.line}` }}>
+            <span>Page {data.page} of {data.pages}</span>
+            <Btn size="sm" tone="ghost" disabled={data.page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</Btn>
+            <Btn size="sm" tone="ghost" disabled={data.page >= data.pages} onClick={() => setPage((p) => p + 1)}>Next</Btn>
+          </div>
+        )}
+        <div style={{ padding: "12px 20px", borderTop: `1px solid ${C.line}`, background: C.paper }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center", marginBottom: items.length ? 10 : 0 }} aria-live="polite">
+            <span style={{ fontSize: 12, color: C.slate, marginRight: 4 }}>
+              <span>{items.length} selected</span> · <b style={{ color: C.ink, fontFamily: FONT_MONO }}>{fmtMoney(totalRounded, currency)}</b>
+            </span>
+            {items.map((e) => (
+              <span key={e.row.ledgerId} className="gk-fund-chip" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11.5, border: `1px solid ${C.line}`, background: C.card, borderRadius: 999, padding: "3px 4px 3px 10px" }}>
+                <span translate="no" style={{ fontFamily: FONT_MONO }}>{e.row.reference || e.row.type}</span>
+                <b style={{ fontFamily: FONT_MONO }}>{fmtMoney(Number(e.amount) || 0, currency)}</b>
+                {Number(e.amount) > 0 && Number(e.amount) < e.row.available - 1e-8 && <span style={{ color: C.slate }}><span>of {fmtMoney(e.row.available, currency)}</span></span>}
+                <button type="button" onClick={() => toggle(e.row)} aria-label={`Remove ${e.row.reference || e.row.type}`} style={{ background: "none", border: "none", cursor: "pointer", color: C.slate, display: "inline-flex", padding: 2, borderRadius: 999 }}><NavIcon name="x" size={12} /></button>
+              </span>
+            ))}
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, flexWrap: "wrap" }}>
+            <Btn tone="ghost" onClick={onClose}>Cancel</Btn>
+            <Btn tone="primary" icon="check" disabled={!canUse} onClick={() => onUse(items.map((e) => ({ ledgerId: e.row.ledgerId, amount: Number(e.amount), row: e.row })), totalRounded)}>
+              <span>Use Selected Amount ({fmtMoney(totalRounded, currency)})</span>
+            </Btn>
+          </div>
+        </div>
+      </div>
+    </Modal>
+  );
+}
 function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateChanged, onSaleRateChanged, onDailySlshRateChanged, onClose, onSubmit, presetFromAccountId, presetCurrencyGiven, editingTx, saving }) {
   // SECURITY & INTEGRITY AUDIT round: one id per opening of this form — a
   // double click or retried save is answered once, never posted twice.
@@ -6716,6 +6878,12 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
   const [submitting, setSubmitting] = useState(false);
   const [triedSubmit, setTriedSubmit] = useState(false);
   const [amountBlurred, setAmountBlurred] = useState(false);
+  // CUSTOMER TRANSACTION SELECTOR round: credits picked in View Transactions
+  // ({ accountId, currency, items: [{ ledgerId, amount, row }], total }).
+  const [fundSel, setFundSel] = useState(null);
+  const [fundModalOpen, setFundModalOpen] = useState(false);
+  const [fundCount, setFundCount] = useState(null); // eligible credits on the From Account
+  const [fundNotice, setFundNotice] = useState("");
   const busy = saving || submitting;
 
   const curReceived = currencyGiven === "USD" ? "SLSH" : "USD";
@@ -6761,6 +6929,38 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
   const fromAccount = fromAccountOptions.find((a) => a.id === fromAccountId) || null;
   const toAccount = toAccountOptions.find((a) => a.id === toAccountId) || null;
   const effectiveClientName = fromAccount ? fromAccount.name : (editingTx?.clientName || "Walk-in");
+  // View Transactions is offered when recording a NEW exchange from a From
+  // Account; its count is refreshed whenever that account changes.
+  const fundsEnabled = !editingTx && trackMode === "account" && !!fromAccount;
+  useEffect(() => {
+    if (!fundsEnabled) { setFundCount(null); return undefined; }
+    let live = true;
+    setFundCount(null);
+    call("/api/transactions/fund-sources" + qs({ accountId: fromAccount.id, pageSize: 1 }))
+      .then((d) => { if (live) setFundCount(d.eligibleCount); })
+      .catch(() => { if (live) setFundCount("error"); });
+    return () => { live = false; };
+  }, [fundsEnabled, fromAccount && fromAccount.id, call]); // eslint-disable-line react-hooks/exhaustive-deps
+  // A selection belongs to one account and direction: changing either clears
+  // it (with a visible note), never carries it over.
+  useEffect(() => {
+    if (fundSel && (fundSel.accountId !== fromAccountId || fundSel.currency !== currencyGiven || trackMode !== "account")) {
+      setFundSel(null);
+      setFundNotice("The selected transactions were cleared because the account or exchange direction changed.");
+    }
+  }, [fromAccountId, currencyGiven, trackMode]); // eslint-disable-line react-hooks/exhaustive-deps
+  function applyFunds(items, total) {
+    setFundSel({ accountId: fromAccountId, currency: currencyGiven, items, total });
+    setAmountGiven(String(total)); setAmountBlurred(true); setAmountReceived("");
+    setFundNotice(""); setFundModalOpen(false);
+  }
+  function changeAmount(v) {
+    setAmountGiven(v);
+    if (fundSel && Math.abs((Number(v) || 0) - fundSel.total) > 1e-9) {
+      setFundSel(null);
+      setFundNotice("The selected transactions were cleared because the amount was changed by hand.");
+    }
+  }
 
   // Existing behavior: switching direction swaps the two picked accounts and
   // clears the amounts, so no figure from the old direction is left behind.
@@ -6813,6 +7013,7 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
         rateUsed: rateUsed === "" ? undefined : Number(rateUsed),
         costRate: costRateUsed === "" ? undefined : Number(costRateUsed),
         cashOutAccountId: cashOutAccountId || undefined, cashInAccountId: cashInAccountId || undefined,
+        fundSelections: fundSel ? fundSel.items.map((i) => ({ ledgerId: i.ledgerId, amount: i.amount })) : undefined,
       });
     } finally { setSubmitting(false); }
   }
@@ -6877,7 +7078,18 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
                       {fromAccountOptions.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)} · {a.accountNumber} · {fmtMoney(a.balance, a.currency)}</option>)}
                     </Select>
                   )}
-                  {fromAccount && <div style={{ fontSize: 11, color: C.slate, marginTop: 4 }}>Available: {fmtMoney(fromAccount.balance, fromAccount.currency)}</div>}
+                  {fromAccount && (
+                    <div className="gk-qx-available" style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, fontSize: 11, color: C.slate, marginTop: 4 }}>
+                      <span>Available: {fmtMoney(fromAccount.balance, fromAccount.currency)}</span>
+                      {!editingTx && (
+                        <button type="button" className="gk-qx-viewtx" onClick={() => setFundModalOpen(true)} disabled={busy || fundCount === 0}
+                          title={fundCount === 0 ? "This account has no transactions with money left to exchange." : fundCount === "error" ? "Could not load the count — open to try again." : undefined}>
+                          <NavIcon name="fileText" size={13} /><span>View Transactions</span>
+                          <span className="gk-qx-viewtx-count">{fundCount === null ? "…" : fundCount === "error" ? "!" : fundCount}</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div className="gk-exw-cashpair-arrow" style={{ color: C.slate, display: "flex" }}><NavIcon name="arrowRight" size={16} /></div>
                 <div style={{ minWidth: 0 }}>
@@ -6933,11 +7145,22 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
             <QxSectionTitle icon="banknote">Amount to Exchange</QxSectionTitle>
             <label htmlFor="qx-amount" style={{ display: "block", fontSize: 11, fontWeight: 600, color: C.slate, marginBottom: 5 }}>Amount given ({currencyGiven})</label>
             <div style={{ display: "flex", alignItems: "center", border: `1.5px solid ${amountError ? EX.danger : EX.usdBorder}`, borderRadius: 10, background: C.card, overflow: "hidden" }}>
-              <MoneyInput id="qx-amount" value={amountGiven} onChange={(e) => setAmountGiven(e.target.value.replace(/^-/, ""))} onBlur={() => setAmountBlurred(true)} disabled={busy} placeholder="0.00" aria-invalid={!!amountError}
+              <MoneyInput id="qx-amount" value={amountGiven} onChange={(e) => changeAmount(e.target.value.replace(/^-/, ""))} onBlur={() => setAmountBlurred(true)} disabled={busy} placeholder="0.00" aria-invalid={!!amountError}
                 style={{ flex: 1, minWidth: 0, fontSize: 22, fontWeight: 700, fontFamily: FONT_MONO, border: "none", background: "transparent", padding: "10px 12px", color: C.ink, fontVariantNumeric: "tabular-nums" }} />
               <span style={{ padding: "0 14px", fontWeight: 800, fontSize: 13, color: EX.primary, borderLeft: `1px solid ${C.line}`, alignSelf: "stretch", display: "flex", alignItems: "center", background: EX.usdBg }}>{currencyGiven}</span>
             </div>
-            <QxFieldError>{amountError}</QxFieldError>
+            {fundSel && (
+                <div className="gk-qx-fundsel" style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, fontSize: 11.5, marginTop: 6, padding: "6px 9px", borderRadius: 7, background: EX.usdBg, border: `1px solid ${EX.usdBorder}`, color: C.ink }}>
+                  <NavIcon name="fileText" size={14} style={{ color: EX.primary }} />
+                  <span>From {fundSel.items.length} selected transaction(s): <b style={{ fontFamily: FONT_MONO }}>{fundSel.items.map((x) => x.row.reference || x.row.type).join(", ")}</b></span>
+                  <span style={{ marginLeft: "auto", display: "flex", gap: 10 }}>
+                    <button type="button" onClick={() => setFundModalOpen(true)} disabled={busy} style={{ background: "none", border: "none", color: EX.primary, textDecoration: "underline", cursor: "pointer", fontSize: 11.5, padding: 0 }}>Change</button>
+                    <button type="button" onClick={() => { setFundSel(null); setFundNotice(""); }} disabled={busy} style={{ background: "none", border: "none", color: C.slate, textDecoration: "underline", cursor: "pointer", fontSize: 11.5, padding: 0 }}>Clear selection</button>
+                  </span>
+                </div>
+              )}
+              {!fundSel && fundNotice && <div role="status" style={{ fontSize: 11, color: EX.warning, marginTop: 5 }}>{fundNotice}</div>}
+              <QxFieldError>{amountError}</QxFieldError>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }} aria-label="Quick amounts">
               {QX_QUICK_AMOUNTS[currencyGiven].map((v) => (
                 <button key={v} type="button" disabled={busy} onClick={() => { setAmountGiven(String(v)); setAmountBlurred(true); }} className="gk-qx-chip"
@@ -7090,6 +7313,10 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
         </div>
       </div>
 
+      {fundModalOpen && fromAccount && (
+        <FundSourcesModal call={call} account={fromAccount} currency={currencyGiven} initial={fundSel ? fundSel.items : []}
+          onClose={() => setFundModalOpen(false)} onUse={applyFunds} />
+      )}
       {manageRatesOpen && (
         <ManageRatesModal call={call} notify={notify} rate={rate} saleRate={saleRate} dailySlshRate={dailySlshRate}
           onSaved={(d, s, slsh) => { onRateChanged?.(d); onSaleRateChanged?.(s); onDailySlshRateChanged?.(slsh); }}

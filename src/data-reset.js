@@ -125,6 +125,7 @@ function clearCategory(key) {
     case "exchanges":
       d.account_ledger = delWhereIdIn("account_ledger", "SELECT id FROM account_ledger WHERE source_type = 'exchange'");
       d.cash_ledger = delWhereIdIn("cash_ledger", "SELECT id FROM cash_ledger WHERE source_type = 'exchange'");
+      d.exchange_fund_allocations = run("DELETE FROM exchange_fund_allocations").changes;
       d.exchange_transactions = run("DELETE FROM exchange_transactions").changes;
       break;
     case "transfers":

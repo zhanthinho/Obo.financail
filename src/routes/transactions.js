@@ -1,8 +1,9 @@
 "use strict";
+const fundAlloc = require("../fund-allocation");
 const { isValidAmount, MAX_AMOUNT, toNumber } = require("../util");
 const { all, get, run, tx } = require("../db");
 const { sendJSON, badRequest, notFound, sendCSV, sendPDF, sendXLSX, readJSONBody } = require("../http-helpers");
-const { requireAuth, requirePerm, can, allowedCurrencies } = require("../rbac");
+const { requireAuth, requirePerm, can, allowedCurrencies, requireCurrencyAccess } = require("../rbac");
 const { computeMargin, defaultRateFor } = require("../exchange-calc");
 const { getCurrentRate, getCurrentSaleRate, getCurrentRates, getCurrentCostRate, costRateAt, costRateLookup, computeExchangeProfit, getCompanySettings, getDefaultPdfTemplate, getDefaultExcelTemplate, findOrCreateClient, addAudit, rebuildAccountBalance, nextExchangeReference, rebuildCashAccountBalance, nextCashLedgerReference } = require("../domain");
 const { uid, nowISO, todayStr, convert, fmtMoney } = require("../util");
@@ -146,7 +147,24 @@ function register(router) {
     const includeProfit = can(user, "profit.viewExchange");
     const rows = queryTransactions(user, query);
     const lookup = includeProfit ? costRateLookup() : null;
-    sendJSON(res, 200, { transactions: rows.map((t) => rowToJSON(t, includeProfit, lookup)) });
+    const sources = fundAlloc.allocationsFor(rows.map((t) => t.id));
+    sendJSON(res, 200, { transactions: rows.map((t) => ({ ...rowToJSON(t, includeProfit, lookup), fundSources: sources.get(t.id) || [] })) });
+  });
+
+  // CUSTOMER TRANSACTION SELECTOR round: the credits of ONE account that can
+  // still pay for an exchange (src/fund-allocation.js). Same gates as
+  // recording an exchange: signed in, exchange.create, access to both
+  // currencies and to this account's currency. The account is looked up in
+  // the caller's own company only (company-scoped tables), so another
+  // company's account id is simply "not found".
+  router.get("/api/transactions/fund-sources", (req, res, params, query) => {
+    const user = requireAuth(req, res); if (!user) return;
+    if (allowedCurrencies(user).length < 2) return sendJSON(res, 403, { error: "You need access to both USD and SLSH accounts to record a currency exchange." });
+    if (!requirePerm(user, res, "exchangeCreate")) return;
+    const account = query.accountId ? get("SELECT * FROM clients WHERE id = ?", [String(query.accountId)]) : null;
+    if (!account || account.deleted_at) return notFound(res, "Account not found.");
+    if (!requireCurrencyAccess(user, res, account.currency)) return;
+    sendJSON(res, 200, fundAlloc.listAvailable(account, query));
   });
 
   router.post("/api/transactions", async (req, res) => {
@@ -229,6 +247,13 @@ function register(router) {
       }
     }
 
+    // CUSTOMER TRANSACTION SELECTOR round: credits picked in View
+    // Transactions. Only with a From Account (they're that account's own
+    // credits); amounts and availability are checked again inside the save.
+    const fundSelections = Array.isArray(body.fundSelections) && body.fundSelections.length ? body.fundSelections : null;
+    if (body.fundSelections !== undefined && body.fundSelections !== null && !Array.isArray(body.fundSelections)) return badRequest(res, "fundSelections must be a list.");
+    if (fundSelections && !fromAccount) return badRequest(res, "Selected transactions need a From Account.");
+
     // EXCHANGE WORKSPACE round: optional Cash in Hand linkage (spec section
     // 7/10) — Cash Out From must hold currencyGiven, Cash In To must hold
     // currencyReceived. Resolved and validated before anything is written,
@@ -248,44 +273,56 @@ function register(router) {
     const resolvedClientName = fromAccount ? fromAccount.name : (get("SELECT name FROM clients WHERE id = ?", [clientId]) || {}).name || body.clientName;
     const id = uid("t");
     const referenceNumber = nextExchangeReference();
-    tx(() => {
-      run(
-        `INSERT INTO exchange_transactions
-         (id, date, client_id, client_name, from_account_id, to_account_id, amount_given, currency_given, amount_received, currency_received, rate_used, cost_rate, profit_usd, staff_id, staff_name, status, notes, void_reason, voided_by, voided_at, reference_number, cash_out_account_id, cash_in_account_id)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'active',?,NULL,NULL,NULL,?,?,?)`,
-        [id, txDate, clientId, resolvedClientName, fromAccount ? fromAccount.id : null, toAccount ? toAccount.id : null, given, currencyGiven, received, currencyReceived, rate, costRate, profitUsd, user.id, user.name, body.notes || null, referenceNumber, cashOutAccount ? cashOutAccount.id : null, cashInAccount ? cashInAccount.id : null]
-      );
-      if (fromAccount) {
-        run("INSERT INTO account_ledger (id, client_id, type, currency, amount, balance_after, notes, staff_id, staff_name, date, source_type, source_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
-          [uid("ldg"), fromAccount.id, "withdrawal", fromAccount.currency, given, 0, `Exchange: gave ${fmtMoney(given, currencyGiven)} for ${fmtMoney(received, currencyReceived)}`, user.id, user.name, txDate, "exchange", id]);
-        rebuildAccountBalance(fromAccount.id, fromAccount.currency);
-      }
-      if (toAccount) {
-        run("INSERT INTO account_ledger (id, client_id, type, currency, amount, balance_after, notes, staff_id, staff_name, date, source_type, source_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
-          [uid("ldg"), toAccount.id, "deposit", toAccount.currency, received, 0, `Exchange: received ${fmtMoney(received, currencyReceived)} for ${fmtMoney(given, currencyGiven)}`, user.id, user.name, txDate, "exchange", id]);
-        rebuildAccountBalance(toAccount.id, toAccount.currency);
-      }
-      // Cash in Hand legs — mirror the client-ledger legs exactly (withdraw
-      // the given amount from Cash Out From, deposit the received amount
-      // into Cash In To), tagged back to this same exchange id so Delete/
-      // Update can find and reverse precisely these rows later, and so the
-      // Cash Movements tab's rejectIfLinked guard routes any edit attempt
-      // back to this Exchange instead of letting it be edited standalone.
-      if (cashOutAccount) {
-        run("INSERT INTO cash_ledger (id, cash_account_id, type, currency, amount, balance_after, description, reference_number, staff_id, staff_name, date, source_type, source_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-          [uid("csl"), cashOutAccount.id, "withdrawal", currencyGiven, given, 0, `Exchange ${referenceNumber}: ${resolvedClientName} gave ${fmtMoney(given, currencyGiven)}`, nextCashLedgerReference("withdrawal"), user.id, user.name, txDate, "exchange", id]);
-        rebuildCashAccountBalance(cashOutAccount.id);
-      }
-      if (cashInAccount) {
-        run("INSERT INTO cash_ledger (id, cash_account_id, type, currency, amount, balance_after, description, reference_number, staff_id, staff_name, date, source_type, source_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-          [uid("csl"), cashInAccount.id, "deposit", currencyReceived, received, 0, `Exchange ${referenceNumber}: ${resolvedClientName} received ${fmtMoney(received, currencyReceived)}`, nextCashLedgerReference("deposit"), user.id, user.name, txDate, "exchange", id]);
-        rebuildCashAccountBalance(cashInAccount.id);
-      }
-    });
+    let allocations = null;
+    try {
+      tx(() => {
+        if (fundSelections) allocations = fundAlloc.validateSelections(fundSelections, fromAccount, given);
+        run(
+          `INSERT INTO exchange_transactions
+           (id, date, client_id, client_name, from_account_id, to_account_id, amount_given, currency_given, amount_received, currency_received, rate_used, cost_rate, profit_usd, staff_id, staff_name, status, notes, void_reason, voided_by, voided_at, reference_number, cash_out_account_id, cash_in_account_id)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'active',?,NULL,NULL,NULL,?,?,?)`,
+          [id, txDate, clientId, resolvedClientName, fromAccount ? fromAccount.id : null, toAccount ? toAccount.id : null, given, currencyGiven, received, currencyReceived, rate, costRate, profitUsd, user.id, user.name, body.notes || null, referenceNumber, cashOutAccount ? cashOutAccount.id : null, cashInAccount ? cashInAccount.id : null]
+        );
+        if (fromAccount) {
+          run("INSERT INTO account_ledger (id, client_id, type, currency, amount, balance_after, notes, staff_id, staff_name, date, source_type, source_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            [uid("ldg"), fromAccount.id, "withdrawal", fromAccount.currency, given, 0, `Exchange: gave ${fmtMoney(given, currencyGiven)} for ${fmtMoney(received, currencyReceived)}`, user.id, user.name, txDate, "exchange", id]);
+          rebuildAccountBalance(fromAccount.id, fromAccount.currency);
+        }
+        if (toAccount) {
+          run("INSERT INTO account_ledger (id, client_id, type, currency, amount, balance_after, notes, staff_id, staff_name, date, source_type, source_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            [uid("ldg"), toAccount.id, "deposit", toAccount.currency, received, 0, `Exchange: received ${fmtMoney(received, currencyReceived)} for ${fmtMoney(given, currencyGiven)}`, user.id, user.name, txDate, "exchange", id]);
+          rebuildAccountBalance(toAccount.id, toAccount.currency);
+        }
+        // Cash in Hand legs — mirror the client-ledger legs exactly (withdraw
+        // the given amount from Cash Out From, deposit the received amount
+        // into Cash In To), tagged back to this same exchange id so Delete/
+        // Update can find and reverse precisely these rows later, and so the
+        // Cash Movements tab's rejectIfLinked guard routes any edit attempt
+        // back to this Exchange instead of letting it be edited standalone.
+        if (cashOutAccount) {
+          run("INSERT INTO cash_ledger (id, cash_account_id, type, currency, amount, balance_after, description, reference_number, staff_id, staff_name, date, source_type, source_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            [uid("csl"), cashOutAccount.id, "withdrawal", currencyGiven, given, 0, `Exchange ${referenceNumber}: ${resolvedClientName} gave ${fmtMoney(given, currencyGiven)}`, nextCashLedgerReference("withdrawal"), user.id, user.name, txDate, "exchange", id]);
+          rebuildCashAccountBalance(cashOutAccount.id);
+        }
+        if (cashInAccount) {
+          run("INSERT INTO cash_ledger (id, cash_account_id, type, currency, amount, balance_after, description, reference_number, staff_id, staff_name, date, source_type, source_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            [uid("csl"), cashInAccount.id, "deposit", currencyReceived, received, 0, `Exchange ${referenceNumber}: ${resolvedClientName} received ${fmtMoney(received, currencyReceived)}`, nextCashLedgerReference("deposit"), user.id, user.name, txDate, "exchange", id]);
+          rebuildCashAccountBalance(cashInAccount.id);
+        }
+        if (allocations) fundAlloc.saveAllocations(id, fromAccount, allocations, user);
+      });
+    } catch (e) {
+      if (e instanceof fundAlloc.SelectionError) return badRequest(res, e.message);
+      throw e;
+    }
     const linkNote = fromAccount ? (toAccount ? ` — moved ${fmtMoney(given, currencyGiven)} from ${fromAccount.name} into linked account ${toAccount.name}` : ` — debited ${fmtMoney(given, currencyGiven)} from ${fromAccount.name}'s account`) : "";
     const cashNote = cashOutAccount || cashInAccount ? ` (Cash Account: ${cashOutAccount ? cashOutAccount.name : "—"} -> ${cashInAccount ? cashInAccount.name : "—"})` : "";
     addAudit(user, "Transaction recorded", `${resolvedClientName}: ${given} ${currencyGiven} -> ${received} ${currencyReceived}${linkNote}${cashNote}`);
-    sendJSON(res, 201, { transaction: rowToJSON(get("SELECT * FROM exchange_transactions WHERE id = ?", [id]), can(user, "profit.viewExchange")) });
+    const allocNote = allocations ? ` — paid from ${allocations.length} selected transaction(s)` : "";
+    if (allocNote) addAudit(user, "Exchange funds selected", `${referenceNumber}${allocNote}`);
+    const created = rowToJSON(get("SELECT * FROM exchange_transactions WHERE id = ?", [id]), can(user, "profit.viewExchange"));
+    created.fundSources = fundAlloc.allocationsFor([id]).get(id) || [];
+    sendJSON(res, 201, { transaction: created });
   });
 
   // EXCHANGE DELETE — PERMANENT FULL DATA DELETION. Replaces the old
@@ -344,6 +381,7 @@ function register(router) {
         // not by account, date, or amount.
         run("DELETE FROM account_ledger WHERE source_type = 'exchange' AND source_id = ?", [t.id]);
         run("DELETE FROM cash_ledger WHERE source_type = 'exchange' AND source_id = ?", [t.id]);
+        fundAlloc.removeAllocations(t.id);
         run("DELETE FROM exchange_transactions WHERE id = ?", [t.id]);
         // Rebuild replays every ledger row that's left for each account, in
         // order — with this exchange's own rows now gone, that naturally
@@ -473,6 +511,13 @@ function register(router) {
         const oldFromAccount = t.from_account_id ? get("SELECT id, currency FROM clients WHERE id = ?", [t.from_account_id]) : null;
         const oldToAccount = t.to_account_id ? get("SELECT id, currency FROM clients WHERE id = ?", [t.to_account_id]) : null;
         const oldCashOutId = t.cash_out_account_id, oldCashInId = t.cash_in_account_id;
+        // CUSTOMER TRANSACTION SELECTOR round: credits named for this
+        // exchange stay named only while it is still the same payment (same
+        // From Account, currency and amount); otherwise the link is dropped
+        // and the exchange uses credits oldest-first like any other debit.
+        if ((newFromAccount ? newFromAccount.id : null) !== t.from_account_id || currencyGiven !== t.currency_given || Math.abs(given - t.amount_given) > 1e-9) {
+          fundAlloc.removeAllocations(t.id);
+        }
 
         // Undo the OLD effect: delete only this exchange's own tagged
         // ledger rows (never unrelated data — DO NOT DELETE UNRELATED DATA)

@@ -280,5 +280,15 @@
  "Buy USD-SLSH ": "Buy USD-SLSH ",
  "Sell SLSH-USD ": "Sell SLSH-USD ",
  "Use current Cost Rate ({0})": "Isticmaal Cost Rate-ka hadda ({0})",
- "Use this exchange's Cost Rate ({0})": "Isticmaal Cost Rate-ka sarrifkan ({0})"
+ "Use this exchange's Cost Rate ({0})": "Isticmaal Cost Rate-ka sarrifkan ({0})",
+ "Use Selected Amount ({0})": "Isticmaal Lacagta La Doortay ({0})",
+ "{0} selected": "{0} la doortay",
+ "Select {0}": "Dooro {0}",
+ "Remove {0}": "Ka saar {0}",
+ "Amount to use from {0}": "Lacagta laga isticmaalayo {0}",
+ "{0} used": "{0} la isticmaalay",
+ "of {0}": "ka mid ah {0}",
+ "Only {0} is left on this transaction.": "Kaliya {0} ayaa ka hadhay macaamilkan.",
+ "From {0} selected transaction(s):": "Laga bixiyay {0} macaamil oo la doortay:",
+ "{0} has only {1} {2} left — refresh the list and select again.": "{0} waxaa ka hadhay {1} {2} oo keliya — cusboonaysii liiska oo mar kale dooro."
 }

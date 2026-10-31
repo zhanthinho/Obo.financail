@@ -33,6 +33,7 @@ const CONFIRM_CODE = "CONFIRM-RESET-2026-10";
 
 const OPERATIONAL_TABLES = [
   // child tables first (foreign-key order)
+  "exchange_fund_allocations",
   "quotation_payments", "quotation_items", "quotations",
   // COMPANY EXPENSES round: an expense owns one cash_ledger withdrawal, so
   // it is cleared together with (and before) the cash ledger. Expense

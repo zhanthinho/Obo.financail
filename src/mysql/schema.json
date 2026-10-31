@@ -6511,6 +6511,140 @@
      "expression": null
     }
    ]
+  },
+  {
+   "name": "exchange_fund_allocations",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "exchange_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "ledger_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "client_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "currency",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "amount",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_by_id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_by_name",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [],
+   "checks": [
+    "currency IN ('USD','SLSH')",
+    "amount > 0"
+   ],
+   "indexes": [
+    {
+     "name": "idx_exchange_fund_alloc_exchange",
+     "unique": false,
+     "columns": [
+      "exchange_id"
+     ],
+     "where": null,
+     "expression": null
+    },
+    {
+     "name": "idx_exchange_fund_alloc_ledger",
+     "unique": false,
+     "columns": [
+      "ledger_id"
+     ],
+     "where": null,
+     "expression": null
+    },
+    {
+     "name": "idx_exchange_fund_alloc_client",
+     "unique": false,
+     "columns": [
+      "client_id"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ]
   }
  ],
  "controlTables": [
