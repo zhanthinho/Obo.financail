@@ -151,6 +151,11 @@ function startScheduler() {
   started = true;
   const dueMs = INTERVAL_HOURS * 3600 * 1000 - 5 * 60 * 1000;
   const check = () => {
+    // GODADDY round: a database hiccup during the hourly check must never
+    // take the whole server down (this runs outside any request).
+    try { checkAll(); } catch (e) { console.error("[backup] Scheduled check failed:", e && e.message); }
+  };
+  const checkAll = () => {
     const tenancy = require("./tenancy");
     let anyRan = false;
     for (const company of tenancy.listCompanies()) {

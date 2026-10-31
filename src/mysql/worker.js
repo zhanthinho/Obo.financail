@@ -27,6 +27,16 @@ const SESSION_SQL = [
   "SET SESSION time_zone = '+00:00'",
   "SET NAMES utf8mb4 COLLATE utf8mb4_0900_bin",
 ];
+// GODADDY round: managed MySQL hosts close idle connections quickly (short
+// wait_timeout). Asked for a longer idle time where the server allows it;
+// refused silently where it doesn't — the reconnect below covers both.
+const OPTIONAL_SESSION_SQL = ["SET SESSION wait_timeout = 28800"];
+// Errors meaning "the server already dropped this idle connection": the
+// statement in hand was never run, so outside a transaction it is safe to
+// reconnect and send it once. (MySQL 8.0.24+ sends ER_CLIENT_INTERACTION_TIMEOUT
+// / 4031 when it closes an idle session; the driver reports it on the next
+// query.)
+const IDLE_DROP_RE = /closed state|EPIPE|ECONNRESET|PROTOCOL_CONNECTION_LOST|ER_CLIENT_INTERACTION_TIMEOUT|\b4031\b|server closed the connection/i;
 
 let conn = null;
 
@@ -47,8 +57,16 @@ function connect() {
     c.connect((err) => {
       if (err) { try { c.destroy(); } catch (_) { /* ignore */ } return reject(err); }
       let i = 0;
+      const optional = () => {
+        let j = 0;
+        const step = () => {
+          if (j >= OPTIONAL_SESSION_SQL.length) { conn = c; return resolve(c); }
+          c.query(OPTIONAL_SESSION_SQL[j++], () => step()); // best effort
+        };
+        step();
+      };
       const next = () => {
-        if (i >= SESSION_SQL.length) { conn = c; return resolve(c); }
+        if (i >= SESSION_SQL.length) return optional();
         c.query(SESSION_SQL[i++], (e) => (e ? (c.destroy(), reject(e)) : next()));
       };
       next();
@@ -71,7 +89,15 @@ async function handle(msg) {
   }
   if (msg.op === "ping") {
     if (!conn) await connect();
-    await q(conn, "SELECT 1 AS ok", [], false);
+    try {
+      await q(conn, "SELECT 1 AS ok", [], false);
+    } catch (e) {
+      if (!IDLE_DROP_RE.test(`${e.code} ${e.errno} ${e.message}`)) throw e;
+      try { conn && conn.destroy(); } catch (_) { /* ignore */ }
+      conn = null;
+      await connect();
+      await q(conn, "SELECT 1 AS ok", [], false);
+    }
     return { ok: 1 };
   }
   if (msg.op === "query") {
@@ -93,7 +119,7 @@ async function handle(msg) {
       // The server closed an idle connection and the driver only noticed now:
       // the statement was NEVER sent, so (outside a transaction) it is safe to
       // reconnect and send it once. Any other failure is reported as-is.
-      if (msg.inTx || !/closed state|EPIPE/i.test(`${e.code} ${e.message}`)) throw e;
+      if (msg.inTx || !IDLE_DROP_RE.test(`${e.code} ${e.errno} ${e.message}`)) throw e;
       try { conn && conn.destroy(); } catch (_) { /* ignore */ }
       conn = null;
       await connect();
@@ -106,7 +132,18 @@ async function handle(msg) {
   throw new Error(`unknown op ${msg.op}`);
 }
 
+// GODADDY round: keep the one connection from being dropped as idle — a
+// lightweight ping every 45 s while nothing else is running on it. A failed
+// ping just forgets the connection; the next query reconnects.
+let busy = false;
+setInterval(() => {
+  if (busy || !conn) return;
+  const c = conn;
+  c.ping((err) => { if (err && conn === c) { try { c.destroy(); } catch (_) { /* ignore */ } conn = null; } });
+}, Number(cfg.keepAliveMs) || 45000).unref();
+
 parentPort.on("message", async (msg) => {
+  busy = true;
   let out;
   try {
     out = { ok: true, result: await handle(msg) };
@@ -114,6 +151,7 @@ parentPort.on("message", async (msg) => {
     if (e && e.fatal) { try { conn && conn.destroy(); } catch (_) { /* ignore */ } conn = null; }
     out = { ok: false, error: { message: e && e.message, code: e && e.code, errno: e && e.errno, sqlState: e && e.sqlState, fatal: !!(e && e.fatal) } };
   }
+  busy = false;
   try { reply.postMessage(out); } catch (e) { reply.postMessage({ ok: false, error: { message: `result could not be returned: ${e.message}` } }); }
   Atomics.store(flag, 0, 1);
   Atomics.notify(flag, 0);
