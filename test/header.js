@@ -154,9 +154,9 @@ async function browserChecks() {
       await closeDialog(p);
     });
     await check("tabs still switch, and the primary action follows the active tab", async () => {
-      await p.locator(".gk-tabbar button", { hasText: "Company accounts" }).click(); await p.waitForTimeout(600);
+      await p.getByRole("tab", { name: "Company Accounts" }).click(); await p.waitForTimeout(600);
       await header(p).getByRole("button", { name: /Add Company \(USD\)/ }).waitFor({ timeout: 3000 });
-      await p.locator(".gk-tabbar button", { hasText: "Customer accounts" }).click(); await p.waitForTimeout(400);
+      await p.getByRole("tab", { name: "Customer Accounts" }).click(); await p.waitForTimeout(400);
     });
 
     console.log("\nCash Account — the active tab's main action is in the header (Super Admin: Admin has no cash.view)");
