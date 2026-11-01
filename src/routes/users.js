@@ -179,12 +179,6 @@ function register(router) {
     // endpoint is blocked unconditionally now — see the matching comment on
     // the POST handler above for why (no actor exemption, including a
     // Super Admin actor).
-    // ADVANCED RBAC round: no one changes their own role (that would be
-    // granting themselves a different permission set).
-    if (roleChanging && target.id === user.id) {
-      require("../rbac").auditDenied(user, "tried to change own role");
-      return sendJSON(res, 403, { error: "You cannot change your own role — ask another administrator." });
-    }
     if (roleChanging && requestedRole.is_super_admin) {
       return badRequest(res, "Super Admin can't be assigned from here — it's reserved for the accounts that already hold it.");
     }
@@ -192,6 +186,12 @@ function register(router) {
     // a user already holding one (roleChanging === false here) is left
     // completely alone by this check, per "existing users assigned to an
     // inactive role must be handled safely," never silently stripped.
+    // ADVANCED RBAC round: no one changes their own role (that would be
+    // granting themselves a different permission set).
+    if (roleChanging && target.id === user.id) {
+      require("../rbac").auditDenied(user, "tried to change own role");
+      return sendJSON(res, 403, { error: "You cannot change your own role — ask another administrator." });
+    }
     if (roleChanging && requestedRole.status === "inactive") {
       return badRequest(res, `The "${requestedRole.name}" role is inactive and can't be assigned. Reactivate it first, or choose a different role.`);
     }
