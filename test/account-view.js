@@ -145,6 +145,12 @@ async function browserChecks() {
       assert(near(money(await cardValue(p, "Net Change")), ctx.expect.credit - ctx.expect.debit), "net");
       assert((await cardValue(p, "Total Transactions")) === String(ctx.expect.count), "count");
     });
+    await check("desktop: the five cards sit in one compact row (about 70–84px tall)", async () => {
+      const boxes = await p.locator(".gk-av-card").evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [Math.round(r.top), Math.round(r.height)]; }));
+      assert(boxes.length === 5, `cards: ${boxes.length}`);
+      assert(new Set(boxes.map((b) => b[0])).size === 1, `not one row: ${JSON.stringify(boxes)}`);
+      assert(boxes.every((b) => b[1] >= 68 && b[1] <= 84), `heights: ${boxes.map((b) => b[1]).join(",")}`);
+    });
 
     console.log("\nCredits & Debits table");
     await check("columns run # · Date · Reference · Description · Credit · Debit · Balance", async () => {

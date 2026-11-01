@@ -807,20 +807,25 @@ const THEME_CSS = `
   .gk-av-status { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 20px; background: var(--c-deposit-badge-bg, #dcfce7); color: #15803d; }
   .gk-av-status.is-off { background: #fee2e2; color: #b91c1c; }
   .gk-av-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .gk-av-cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
-  .gk-av-card { display: flex; align-items: flex-start; gap: 12px; background: var(--c-card); border: 1px solid var(--c-line); border-radius: 12px; padding: 14px 16px; box-shadow: 0 1px 2px rgba(15, 42, 54, 0.05); min-width: 0; }
-  .gk-av-card-icon { width: 40px; height: 40px; border-radius: 11px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
-  .gk-av-card-body { min-width: 0; }
-  .gk-av-card-label { font-size: 12.5px; font-weight: 600; color: var(--c-slate); }
-  .gk-av-card-value { font-size: 22px; line-height: 1.25; font-weight: 700; color: var(--c-ink); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; margin-top: 2px; }
-  .gk-av-card-sub { font-size: 12px; color: var(--c-slate); margin-top: 2px; }
-  .gk-av-card--balance { background: linear-gradient(135deg, var(--c-navy-deep), var(--c-navy)); border-color: transparent; }
-  .gk-av-card--balance .gk-av-card-label, .gk-av-card--balance .gk-av-card-sub { color: rgba(255, 255, 255, 0.82); }
-  .gk-av-card--balance .gk-av-card-value { color: #fff; font-size: 26px; }
-  .gk-av-card--balance .gk-av-card-icon { background: rgba(255, 255, 255, 0.16); color: #e7fff7; }
+  /* COMPACT SUMMARY CARDS round: five ~76px cards in one row on desktop. */
+  .gk-av-cards { display: grid; grid-template-columns: 1.15fr repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+  .gk-av-card { display: flex; align-items: center; gap: 11px; min-height: 76px; box-sizing: border-box; background: var(--c-card); border: 1px solid var(--c-line); border-radius: 10px; padding: 10px 13px; box-shadow: 0 1px 2px rgba(15, 42, 54, 0.05); min-width: 0; }
+  .gk-av-card-icon { width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+  .gk-av-card-icon svg { width: 18px; height: 18px; }
+  .gk-av-card-body { min-width: 0; flex: 1; }
+  .gk-av-card-label { font-size: 12.5px; font-weight: 500; color: var(--c-slate); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gk-av-card-value { font-size: 21px; line-height: 1.2; font-weight: 700; color: var(--c-ink); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.01em; }
+  .gk-av-card-sub { font-size: 11.5px; line-height: 1.3; color: var(--c-slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gk-av-card--balance { background: var(--c-navy-deep); border-color: transparent; box-shadow: 0 2px 6px color-mix(in srgb, var(--c-navy-deep) 30%, transparent); }
+  .gk-av-card--balance .gk-av-card-label, .gk-av-card--balance .gk-av-card-sub { color: rgba(255, 255, 255, 0.84); }
+  .gk-av-card--balance .gk-av-card-value { color: #fff; font-size: 23px; }
+  .gk-av-card--balance .gk-av-card-icon { background: rgba(255, 255, 255, 0.15); color: #e7fff7; }
   .gk-av-card--credit .gk-av-card-icon { background: #dcfce7; color: #16a34a; }
+  .gk-av-card--credit .gk-av-card-value { color: #15803d; }
   .gk-av-card--debit .gk-av-card-icon { background: #fee2e2; color: #dc2626; }
-  .gk-av-card--net .gk-av-card-icon { background: color-mix(in srgb, var(--c-navy) 12%, var(--c-card)); color: var(--c-navy); }
+  .gk-av-card--debit .gk-av-card-value { color: #dc2626; }
+  .gk-av-card--net { background: color-mix(in srgb, var(--c-slate) 5%, var(--c-card)); }
+  .gk-av-card--net .gk-av-card-icon { background: color-mix(in srgb, var(--c-slate) 12%, var(--c-card)); color: var(--c-ink); }
   .gk-av-card--count .gk-av-card-icon { background: color-mix(in srgb, var(--c-cyan) 14%, var(--c-card)); color: var(--c-navy); }
   .gk-av-skel { background: linear-gradient(90deg, var(--c-line) 25%, color-mix(in srgb, var(--c-line) 40%, var(--c-card)) 50%, var(--c-line) 75%); background-size: 200% 100%; animation: gk-av-shimmer 1.3s infinite linear; border-radius: 6px; }
   @keyframes gk-av-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
@@ -861,17 +866,17 @@ const THEME_CSS = `
   .gk-av-kind-table th, .gk-av-kind-table td { padding: 6px 8px; border-bottom: 1px solid var(--c-line); text-align: left; color: var(--c-ink); }
   .gk-av-kind-table th { font-size: 11.5px; color: var(--c-slate); text-transform: uppercase; letter-spacing: .03em; }
   .gk-av-kind-table tfoot td { font-weight: 700; background: var(--c-av-total-bg); border-bottom: 0; }
-  @media (max-width: 1180px) { .gk-av-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } .gk-av-card--balance { grid-column: span 3; } }
+  @media (max-width: 1180px) { .gk-av-cards { grid-template-columns: repeat(6, minmax(0, 1fr)); } .gk-av-card { grid-column: span 2; } .gk-av-card--balance, .gk-av-card--credit { grid-column: span 3; } }
   @media (max-width: 640px) {
     .gk-av-name { font-size: 21px; }
-    .gk-av-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .gk-av-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .gk-av-card, .gk-av-card--credit { grid-column: auto; padding: 9px 10px; gap: 8px; min-height: 68px; }
     .gk-av-card--balance { grid-column: span 2; }
-    .gk-av-card { padding: 12px; flex-direction: column; gap: 8px; }
-    .gk-av-card--balance { flex-direction: row; }
-    .gk-av-card-icon { width: 34px; height: 34px; }
-    .gk-av-card-value { font-size: 17px; white-space: nowrap; overflow-wrap: normal; }
-    .gk-av-card-label { white-space: normal; }
-    .gk-av-card--balance .gk-av-card-value { font-size: 22px; }
+    .gk-av-card-icon { width: 32px; height: 32px; }
+    .gk-av-card-icon svg { width: 16px; height: 16px; }
+    .gk-av-card-value { font-size: 17px; }
+    .gk-av-card--balance .gk-av-card-value { font-size: 21px; }
+    .gk-av-card-label, .gk-av-card-sub { white-space: normal; overflow: visible; }
     .gk-av-actions { width: 100%; }
     .gk-av-cmp-grid { grid-template-columns: 1fr; }
   }
@@ -9867,11 +9872,11 @@ function avTotals(rows) {
 function AvCard({ tone, icon, label, value, sub, loading }) {
   return (
     <div className={`gk-av-card gk-av-card--${tone}`} role="group" aria-label={label}>
-      <span className="gk-av-card-icon" aria-hidden="true"><NavIcon name={icon} size={20} /></span>
+      <span className="gk-av-card-icon" aria-hidden="true"><NavIcon name={icon} size={18} /></span>
       <div className="gk-av-card-body">
-        <div className="gk-av-card-label">{label}</div>
-        {loading ? <div className="gk-av-skel" style={{ width: "70%", height: 22 }} /> : <div className="gk-av-card-value">{value}</div>}
-        {sub && !loading && <div className="gk-av-card-sub">{sub}</div>}
+        <div className="gk-av-card-label" title={label}>{label}</div>
+        {loading ? <div className="gk-av-skel" style={{ width: "70%", height: 20, margin: "2px 0" }} /> : <div className="gk-av-card-value" title={value}>{value}</div>}
+        {sub && !loading && <div className="gk-av-card-sub" title={sub}>{sub}</div>}
       </div>
     </div>
   );
@@ -9888,7 +9893,7 @@ function AccountSummaryCards({ account, totals, periodText, filtered, loading })
       <AvCard tone="debit" icon="arrowUpRight" label="Total Debits" loading={loading}
         value={fmtMoney(totals.debit, cur)} sub={`${totals.debitCount} debit${totals.debitCount === 1 ? "" : "s"} · ${scope}`} />
       <AvCard tone="net" icon="chartCombined" label="Net Change" loading={loading}
-        value={`${totals.net > 0 ? "+" : totals.net < 0 ? "−" : ""}${fmtMoney(Math.abs(totals.net), cur)}`} sub={`Credits − Debits · ${scope}`} />
+        value={`${totals.net > 0 ? "+" : totals.net < 0 ? "−" : ""}${fmtMoney(Math.abs(totals.net), cur)}`} sub={scope} />
       <AvCard tone="count" icon="receipt" label="Total Transactions" loading={loading}
         value={String(totals.count)} sub={scope} />
     </div>
