@@ -154,6 +154,11 @@ const MODULES = {
   //   export — PDF / Excel downloads and printing of those reports
   //   manage — schedule settings, manual snapshot, retry of a failed run
   dailyReports: { label: "Daily Reports", actions: ["view", "export", "manage"] },
+  // CROSS-CURRENCY CUSTOMER LINKING round: customer profiles that group one
+  // person's USD / SLSH accounts. "view" is also implied by accounts.view
+  // (see routes/customers.js); "link" (manual link / unlink / review
+  // decisions) is sensitive and only Super Admin has it until granted.
+  customers: { label: "Customer Profiles", actions: ["view", "link"] },
 };
 
 function permKey(moduleKey, action) {
@@ -193,6 +198,7 @@ const SENSITIVE = new Set([
   "loans.view", "loans.create", "loans.repay",
   "expenses.create", "expenses.update", "expenses.manageCategories", "expenses.export",
   "dailyReports.view", "dailyReports.export", "dailyReports.manage",
+  "customers.link",
 ]);
 function permissionLevel(key) {
   return CRITICAL.has(key) ? "critical" : SENSITIVE.has(key) ? "sensitive" : "standard";

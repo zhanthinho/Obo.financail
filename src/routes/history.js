@@ -255,6 +255,12 @@ function queryHistory(query, opts = {}) {
   if (status) entries = entries.filter((e) => (e.status || "").toLowerCase() === status);
   if (staffId) entries = entries.filter((e) => e.staffId === staffId);
   if (accountId) entries = entries.filter((e) => e.accountId === accountId || e.counterpartAccountId === accountId);
+  // CROSS-CURRENCY CUSTOMER LINKING round: every account of one customer
+  // profile (combined history; filter by currency as usual).
+  if (query.customerId) {
+    const ids = new Set(all("SELECT id FROM clients WHERE customer_id = ?", [query.customerId]).map((r) => r.id));
+    entries = entries.filter((e) => ids.has(e.accountId) || ids.has(e.counterpartAccountId));
+  }
   if (search) {
     entries = entries.filter((e) =>
       e.reference.toLowerCase().includes(search) ||
@@ -340,6 +346,7 @@ function describeFilters(query) {
   if (query.currency) parts.push(`Currency: ${query.currency}`);
   if (query.status && query.status !== "all") parts.push(`Status: ${query.status}`);
   if (query.accountId) parts.push("Account: filtered");
+  if (query.customerId) parts.push("Customer: filtered");
   if (query.search) parts.push(`Search: "${query.search}"`);
   return parts.length ? parts.join(" · ") : null;
 }

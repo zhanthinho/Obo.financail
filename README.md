@@ -273,6 +273,17 @@ restorable with `node scripts/backup.js restore --company CMP-000N --name … --
 - **Permissions:** `dailyReports.view`, `dailyReports.export` and `dailyReports.manage` (settings, manual snapshot, retry). Super Admin has all three. Other roles get them only when a Super Admin grants them.
 - **Tests:** `npm run test:daily-reports`.
 
+## Customer Profiles (one customer, separate USD / SLSH accounts)
+
+**Account → Customer Profiles.** A profile (`CUST-0001`) groups one person's currency accounts, e.g. *A-Rahen Moh'ed Ali* — USD `ACC-0006` and SLSH `ACC-0012`. Each account keeps its own ID, number, currency, balance, ledger, status and history; USD and SLSH figures are never added together.
+
+- **Automatic linking (server-side, `src/customers.js`):** when a customer account is created (form, import, or a walk-in name), it joins the existing profile with the same normalized name (trimmed, repeated spaces collapsed, case and ’/' ignored) **only** if nothing conflicts. A different phone or ID number, several profiles with that name, a profile that already has an account in that currency, or a name that only matches when punctuation is ignored → the account gets its own profile and the pair goes to **Needs Review**. Nothing is merged automatically when in doubt. Company (internal) accounts never get a profile.
+- **Existing data:** on start, every customer account without a profile is classified the same way (high confidence → linked; conflicts → review; otherwise its own profile). Balances, ledger rows and transactions are never touched. Audit entry: "Customer profiles migrated".
+- **Manual changes:** link / unlink / review decisions need the new `customers.link` permission (sensitive; Super Admin only until granted). Viewing needs `customers.view` or `accounts.view`. Every change is in the audit log.
+- **Database:** new tenant tables `customers` and `customer_link_reviews`, new column `clients.customer_id` (added automatically, additive).
+- **API:** `GET /api/customers`, `GET /api/customers/:id`, `GET /api/customers/reviews`, `POST /api/customers/reviews/:id` (`{action:"link"|"dismiss"}`), `POST /api/customers/:id/accounts`, `DELETE /api/customers/:id/accounts/:accountId`, and `GET /api/history?customerId=…` for the combined history. `GET /api/accounts/:id` now includes `customer`.
+- **Tests:** `npm run test:customer-linking`.
+
 ## API reference
 
 All endpoints except `/api/health` and `/api/auth/login` require

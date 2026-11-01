@@ -826,6 +826,37 @@ const THEME_CSS = `
   .gk-th-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 40px 16px; color: var(--c-slate); text-align: center; font-size: 12.5px; }
   .gk-th-empty b { color: var(--c-ink); font-size: 14px; }
   .gk-th-scope { font-size: 11.5px; color: var(--c-slate); margin-top: 8px; line-height: 1.45; }
+  /* CROSS-CURRENCY CUSTOMER LINKING round — Customer Profiles */
+  .gk-cp-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .gk-cp-check { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--c-ink); height: 34px; }
+  .gk-cp-chips { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .gk-cp-chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--c-line); border-radius: 6px; padding: 3px 8px; background: var(--c-card); font: inherit; font-size: 12px; color: var(--c-ink); }
+  button.gk-cp-chip:not(:disabled) { cursor: pointer; } button.gk-cp-chip:not(:disabled):hover { border-color: var(--c-navy); }
+  .gk-cp-chip.is-off { opacity: .6; }
+  .gk-cp-cur { font-size: 10.5px; font-weight: 700; letter-spacing: .03em; padding: 1px 6px; border-radius: 4px; background: color-mix(in srgb, var(--c-navy) 12%, var(--c-card)); color: var(--c-navy); }
+  .gk-cp-cur--lg { font-size: 12px; padding: 2px 8px; }
+  .gk-cp-num { font-family: "JetBrains Mono", "SFMono-Regular", Menlo, monospace; color: var(--c-slate); }
+  .gk-cp-bal { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .gk-cp-flag { margin-left: 8px; font-size: 10.5px; font-weight: 700; color: #7a5410; background: #fdf6e7; border: 1px solid #ecd2a4; border-radius: 10px; padding: 0 6px; }
+  .gk-cp-hidden, .gk-cp-muted { font-size: 11.5px; color: var(--c-slate); }
+  .gk-cp-accounts { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; margin-bottom: 12px; }
+  .gk-cp-account { background: var(--c-card); border: 1px solid var(--c-line); border-left: 3px solid var(--c-navy); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+  .gk-cp-account.is-off { border-left-color: var(--c-slate); }
+  .gk-cp-account.is-hidden { justify-content: center; border-style: dashed; }
+  .gk-cp-account-head { display: flex; align-items: center; gap: 8px; }
+  .gk-cp-account-head .gk-av-status { margin-left: auto; }
+  .gk-cp-account-num { font-family: "JetBrains Mono", "SFMono-Regular", Menlo, monospace; font-size: 13px; color: var(--c-slate); }
+  .gk-cp-account-bal { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--c-ink); }
+  .gk-cp-account-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .gk-cp-h2 { font-size: 15px; font-weight: 700; color: var(--c-ink); margin: 16px 0 8px; }
+  .gk-cp-reviews { display: flex; flex-direction: column; gap: 10px; }
+  .gk-cp-review { display: grid; grid-template-columns: 1fr minmax(160px, 0.8fr) 1fr auto; gap: 12px; align-items: center; background: var(--c-card); border: 1px solid var(--c-line); border-left: 3px solid #d97706; border-radius: 8px; padding: 12px 14px; }
+  .gk-cp-review-side { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .gk-cp-review-mid { display: flex; gap: 8px; align-items: center; font-size: 12px; color: #7a5410; }
+  .gk-cp-review-actions { display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+  .gk-av-link { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; padding: 9px 12px; background: var(--c-card); border: 1px solid var(--c-line); border-radius: 8px; font-size: 12.5px; }
+  .gk-av-link b { color: var(--c-ink); }
+  @media (max-width: 900px) { .gk-cp-review { grid-template-columns: 1fr; } .gk-cp-review-actions { flex-direction: row; } .gk-cp-kpis { grid-template-columns: 1fr; } }
   .gk-th-toolbar .gk-acc-field { flex: 0 1 150px; }
   .gk-th-toolbar .gk-acc-field--search { flex: 1 1 240px; }
   @media (max-width: 1300px) { .gk-th-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
@@ -1191,6 +1222,12 @@ function fmtSignedSlsh(n) {
 // and "C/LAAHI" -> "C/laahi", matching the spec's own worked examples).
 // Falsy input (null/undefined/"") is returned unchanged so call sites like
 // `a || b` and `a ? x : y` keep working exactly as before.
+// CROSS-CURRENCY CUSTOMER LINKING round: the one label for an account in a
+// picker — name, account number and currency — so two accounts of the same
+// customer (USD and SLSH) are never told apart by name alone.
+function accountOptionLabel(a) {
+  return [toTitleCase(a.name), a.accountNumber, a.currency].filter(Boolean).join(" · ");
+}
 function toTitleCase(str) {
   if (!str) return str;
   return String(str)
@@ -4214,7 +4251,7 @@ function LoginScreen({ onSuccess }) {
 // renders throws React error #310). Must be kept in sync with navTree's own
 // group/children keys below if either one changes.
 const NAV_GROUP_OF_VIEW_KEY = {
-  "accounts-usd": "account", "accounts-slsh": "account", cashInHand: "account",
+  "accounts-usd": "account", "accounts-slsh": "account", cashInHand: "account", customers: "account",
   "deposits-usd": "payment", "deposits-slsh": "payment",
   // BULK TRANSACTION WORKSPACE round: not a sidebar item of its own (reached
   // only via the "+ Bulk Entry" button on the matching Deposits &
@@ -4284,6 +4321,8 @@ function App() {
   // instead of at the Account View itself.
   const [accountPageId, setAccountPageId] = useState(null);
   const [accountPageReturnView, setAccountPageReturnView] = useState(null);
+  const [customerFocusId, setCustomerFocusId] = useState(null);
+  const openCustomerProfile = useCallback((id) => { setCustomerFocusId(id); setView("customers"); }, []);
   const openAccountView = useCallback((id) => {
     setAccountPageId(id);
     if (view !== "account-view") setAccountPageReturnView(view);
@@ -4776,6 +4815,9 @@ function App() {
       // so it's invisible to everyone except Super Admin until explicitly
       // granted to a role via Roles Management.
       { key: "cashInHand", label: "Cash Account", icon: "cash", show: hasRaw("cash.view") },
+      // CROSS-CURRENCY CUSTOMER LINKING round: one profile per customer
+      // grouping their USD / SLSH accounts (backend: routes/customers.js).
+      { key: "customers", label: "Customer Profiles", icon: "usersRound", show: (hasRaw("customers.view") || hasRaw("accounts.view")) && (hasRaw("currency.usd") || hasRaw("currency.slsh")) },
     ] },
     { type: "group", key: "payment", label: "Payment", icon: "payment", children: [
       { key: "deposits-usd", label: "USD Payment", icon: "accountsUsd", show: (perm("accountsManage") || perm("reports")) && hasRaw("currency.usd") },
@@ -5106,6 +5148,7 @@ function App() {
             )}
             {view === "accounts-usd" && hasRaw("currency.usd") && <AccountsModule currency="USD" call={call} dl={dl} preview={preview} print={print} notify={notify} perm={perm} hasRaw={hasRaw} onNewQuotation={(acct) => { setQuotationPrefill({ clientName: acct.name, clientContact: acct.contact, clientAddress: acct.address, accountId: acct.id }); setView("quotations-pending"); }} onExchange={(acct) => { setExchangePrefill({ clientName: acct.name, accountId: acct.id, currency: acct.currency }); setView("exchange"); }} onOpenAccountView={openAccountView} />}
             {view === "accounts-slsh" && hasRaw("currency.slsh") && <AccountsModule currency="SLSH" call={call} dl={dl} preview={preview} print={print} notify={notify} perm={perm} hasRaw={hasRaw} onNewQuotation={(acct) => { setQuotationPrefill({ clientName: acct.name, clientContact: acct.contact, clientAddress: acct.address, accountId: acct.id }); setView("quotations-pending"); }} onExchange={(acct) => { setExchangePrefill({ clientName: acct.name, accountId: acct.id, currency: acct.currency }); setView("exchange"); }} onOpenAccountView={openAccountView} />}
+            {view === "customers" && (hasRaw("customers.view") || hasRaw("accounts.view")) && <CustomerProfilesModule call={call} notify={notify} perm={perm} focusId={customerFocusId} onConsumeFocus={() => setCustomerFocusId(null)} onOpenAccountView={openAccountView} />}
             {view === "cashInHand" && hasRaw("cash.view") && <CashInHandModule call={call} dl={dl} notify={notify} perm={perm} hasRaw={hasRaw} onOpenCashAccountView={openCashAccountView} />}
             {view === "deposits-usd" && (perm("accountsManage") || perm("reports")) && hasRaw("currency.usd") && <DepositsWithdrawalsModule currency="USD" call={call} dl={dl} preview={preview} print={print} notify={notify} perm={perm} hasRaw={hasRaw} onOpenAccountView={openAccountView} onOpenBulkWorkspace={() => setView("bulk-tx-usd")} />}
             {view === "deposits-slsh" && (perm("accountsManage") || perm("reports")) && hasRaw("currency.slsh") && <DepositsWithdrawalsModule currency="SLSH" call={call} dl={dl} preview={preview} print={print} notify={notify} perm={perm} hasRaw={hasRaw} onOpenAccountView={openAccountView} onOpenBulkWorkspace={() => setView("bulk-tx-slsh")} />}
@@ -5152,6 +5195,7 @@ function App() {
                 onNewQuotation={(acct) => { setQuotationPrefill({ clientName: acct.name, clientContact: acct.contact, clientAddress: acct.address, accountId: acct.id }); setView("quotations-pending"); }}
                 onExchange={(acct) => { setExchangePrefill({ clientName: acct.name, accountId: acct.id, currency: acct.currency }); setView("exchange"); }}
                 onViewAccount={(id) => openAccountView(id)}
+                onOpenCustomer={openCustomerProfile}
               />
             )}
             {/* CASH ACCOUNT VIEW round: the same "real page, reached only via
@@ -8834,7 +8878,7 @@ function QuotationEditor({ initial, rate, call, notify, userColumnPrefs, systemC
               <div style={{ marginTop: 6, border: `1px solid ${C.line}`, borderRadius: 6, padding: 6, background: C.paper, maxHeight: 180, overflowY: "auto" }}>
                 {clientResults.map((a) => (
                   <button key={a.id} onClick={() => selectClientAccount(a)} style={{ display: "flex", width: "100%", alignItems: "center", justifyContent: "space-between", gap: 8, textAlign: "left", padding: "6px 8px", border: "none", borderRadius: 4, background: "transparent", cursor: "pointer" }}>
-                    <span><span style={{ fontWeight: 600, fontSize: 12.5 }}>{toTitleCase(a.name)}</span> <span style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.slate }}>{a.accountNumber}</span></span>
+                    <span><span style={{ fontWeight: 600, fontSize: 12.5 }}>{toTitleCase(a.name)}</span> <span style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.slate }}>{a.accountNumber} · {a.currency}</span></span>
                     <Pill tone={a.currency === "USD" ? "navy" : "amber"}>{a.currency}</Pill>
                   </button>
                 ))}
@@ -10201,7 +10245,7 @@ function AccountTxCustomizeButton({ layoutState, resize, notify }) {
   );
 }
 
-function AccountDetailModal({ call, dl, preview, print, notify, perm, accountId, onClose, onChanged, onNewQuotation, onExchange, onViewAccount, asPage, onBack }) {
+function AccountDetailModal({ call, dl, preview, print, notify, perm, accountId, onClose, onChanged, onNewQuotation, onExchange, onViewAccount, asPage, onBack, onOpenCustomer }) {
   const [data, setData] = useState(null);
   const [editEntry, setEditEntry] = useState(null); const [deleteEntry, setDeleteEntry] = useState(null);
   const [activityType, setActivityType] = useState("all"); const [activityFrom, setActivityFrom] = useState(""); const [activityTo, setActivityTo] = useState("");
@@ -10418,6 +10462,20 @@ function AccountDetailModal({ call, dl, preview, print, notify, perm, accountId,
         <div style={{ marginBottom: 12, padding: "10px 12px", background: C.redBg, border: `1px solid ${C.red}`, borderRadius: 8, fontSize: 12.5, color: C.ink }}>
           <b>This account is deactivated</b> — its balance and history are preserved, but it can't take part in any new credit, debit, exchange, transfer, or quotation charge until it's reactivated.
           {account.deactivatedAt && <div style={{ color: C.slate, marginTop: 3 }}>Deactivated {fmtDateTime(account.deactivatedAt)} by {account.deactivatedBy}{account.deactivationReason ? ` — "${account.deactivationReason}"` : ""}</div>}
+        </div>
+      )}
+      {data.customer && account.accountType === "customer" && (
+        <div className="gk-av-link" data-testid="customer-link">
+          <NavIcon name="usersRound" size={15} />
+          <span>Customer profile</span>
+          {onOpenCustomer ? <button type="button" className="gk-acc-btn" style={{ height: 28 }} onClick={() => onOpenCustomer(data.customer.id)}><b>{data.customer.customerNumber}</b></button> : <b>{data.customer.customerNumber}</b>}
+          <span className="gk-cp-chips">
+            {data.customer.accounts.map((a) => (a.current
+              ? <span key={a.id} className="gk-cp-chip" aria-current="true"><span className="gk-cp-cur">{a.currency}</span><span className="gk-cp-num">{a.accountNumber}</span><span className="gk-cp-bal">{fmtMoney(a.balance, a.currency)}</span><span className="gk-cp-muted">this account</span></span>
+              : <CpAccountChip key={a.id} a={a} onOpen={onViewAccount} />))}
+          </span>
+          {data.customer.accounts.length === 1 && !data.customer.hiddenAccounts && <span className="gk-cp-muted">No account in another currency yet.</span>}
+          {data.customer.hiddenAccounts > 0 && <span className="gk-cp-hidden">+{data.customer.hiddenAccounts} in a currency you can't view</span>}
         </div>
       )}
       {data.activityComplete === false && (
@@ -12434,7 +12492,7 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
             <div className="gk-th-suggest" role="listbox">
               {accountResults.map((a) => (
                 <button key={a.id} type="button" role="option" onClick={() => { setAccountFilter({ id: a.id, name: a.name }); setAccountResults([]); }}>
-                  <b>{toTitleCase(a.name)}</b><span>{a.accountNumber}</span>
+                  <b>{toTitleCase(a.name)}</b><span>{a.accountNumber} · {a.currency}</span>
                 </button>
               ))}
             </div>
@@ -15028,6 +15086,285 @@ function DrExportButtons({ canExport, base, params, name, dl, preview }) {
   );
 }
 
+// CROSS-CURRENCY CUSTOMER LINKING round — Customer Profiles.
+// A profile (CUST-0001) groups one person's USD and SLSH accounts. Each
+// account keeps its own number, currency, balance and history; nothing here
+// ever adds a USD and an SLSH figure together. Linking decisions are made on
+// the server (src/customers.js); this page shows them, lists the possible
+// matches waiting for review, and — for users with customers.link — lets
+// them link, unlink or keep accounts apart (every change is audit-logged).
+function CpAccountChip({ a, onOpen }) {
+  const inner = <>
+    <span className="gk-cp-cur">{a.currency}</span>
+    <span className="gk-cp-num">{a.accountNumber}</span>
+    <span className="gk-cp-bal" style={{ color: a.balance < 0 ? C.balanceNegative : undefined }}>{fmtMoney(a.balance, a.currency)}</span>
+  </>;
+  const cls = `gk-cp-chip${a.status !== "active" ? " is-off" : ""}`;
+  // A plain span when it isn't a link, so a click reaches the row around it.
+  return onOpen
+    ? <button type="button" className={cls} onClick={(e) => { e.stopPropagation(); onOpen(a.id); }} title="Open this account">{inner}</button>
+    : <span className={cls}>{inner}</span>;
+}
+function CustomerProfilesModule({ call, notify, perm, focusId, onConsumeFocus, onOpenAccountView }) {
+  const [tab, setTab] = useState("profiles");
+  const [search, setSearch] = useState("");
+  const [onlyLinked, setOnlyLinked] = useState(false);
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState("");
+  const [openId, setOpenId] = useState(focusId || null);
+  const [reviews, setReviews] = useState(null);
+  const [reviewStatus, setReviewStatus] = useState("pending");
+  const [busy, setBusy] = useState("");
+  const load = useCallback(() => {
+    call("/api/customers" + qs({ search: search.trim() || undefined, linked: onlyLinked ? "1" : undefined }))
+      .then((d) => { setData(d); setErr(""); }).catch((e) => setErr(e.message));
+  }, [call, search, onlyLinked]);
+  useEffect(() => { const t = setTimeout(load, 200); return () => clearTimeout(t); }, [load]);
+  const loadReviews = useCallback(() => {
+    call("/api/customers/reviews" + qs({ status: reviewStatus })).then((d) => setReviews(d.reviews)).catch((e) => notify(e.message, true));
+  }, [call, reviewStatus, notify]);
+  useEffect(() => { if (tab === "reviews") loadReviews(); }, [tab, loadReviews]);
+  useEffect(() => { if (focusId) { setOpenId(focusId); setTab("profiles"); if (onConsumeFocus) onConsumeFocus(); } }, [focusId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const decide = async (r, action) => {
+    setBusy(r.id);
+    try {
+      await call(`/api/customers/reviews/${r.id}`, { method: "POST", body: { action } });
+      notify(action === "link" ? `${r.account.accountNumber} linked to ${r.candidate.customerNumber}.` : `${r.account.accountNumber} kept separate from ${r.candidate.customerNumber}.`);
+      loadReviews(); load();
+    } catch (e) { notify(e.message, true); } finally { setBusy(""); }
+  };
+
+  if (openId) return <CustomerProfileView id={openId} call={call} notify={notify} perm={perm} onBack={() => { setOpenId(null); load(); }} onOpenAccountView={onOpenAccountView} />;
+  const counts = data ? data.counts : null;
+  const canLink = !!(data && data.canLink);
+  return (
+    <div>
+      <SectionHeader icon="usersRound" title="Customer Profiles" sub="One profile per customer, holding their separate USD and SLSH accounts. Balances are never added across currencies." />
+      <div className="gk-acc-tabs" role="tablist" aria-label="Customer profiles">
+        <button type="button" role="tab" aria-selected={tab === "profiles"} className={`gk-acc-tab${tab === "profiles" ? " is-active" : ""}`} onClick={() => setTab("profiles")}><NavIcon name="usersRound" size={15} /><span>Profiles</span></button>
+        <button type="button" role="tab" aria-selected={tab === "reviews"} className={`gk-acc-tab${tab === "reviews" ? " is-active" : ""}`} onClick={() => setTab("reviews")}><NavIcon name="circleAlert" size={15} /><span>Needs Review{counts && counts.pendingReviews ? ` (${counts.pendingReviews})` : ""}</span></button>
+      </div>
+      {tab === "profiles" && (
+        <>
+          <div className="gk-acc-toolbar" role="search">
+            <label className="gk-acc-field gk-acc-field--search">
+              <span className="gk-acc-label">Search</span>
+              <span className="gk-acc-input"><NavIcon name="search" size={15} /><input type="search" aria-label="Search customers" placeholder="Name, CUST number, account number or phone" value={search} onChange={(e) => setSearch(e.target.value)} /></span>
+            </label>
+            <label className="gk-cp-check"><input type="checkbox" checked={onlyLinked} onChange={(e) => setOnlyLinked(e.target.checked)} /> Only customers with accounts in more than one currency</label>
+          </div>
+          <div className="gk-acc-kpis gk-cp-kpis">
+            <div className="gk-acc-kpi"><span className="gk-acc-kpi-icon"><NavIcon name="usersRound" size={20} /></span><span className="gk-acc-kpi-body"><span className="gk-acc-kpi-label">Customer profiles</span><span className="gk-acc-kpi-value">{counts ? counts.profiles : "—"}</span><span className="gk-acc-kpi-sub">matching the search</span></span></div>
+            <div className="gk-acc-kpi is-pos"><span className="gk-acc-kpi-icon"><NavIcon name="arrowLeftRight" size={20} /></span><span className="gk-acc-kpi-body"><span className="gk-acc-kpi-label">Linked across currencies</span><span className="gk-acc-kpi-value">{counts ? counts.linked : "—"}</span><span className="gk-acc-kpi-sub">USD and SLSH under one profile</span></span></div>
+            <button type="button" className="gk-acc-kpi is-neg" onClick={() => setTab("reviews")}><span className="gk-acc-kpi-icon"><NavIcon name="circleAlert" size={20} /></span><span className="gk-acc-kpi-body"><span className="gk-acc-kpi-label">Possible matches to review</span><span className="gk-acc-kpi-value">{counts ? counts.pendingReviews : "—"}</span><span className="gk-acc-kpi-sub">never merged automatically</span></span></button>
+          </div>
+          <div className="gk-table-wrap" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 8 }}>
+            {err ? <div className="gk-acc-error" role="alert"><NavIcon name="circleAlert" size={16} /><span>Couldn't load the customer profiles: {err}</span></div>
+              : !data ? <Spinner label="Loading customer profiles…" />
+              : data.customers.length === 0 ? <div className="gk-th-empty"><NavIcon name="usersRound" size={28} /><b>No customer profiles found</b><span>Try a different search.</span></div>
+              : (
+                <table className="gk-table gk-cp-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead><tr><th style={th} scope="col">Customer ID</th><th style={th} scope="col">Name</th><th style={th} scope="col">Accounts (each in its own currency)</th><th style={th} scope="col">Phone</th></tr></thead>
+                  <tbody>
+                    {data.customers.map((p) => (
+                      <tr key={p.id} data-customer={p.customerNumber} onClick={() => setOpenId(p.id)} style={{ cursor: "pointer" }}>
+                        <td style={{ ...tdMono, textAlign: "left" }}>{p.customerNumber}</td>
+                        <td style={td}><b>{toTitleCase(p.name)}</b>{p.pendingReviews > 0 && <span className="gk-cp-flag" title="A possible match is waiting for review">Review</span>}</td>
+                        <td style={td}><span className="gk-cp-chips">{p.accounts.map((a) => <CpAccountChip key={a.id} a={a} />)}{p.hiddenAccounts > 0 && <span className="gk-cp-hidden">+{p.hiddenAccounts} in a currency you can't view</span>}</span></td>
+                        <td style={{ ...tdMono, textAlign: "left", fontWeight: 500 }}>{p.contact || "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+          </div>
+        </>
+      )}
+      {tab === "reviews" && (
+        <>
+          <div className="gk-acc-toolbar">
+            <label className="gk-acc-field">
+              <span className="gk-acc-label">Show</span>
+              <span className="gk-acc-input"><NavIcon name="circleCheck" size={15} />
+                <select aria-label="Review status" value={reviewStatus} onChange={(e) => setReviewStatus(e.target.value)}>
+                  <option value="pending">Waiting for a decision</option><option value="linked">Linked</option><option value="dismissed">Kept separate</option>
+                </select>
+              </span>
+            </label>
+            <div className="gk-th-scope" style={{ margin: 0, flex: "1 1 300px" }}>Accounts with the same or a similar name but conflicting details (phone, ID number, or an account already in that currency) are never merged automatically. {canLink ? "Link them only when you are sure they are the same person." : "Only users with the Customer Profiles “link” permission can decide."}</div>
+          </div>
+          {!reviews ? <Spinner label="Loading…" /> : reviews.length === 0 ? <div className="gk-th-empty" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 8 }}><NavIcon name="circleCheck" size={28} /><b>Nothing here</b><span>{reviewStatus === "pending" ? "No possible matches are waiting for a decision." : "No decisions of this kind yet."}</span></div> : (
+            <div className="gk-cp-reviews">
+              {reviews.map((r) => (
+                <div key={r.id} className="gk-cp-review" data-review={r.id}>
+                  <div className="gk-cp-review-side">
+                    <span className="gk-acc-label">Account</span>
+                    <b>{toTitleCase(r.account.name)}</b>
+                    <span className="gk-cp-chips"><CpAccountChip a={r.account} onOpen={onOpenAccountView} /></span>
+                    <span className="gk-cp-muted">{r.account.contact || "No phone"}{r.account.idNumber ? ` · ID ${r.account.idNumber}` : ""}{r.account.customerNumber ? ` · now ${r.account.customerNumber}` : ""}</span>
+                  </div>
+                  <div className="gk-cp-review-mid"><NavIcon name="arrowLeftRight" size={18} /><span>{r.reason}</span></div>
+                  <div className="gk-cp-review-side">
+                    <span className="gk-acc-label">Possible profile</span>
+                    <b>{r.candidate.customerNumber} · {toTitleCase(r.candidate.name)}</b>
+                    <span className="gk-cp-chips">{r.candidate.accounts.map((a) => <CpAccountChip key={a.id} a={a} onOpen={onOpenAccountView} />)}</span>
+                    <span className="gk-cp-muted">{r.candidate.contact || "No phone"}</span>
+                  </div>
+                  <div className="gk-cp-review-actions">
+                    {r.status === "pending" && canLink ? (
+                      <>
+                        <button type="button" className="gk-acc-btn" disabled={busy === r.id} onClick={() => decide(r, "link")}><NavIcon name="check" size={14} /><span>Same customer — link</span></button>
+                        <button type="button" className="gk-acc-btn" disabled={busy === r.id} onClick={() => decide(r, "dismiss")}><NavIcon name="x" size={14} /><span>Different people</span></button>
+                      </>
+                    ) : r.status !== "pending" ? <span className="gk-cp-muted">{r.resolution || r.status} · {r.resolvedBy} · {fmtDateTime(r.resolvedAt)}</span> : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function CustomerProfileView({ id, call, notify, perm, onBack, onOpenAccountView }) {
+  const [d, setD] = useState(null);
+  const [err, setErr] = useState("");
+  const [cur, setCur] = useState("all");
+  const [acct, setAcct] = useState("all");
+  const [hist, setHist] = useState(null);
+  const [histErr, setHistErr] = useState("");
+  const [linkQuery, setLinkQuery] = useState("");
+  const [linkResults, setLinkResults] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const canHistory = perm("reports");
+  const load = useCallback(() => { call(`/api/customers/${id}`).then((x) => { setD(x); setErr(""); }).catch((e) => setErr(e.message)); }, [call, id]);
+  useEffect(load, [load]);
+  useEffect(() => {
+    if (!d || !canHistory) return;
+    setHist(null);
+    const accountId = acct !== "all" ? acct : undefined;
+    call("/api/history" + qs({ customerId: d.customer.id, currency: cur !== "all" ? cur : undefined, accountId }))
+      .then((x) => { setHist(x.entries); setHistErr(""); }).catch((e) => { setHist([]); setHistErr(e.message); });
+  }, [d, cur, acct, call, canHistory]);
+  useEffect(() => {
+    if (!d || !d.canLink || linkQuery.trim().length < 2) { setLinkResults([]); return; }
+    const t = setTimeout(() => {
+      call("/api/accounts" + qs({ search: linkQuery.trim(), type: "customer" }))
+        .then((x) => setLinkResults((x.accounts || []).filter((a) => a.customerId !== d.customer.id).slice(0, 8))).catch(() => setLinkResults([]));
+    }, 250);
+    return () => clearTimeout(t);
+  }, [linkQuery, d, call]);
+  const act = async (fn, msg) => { setBusy(true); try { await fn(); notify(msg); setLinkQuery(""); load(); } catch (e) { notify(e.message, true); } finally { setBusy(false); } };
+
+  if (err) return <div><button type="button" className="gk-acc-btn" onClick={onBack}><NavIcon name="arrowLeft" size={14} /><span>Customer Profiles</span></button><div className="gk-acc-error" role="alert"><NavIcon name="circleAlert" size={16} /><span>{err}</span></div></div>;
+  if (!d) return <Spinner label="Loading customer profile…" />;
+  const c = d.customer;
+  const currencies = [...new Set(c.accounts.map((a) => a.currency))];
+  const shown = cur === "all" ? c.accounts : c.accounts.filter((a) => a.currency === cur);
+  return (
+    <div className="gk-cp-profile">
+      <nav className="gk-av-crumbs" aria-label="Breadcrumb">
+        <button type="button" onClick={onBack}><NavIcon name="arrowLeft" size={14} />Customer Profiles</button>
+        <span aria-hidden="true">›</span><span aria-current="page">{c.customerNumber}</span>
+      </nav>
+      <div className="gk-av-head">
+        <div className="gk-av-id">
+          <span className="gk-av-avatar" aria-hidden="true"><NavIcon name="userRound" size={24} /></span>
+          <div style={{ minWidth: 0 }}>
+            <h1 className="gk-av-name">{toTitleCase(c.name)}</h1>
+            <div className="gk-av-meta">
+              <span className="gk-av-meta-item"><NavIcon name="hash" size={13} /><span style={{ fontFamily: FONT_MONO }} data-testid="customer-number">{c.customerNumber}</span></span>
+              <span className="gk-av-meta-item">Customer Profile · {c.accounts.length + c.hiddenAccounts} account{c.accounts.length + c.hiddenAccounts === 1 ? "" : "s"}</span>
+              {c.contact && <span className="gk-av-meta-item"><NavIcon name="phone" size={13} />{c.contact}</span>}
+            </div>
+          </div>
+        </div>
+      </div>
+      {d.reviews.length > 0 && (
+        <div className="gk-acc-warn" role="note"><NavIcon name="circleAlert" size={15} /><span>{d.reviews.length} possible match{d.reviews.length === 1 ? "" : "es"} involving this customer {d.reviews.length === 1 ? "is" : "are"} waiting for review in Customer Profiles › Needs Review.</span></div>
+      )}
+      <div className="gk-cp-accounts">
+        {c.accounts.map((a) => (
+          <div key={a.id} className={`gk-cp-account${a.status !== "active" ? " is-off" : ""}`} data-account={a.accountNumber}>
+            <div className="gk-cp-account-head"><span className="gk-cp-cur gk-cp-cur--lg">{a.currency}</span><span className="gk-cp-muted">{a.currency === "USD" ? "USD Account" : "SLSH Account"}</span><span className={`gk-av-status${a.status === "active" ? "" : " is-off"}`}>{a.status === "active" ? "Active" : "Inactive"}</span></div>
+            <div className="gk-cp-account-num">{a.accountNumber}</div>
+            <div className="gk-cp-account-bal" style={{ color: a.balance < 0 ? C.balanceNegative : undefined }}>{fmtMoney(a.balance, a.currency)}</div>
+            <div className="gk-cp-account-actions">
+              <button type="button" className="gk-acc-btn" onClick={() => onOpenAccountView && onOpenAccountView(a.id)}><NavIcon name="eye" size={14} /><span>Open account</span></button>
+              {d.canLink && c.accounts.length + c.hiddenAccounts > 1 && <button type="button" className="gk-acc-btn" disabled={busy} onClick={() => act(() => call(`/api/customers/${c.id}/accounts/${a.id}`, { method: "DELETE" }), `${a.accountNumber} unlinked — it now has its own profile.`)}><NavIcon name="x" size={14} /><span>Unlink</span></button>}
+            </div>
+          </div>
+        ))}
+        {c.hiddenAccounts > 0 && <div className="gk-cp-account is-hidden"><span className="gk-cp-muted">{c.hiddenAccounts} more account{c.hiddenAccounts === 1 ? "" : "s"} in a currency you don't have access to.</span></div>}
+      </div>
+      {d.canLink && (
+        <div className="gk-acc-toolbar gk-cp-link" style={{ position: "relative" }}>
+          <div className="gk-acc-field gk-acc-field--search" style={{ position: "relative" }}>
+            <span className="gk-acc-label">Link another account to this customer</span>
+            <span className="gk-acc-input"><NavIcon name="search" size={15} /><input aria-label="Find an account to link" placeholder="Name or account number" value={linkQuery} onChange={(e) => setLinkQuery(e.target.value)} /></span>
+            {linkResults.length > 0 && (
+              <div className="gk-th-suggest" role="listbox" style={{ width: "100%" }}>
+                {linkResults.map((a) => (
+                  <button key={a.id} type="button" role="option" disabled={busy} onClick={() => act(() => call(`/api/customers/${c.id}/accounts`, { method: "POST", body: { accountId: a.id } }), `${a.accountNumber} linked to ${c.customerNumber}.`)}>
+                    <b>{toTitleCase(a.name)}</b><span>{a.accountNumber} · {a.currency} · {fmtMoney(a.balance, a.currency)}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="gk-th-scope" style={{ margin: 0, flex: "1 1 260px" }}>A profile holds one account per currency. Linking never moves money or changes any balance or transaction; it is recorded in the audit log.</div>
+        </div>
+      )}
+      <h2 className="gk-cp-h2">Transaction history</h2>
+      {!canHistory ? <div className="gk-th-scope">Viewing transaction history needs the Reports permission.</div> : (
+        <>
+          <div className="gk-acc-tabs" role="tablist" aria-label="History currency">
+            {[["all", "All currencies"], ...currencies.map((x) => [x, x])].map(([k, l]) => (
+              <button key={k} type="button" role="tab" aria-selected={cur === k} className={`gk-acc-tab${cur === k ? " is-active" : ""}`} onClick={() => { setCur(k); setAcct("all"); }}>{l}</button>
+            ))}
+            {shown.length > 1 && (
+              <label className="gk-acc-input" style={{ width: 240 }}><NavIcon name="landmark" size={15} />
+                <select aria-label="Account" value={acct} onChange={(e) => setAcct(e.target.value)}>
+                  <option value="all">All accounts</option>{shown.map((a) => <option key={a.id} value={a.id}>{a.accountNumber} · {a.currency}</option>)}
+                </select>
+              </label>
+            )}
+          </div>
+          <div className="gk-table-wrap" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 8 }}>
+            {!hist ? <Spinner label="Loading history…" /> : histErr ? <div className="gk-acc-error" role="alert"><NavIcon name="circleAlert" size={16} /><span>{histErr}</span></div> : hist.length === 0 ? <div className="gk-th-empty"><NavIcon name="history" size={28} /><b>No transactions</b></div> : (
+              <TableScrollShell height={420}>
+                <table className="gk-table gk-cp-hist" style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead><tr><th style={th} scope="col">Date</th><th style={th} scope="col">Reference</th><th style={th} scope="col">Type</th><th style={th} scope="col">Account</th><th style={{ ...th, textAlign: "right" }} scope="col">Credit</th><th style={{ ...th, textAlign: "right" }} scope="col">Debit</th><th style={th} scope="col">Amount</th></tr></thead>
+                  <tbody>
+                    {hist.map((e) => {
+                      const a = c.accounts.find((x) => x.id === e.accountId || x.id === e.counterpartAccountId);
+                      return (
+                        <tr key={`${e.recordType}-${e.id}`} data-entry={e.id}>
+                          <td style={{ ...tdMono, textAlign: "left", fontWeight: 500 }}>{fmtDateTime(e.date)}</td>
+                          <td style={{ ...tdMono, textAlign: "left", fontWeight: 500 }}>{e.reference}</td>
+                          <td style={td}>{historyTypeLabelFor(e)}</td>
+                          <td style={{ ...tdMono, textAlign: "left", fontWeight: 500 }}>{a ? `${a.accountNumber} · ${a.currency}` : e.accountCurrency}</td>
+                          <td style={{ ...tdMono, textAlign: "right" }}>{e.credit != null ? <span className="gk-acc-credit">{fmtMoney(e.credit, e.entryCurrency)}</span> : ""}</td>
+                          <td style={{ ...tdMono, textAlign: "right" }}>{e.debit != null ? <span className="gk-acc-debit">{fmtMoney(e.debit, e.entryCurrency)}</span> : ""}</td>
+                          <td style={{ ...tdMono, textAlign: "left", fontWeight: 500 }}>{e.amountSummary}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </TableScrollShell>
+            )}
+          </div>
+          <div className="gk-th-scope">Each account's entries stay in its own currency{cur === "all" && currencies.length > 1 ? " — USD and SLSH amounts are listed side by side, never added together" : ""}.</div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function DailyReportsModule({ call, dl, preview, notify, initialTab }) {
   const [tab, setTab] = useState(initialTab || "snapshot");
   useEffect(() => { if (initialTab) setTab(initialTab); }, [initialTab]);
@@ -15952,11 +16289,11 @@ function CashTransferFormModal({ accounts, onClose, onSubmit }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <Field label="From"><Select value={fromId} onChange={(e) => { setFromId(e.target.value); setToId(""); }}>
           <option value="">Select source account…</option>
-          {accounts.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)}{a.accountNumber ? ` · ${a.accountNumber}` : ""} — {fmtMoney(a.balance, a.currency)}</option>)}
+          {accounts.map((a) => <option key={a.id} value={a.id}>{accountOptionLabel(a)} — {fmtMoney(a.balance, a.currency)}</option>)}
         </Select></Field>
         <Field label="To"><Select value={toId} onChange={(e) => setToId(e.target.value)} disabled={!fromId}>
           <option value="">Select destination account…</option>
-          {sameCurrencyTargets.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)}{a.accountNumber ? ` · ${a.accountNumber}` : ""} — {fmtMoney(a.balance, a.currency)}</option>)}
+          {sameCurrencyTargets.map((a) => <option key={a.id} value={a.id}>{accountOptionLabel(a)} — {fmtMoney(a.balance, a.currency)}</option>)}
         </Select></Field>
         <Field label={`Amount${fromAcc ? ` (${fromAcc.currency})` : ""}`}><MoneyInput value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
         <Field label="Date"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
@@ -16011,11 +16348,11 @@ function CashExchangeFormModal({ accounts, rate, onClose, onSubmit }) {
         </div>
         <Field label="From (USD or SLSH account)"><Select value={fromId} onChange={(e) => { setFromId(e.target.value); setToId(""); }}>
           <option value="">Select source account…</option>
-          {accounts.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)}{a.accountNumber ? ` · ${a.accountNumber}` : ""} ({a.currency}) — {fmtMoney(a.balance, a.currency)}</option>)}
+          {accounts.map((a) => <option key={a.id} value={a.id}>{accountOptionLabel(a)} — {fmtMoney(a.balance, a.currency)}</option>)}
         </Select></Field>
         <Field label="To (opposite currency account)"><Select value={toId} onChange={(e) => setToId(e.target.value)} disabled={!fromId}>
           <option value="">Select destination account…</option>
-          {oppositeTargets.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)}{a.accountNumber ? ` · ${a.accountNumber}` : ""} ({a.currency}) — {fmtMoney(a.balance, a.currency)}</option>)}
+          {oppositeTargets.map((a) => <option key={a.id} value={a.id}>{accountOptionLabel(a)} — {fmtMoney(a.balance, a.currency)}</option>)}
         </Select></Field>
         <Field label={`Amount Given${fromAcc ? ` (${fromAcc.currency})` : ""}`}><MoneyInput value={amountGiven} onChange={(e) => setAmountGiven(e.target.value)} /></Field>
         {estimatedReceived != null && <div style={{ fontSize: 12.5, color: C.slate }}>Estimated received at {rateUsed !== "" ? "the rate above" : "current rate"}: <span style={{ fontFamily: FONT_MONO, fontWeight: 700, color: C.ink }}>{fmtMoney(estimatedReceived, toAcc.currency)}</span></div>}
@@ -16054,7 +16391,7 @@ function LoanFormModal({ call, accounts, onClose, onSubmit }) {
         <Field label="Customer"><AccountPicker call={call} accountId={clientId} accountName={clientName} onChange={(id, name) => { setClientId(id); setClientName(name); }} /></Field>
         <Field label="Cash Account (source of funds)"><Select value={cashAccountId} onChange={(e) => setCashAccountId(e.target.value)}>
           <option value="">Select cash account…</option>
-          {accounts.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)}{a.accountNumber ? ` · ${a.accountNumber}` : ""} ({a.currency}) — {fmtMoney(a.balance, a.currency)}</option>)}
+          {accounts.map((a) => <option key={a.id} value={a.id}>{accountOptionLabel(a)} — {fmtMoney(a.balance, a.currency)}</option>)}
         </Select></Field>
         <Field label={`Loan Amount${cashAccount ? ` (${cashAccount.currency})` : ""}`}><MoneyInput value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
         <Field label="Date"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
@@ -16090,7 +16427,7 @@ function LoanRepayModal({ loan, accounts, onClose, onSubmit }) {
         <div style={{ fontSize: 12.5, color: C.slate }}>Outstanding: <span style={{ fontFamily: FONT_MONO, fontWeight: 700, color: C.ink }}>{fmtMoney(loan.outstandingAmount, loan.currency)}</span></div>
         <Field label="Credit to Cash Account"><Select value={cashAccountId} onChange={(e) => setCashAccountId(e.target.value)}>
           <option value="">Select cash account…</option>
-          {eligible.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)}{a.accountNumber ? ` · ${a.accountNumber}` : ""} ({a.currency})</option>)}
+          {eligible.map((a) => <option key={a.id} value={a.id}>{accountOptionLabel(a)}</option>)}
         </Select></Field>
         <Field label={`Amount (${loan.currency})`}><MoneyInput value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
         <Field label="Date"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
@@ -16273,7 +16610,7 @@ function ExpensesModule({ call, dl, notify, hasRaw, token }) {
       <Field label="Paid From" width={160}>
         <Select value={cashAccountId} onChange={(e) => setCashAccountId(e.target.value)}>
           <option value="all">All accounts</option>
-          {accountsFor(currency).map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)}{a.accountNumber ? ` · ${a.accountNumber}` : ""} ({a.currency})</option>)}
+          {accountsFor(currency).map((a) => <option key={a.id} value={a.id}>{accountOptionLabel(a)}</option>)}
         </Select>
       </Field>
       {/* The expense list's search (it filters the Expenses table below). */}
@@ -16559,7 +16896,7 @@ function ExpenseFormModal({ call, notify, meta, expense, onClose, onSaved }) {
             <Field label="Paid From Account *">
               <Select value={f.cashAccountId} onChange={(e) => set("cashAccountId", e.target.value)} aria-invalid={!!errors.cashAccountId}>
                 <option value="">{accounts.length ? "Choose a Cash Account…" : `No active ${f.currency} Cash Account`}</option>
-                {accounts.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)}{a.accountNumber ? ` · ${a.accountNumber}` : ""} — {a.currency}{a.balance !== undefined ? ` (${fmtMoney(a.balance, a.currency)})` : ""}</option>)}
+                {accounts.map((a) => <option key={a.id} value={a.id}>{accountOptionLabel(a)}{a.balance !== undefined ? ` (${fmtMoney(a.balance, a.currency)})` : ""}</option>)}
               </Select>{fieldErr("cashAccountId")}
               {chosen && chosen.balance !== undefined && Number.isFinite(amountNum) && amountNum > 0 && !editing && (
                 <div style={{ fontSize: 11.5, color: chosen.balance - amountNum < 0 ? C.amber : C.slate, marginTop: 4 }}>

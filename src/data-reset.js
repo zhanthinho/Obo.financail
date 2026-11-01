@@ -162,6 +162,9 @@ function clearCategory(key) {
       run("UPDATE clients SET linked_account_id = NULL");
       d.account_imports = run("DELETE FROM account_imports").changes;
       d.clients = run("DELETE FROM clients").changes;
+      // Customer profiles only group these accounts — they go with them.
+      d.customer_link_reviews = run("DELETE FROM customer_link_reviews").changes;
+      d.customers = run("DELETE FROM customers").changes;
       break;
     case "cashAccounts":
       d.cash_ledger = run("DELETE FROM cash_ledger").changes;

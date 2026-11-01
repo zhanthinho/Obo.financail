@@ -181,7 +181,9 @@ function readScope(file, kind, scopeId) {
         // Only optional tables may be absent (created by the app on demand).
         // The daily snapshot tables (DAILY REPORTS round) exist only in the
         // MySQL version — a SQLite installation never had any snapshots.
-        if (t.name === "reset_log" || t.name.startsWith("daily_snapshot")) { out.tables.push({ name: t.name, columns, rows: [], checksum: dump.rowsChecksum(columns, []) }); continue; }
+        // Customer profiles (CROSS-CURRENCY CUSTOMER LINKING round) likewise
+        // exist only in MySQL; the app builds them from the accounts on start.
+        if (t.name === "reset_log" || t.name.startsWith("daily_snapshot") || t.name === "customers" || t.name === "customer_link_reviews") { out.tables.push({ name: t.name, columns, rows: [], checksum: dump.rowsChecksum(columns, []) }); continue; }
         throw fail(`${scopeId}: table ${t.name} is missing from the SQLite database after the upgrade.`);
       }
       const live = h.prepare(`PRAGMA table_info("${t.name}")`).all().map((c) => c.name);

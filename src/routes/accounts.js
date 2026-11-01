@@ -17,6 +17,8 @@ const { accountBasic: cashAccountBasic, validatePaymentCashAccount, hasActiveCas
 // ACCOUNT IMPORT & EXPORT round: shared row-parsing/validation engine (see
 // its own header comment for why preview and commit both go through it).
 const accountImport = require("../account-import");
+// CROSS-CURRENCY CUSTOMER LINKING round — see src/customers.js.
+const customers = require("../customers");
 
 // The one real, pre-existing "opening balance" record for an account: the
 // single account_ledger row POST /api/accounts inserts at creation time
@@ -107,9 +109,23 @@ function serialize(c) {
     // elsewhere for transfer counterparties).
     transactionCount: get("SELECT COUNT(*) as n FROM exchange_transactions WHERE client_id = ? AND status = 'active'", [c.id]).n,
     quotationCount: get("SELECT COUNT(*) as n FROM quotations WHERE client_id = ?", [c.id]).n,
+    customerId: c.customer_id || null,
     status: c.status || "active",
     deactivatedAt: c.deactivated_at, deactivatedBy: c.deactivated_by, deactivationReason: c.deactivation_reason,
     reactivatedAt: c.reactivated_at, reactivatedBy: c.reactivated_by,
+  };
+}
+function customerSummary(user, c) {
+  if (!c.customer_id) return null;
+  const cu = get("SELECT * FROM customers WHERE id = ?", [c.customer_id]);
+  if (!cu) return null;
+  const allowed = allowedCurrencies(user);
+  const linked = customers.linkedAccounts(cu.id);
+  const visible = linked.filter((a) => allowed.includes(a.currency));
+  return {
+    id: cu.id, customerNumber: cu.customer_number, name: cu.name,
+    accounts: visible.map((a) => ({ id: a.id, accountNumber: a.account_number, name: a.name, currency: a.currency, balance: a.currency === "USD" ? a.balance_usd : a.balance_slsh, status: a.status || "active", current: a.id === c.id })),
+    hiddenAccounts: linked.length - visible.length,
   };
 }
 function clearLink(clientId) {
@@ -622,6 +638,7 @@ function register(router) {
       );
     });
 
+    customers.backfill(user, "import");
     addAudit(user, "Accounts imported", `${body.fileName || "file"} — ${importedCount} imported, ${updatedCount} updated, ${skippedCount} skipped, ${errorCount} error(s)`);
     sendJSON(res, 200, {
       summary: { total: rows.length, imported: importedCount, updated: updatedCount, skipped: skippedCount, errors: errorCount },
@@ -838,6 +855,10 @@ function register(router) {
 
     sendJSON(res, 200, {
       account: serialize(c),
+      // CROSS-CURRENCY CUSTOMER LINKING round: the profile this account
+      // belongs to and its other currency accounts (only currencies this
+      // user may see; each balance stays in its own currency).
+      customer: customerSummary(user, c),
       summary: {
         totalDeposited, totalWithdrawn, netMovement: totalDeposited - totalWithdrawn, entryCount: agg.n || 0, turnover: totalDeposited + totalWithdrawn,
         totalCharges, totalExchanges, totalTransfers, availableBalance: c.currency === "USD" ? c.balance_usd : c.balance_slsh,
@@ -906,7 +927,8 @@ function register(router) {
       return get("SELECT * FROM clients WHERE id = ?", [id]);
     });
     addAudit(user, "Account created", `${account.account_number} — ${name} (${accountType}, ${currency})`);
-    sendJSON(res, 201, { account: serialize(account) });
+    const link = customers.assignCustomer(account.id, user, "create");
+    sendJSON(res, 201, { account: serialize(get("SELECT * FROM clients WHERE id = ?", [account.id])), customerLink: link.skipped ? null : { linked: !!link.linked, confidence: link.confidence, reviews: link.reviews || 0 } });
   });
 
   router.patch("/api/accounts/:id", async (req, res, params) => {
@@ -966,6 +988,7 @@ function register(router) {
       rebuildAccountBalance(existing.id, existing.currency);
     });
     addAudit(user, "Account updated", `${existing.account_number} — ${name}`);
+    customers.afterAccountEdit(existing, user);
     if (openingChanging) {
       addAudit(user, "Opening balance changed", `${existing.account_number} — ${name}: ${fmtMoney(previousOpening, existing.currency)} -> ${fmtMoney(newOpening, existing.currency)}`);
     }

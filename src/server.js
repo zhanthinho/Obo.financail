@@ -37,6 +37,11 @@ function tryBootstrap() {
     lastBootError = null;
     require("./backup").startScheduler();
     require("./daily-snapshots").startScheduler();
+    // CROSS-CURRENCY CUSTOMER LINKING round: give existing customer accounts
+    // their profiles (links only reliable matches; never touches balances).
+    for (const company of tenancy.listCompanies()) {
+      try { tenancy.withCompany(company, () => require("./customers").ensureBackfilled(company.id)); } catch (e) { console.error(`[customers] ${company.id}: ${e.message}`); }
+    }
     return true;
   } catch (e) {
     lastBootError = e;
@@ -94,6 +99,7 @@ require("./routes/dataReset").register(router);
 require("./routes/loans").register(router);
 require("./routes/expenses").register(router);
 require("./routes/dailyReports").register(router);
+require("./routes/customers").register(router);
 require("./routes/platform").register(router);
 
 // MYSQL round: the health check makes a real round-trip to MySQL (bounded by

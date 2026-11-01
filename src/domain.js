@@ -261,6 +261,9 @@ function findOrCreateClient(name, contact, address, currencyHint) {
   const id = uid("cl");
   const currency = currencyHint === "SLSH" ? "SLSH" : "USD";
   run("INSERT INTO clients (id, name, contact, address, currency, created_at) VALUES (?,?,?,?,?,?)", [id, formatted, contact || null, address || null, currency, nowISO()]);
+  // CROSS-CURRENCY CUSTOMER LINKING round: a walk-in account gets its
+  // customer profile right away (linked only on a reliable match).
+  require("./customers").assignCustomer(id, undefined, "walk-in");
   return id;
 }
 
