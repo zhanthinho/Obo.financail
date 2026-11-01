@@ -659,11 +659,27 @@ function register(router) {
     // with the quotation's Pending/Paid/Refunded settlement status so it's
     // still legible after the fact (see history.js for the same rule
     // applied to the Transaction History module).
-    const transactionIds = new Set(transactions.map((t) => t.id));
-    const transferIds = new Set(transfersList.map((t) => t.id));
+    // ACCOUNT VIEW PRO round: the activity feed (and every total the Account
+    // View derives from it: Total Credits/Debits, Net Change, the table's
+    // totals row, the Credits & Debits comparison) is built from the
+    // account's COMPLETE history, not the latest 50 rows of each kind that
+    // the `transactions`/`transfers`/`ledger` fields below still return
+    // (unchanged, for their existing callers). A generous safety cap keeps a
+    // pathological account from producing an unbounded response; when it is
+    // reached `activityComplete` is false and the page says so.
+    const ACTIVITY_CAP = 5000;
+    const ledgerAllRows = all(`SELECT * FROM account_ledger WHERE client_id = ? ORDER BY ${CHRONO_SORT_EXPR} DESC, id DESC LIMIT ${ACTIVITY_CAP + 1}`, [c.id]);
+    const txAllRows = all(`SELECT * FROM exchange_transactions WHERE client_id = ? ORDER BY date DESC, id DESC LIMIT ${ACTIVITY_CAP + 1}`, [c.id]);
+    const trAllRows = all(`SELECT * FROM transfers WHERE from_account_id = ? OR to_account_id = ? ORDER BY ${CHRONO_SORT_EXPR} DESC, id DESC LIMIT ${ACTIVITY_CAP + 1}`, [c.id, c.id]);
+    const activityComplete = ledgerAllRows.length <= ACTIVITY_CAP && txAllRows.length <= ACTIVITY_CAP && trAllRows.length <= ACTIVITY_CAP;
+    const ledgerAll = ledgerAllRows.slice(0, ACTIVITY_CAP);
+    const txAll = txAllRows.slice(0, ACTIVITY_CAP);
+    const trAll = trAllRows.slice(0, ACTIVITY_CAP);
+    const transactionIds = new Set(txAll.map((t) => t.id));
+    const transferIds = new Set(trAll.map((t) => t.id));
     const FOLDABLE_PARENTS = { exchange: transactionIds, transfer: transferIds };
     const linkedLedgerByKey = {};
-    for (const l of ledger) {
+    for (const l of ledgerAll) {
       if (l.source_type && l.source_id) linkedLedgerByKey[`${l.source_type}:${l.source_id}`] = l;
     }
     const QUOTATION_LEG_STATUS = { quotation_charge: "Pending", quotation_paid: "Paid", quotation_refund: "Refunded" };
@@ -681,7 +697,7 @@ function register(router) {
     // is exactly the bug the "always follow the latest transaction" fix
     // targets.
     const activityRows = [];
-    for (const l of ledger) {
+    for (const l of ledgerAll) {
       const parents = l.source_type && FOLDABLE_PARENTS[l.source_type];
       if (parents && l.source_id && parents.has(l.source_id)) continue; // folded into its exchange/transfer row instead
       activityRows.push({
@@ -705,7 +721,7 @@ function register(router) {
         },
       });
     }
-    for (const t of transactions) {
+    for (const t of txAll) {
       const linked = linkedLedgerByKey[`exchange:${t.id}`];
       activityRows.push({
         // exchange_transactions.date is always a full timestamp already
@@ -727,7 +743,7 @@ function register(router) {
         },
       });
     }
-    for (const t of transfersList) {
+    for (const t of trAll) {
       const linked = linkedLedgerByKey[`transfer:${t.id}`];
       const isSender = t.from_account_id === c.id;
       const counterpart = basicInfo(isSender ? t.to_account_id : t.from_account_id);
@@ -758,6 +774,7 @@ function register(router) {
         totalCharges, totalExchanges, totalTransfers, availableBalance: c.currency === "USD" ? c.balance_usd : c.balance_slsh,
       },
       activity,
+      activityComplete,
       transactions: transactions.map((t) => ({ id: t.id, date: t.date, amountGiven: t.amount_given, currencyGiven: t.currency_given, amountReceived: t.amount_received, currencyReceived: t.currency_received, status: t.status })),
       quotations: quotations.map((q) => ({ id: q.id, number: q.number, status: q.status, issueDate: q.issue_date })),
       transfers: transfersList.map((t) => ({ id: t.id, date: t.date, fromAccountId: t.from_account_id, toAccountId: t.to_account_id, amount: t.amount, currency: t.currency, status: t.status })),

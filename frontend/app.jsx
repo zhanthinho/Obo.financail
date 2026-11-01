@@ -786,6 +786,96 @@ const THEME_CSS = `
     .gk-filterbar > * { flex: 1 1 140px; }
   }
 
+  /* ACCOUNT VIEW PRO round — professional View Account page */
+  :root { --c-av-total-bg: color-mix(in srgb, var(--c-mint) 11%, var(--c-card)); --c-av-total-line: color-mix(in srgb, var(--c-navy) 35%, transparent); --c-av-balance-bg: color-mix(in srgb, var(--c-mint) 7%, transparent); --c-av-balance-fg: var(--c-navy-deep); }
+  [data-theme="dark"] { --c-av-balance-fg: var(--c-navy); --c-av-total-bg: color-mix(in srgb, var(--c-mint) 11%, var(--c-card)); --c-av-balance-bg: color-mix(in srgb, var(--c-mint) 7%, transparent); }
+  [data-theme="dark"] .gk-av-status { background: rgba(74,222,128,0.14); color: #4ADE80; }
+  [data-theme="dark"] .gk-av-status.is-off { background: rgba(248,113,113,0.14); color: #F87171; }
+  [data-theme="dark"] .gk-av-card--credit .gk-av-card-icon { background: rgba(74,222,128,0.14); color: #4ADE80; }
+  [data-theme="dark"] .gk-av-card--debit .gk-av-card-icon { background: rgba(248,113,113,0.14); color: #F87171; }
+  .gk-av-crumbs { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--c-slate); margin: 2px 0 10px; flex-wrap: wrap; }
+  .gk-av-crumbs button { display: inline-flex; align-items: center; gap: 4px; background: none; border: 0; padding: 2px 0; font: inherit; color: var(--c-navy); font-weight: 600; cursor: pointer; }
+  .gk-av-crumbs button:hover { text-decoration: underline; }
+  .gk-av-crumbs [aria-current] { color: var(--c-ink); font-weight: 600; }
+  .gk-av-head { display: flex; justify-content: space-between; align-items: center; gap: 12px 16px; flex-wrap: wrap; margin-bottom: 14px; }
+  .gk-av-id { display: flex; align-items: center; gap: 14px; min-width: 0; flex: 1 1 320px; }
+  .gk-av-avatar { width: 52px; height: 52px; border-radius: 14px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--c-navy) 12%, var(--c-card)); color: var(--c-navy); }
+  .gk-av-name { margin: 0; font-size: 26px; line-height: 1.2; font-weight: 700; color: var(--c-ink); letter-spacing: -0.015em; overflow-wrap: anywhere; }
+  .gk-av-meta { display: flex; align-items: center; gap: 6px 14px; flex-wrap: wrap; margin-top: 4px; font-size: 13px; color: var(--c-slate); }
+  .gk-av-meta-item { display: inline-flex; align-items: center; gap: 4px; }
+  .gk-av-meta-item strong { color: var(--c-ink); }
+  .gk-av-status { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 20px; background: var(--c-deposit-badge-bg, #dcfce7); color: #15803d; }
+  .gk-av-status.is-off { background: #fee2e2; color: #b91c1c; }
+  .gk-av-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .gk-av-cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .gk-av-card { display: flex; align-items: flex-start; gap: 12px; background: var(--c-card); border: 1px solid var(--c-line); border-radius: 12px; padding: 14px 16px; box-shadow: 0 1px 2px rgba(15, 42, 54, 0.05); min-width: 0; }
+  .gk-av-card-icon { width: 40px; height: 40px; border-radius: 11px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+  .gk-av-card-body { min-width: 0; }
+  .gk-av-card-label { font-size: 12.5px; font-weight: 600; color: var(--c-slate); }
+  .gk-av-card-value { font-size: 22px; line-height: 1.25; font-weight: 700; color: var(--c-ink); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; margin-top: 2px; }
+  .gk-av-card-sub { font-size: 12px; color: var(--c-slate); margin-top: 2px; }
+  .gk-av-card--balance { background: linear-gradient(135deg, var(--c-navy-deep), var(--c-navy)); border-color: transparent; }
+  .gk-av-card--balance .gk-av-card-label, .gk-av-card--balance .gk-av-card-sub { color: rgba(255, 255, 255, 0.82); }
+  .gk-av-card--balance .gk-av-card-value { color: #fff; font-size: 26px; }
+  .gk-av-card--balance .gk-av-card-icon { background: rgba(255, 255, 255, 0.16); color: #e7fff7; }
+  .gk-av-card--credit .gk-av-card-icon { background: #dcfce7; color: #16a34a; }
+  .gk-av-card--debit .gk-av-card-icon { background: #fee2e2; color: #dc2626; }
+  .gk-av-card--net .gk-av-card-icon { background: color-mix(in srgb, var(--c-navy) 12%, var(--c-card)); color: var(--c-navy); }
+  .gk-av-card--count .gk-av-card-icon { background: color-mix(in srgb, var(--c-cyan) 14%, var(--c-card)); color: var(--c-navy); }
+  .gk-av-skel { background: linear-gradient(90deg, var(--c-line) 25%, color-mix(in srgb, var(--c-line) 40%, var(--c-card)) 50%, var(--c-line) 75%); background-size: 200% 100%; animation: gk-av-shimmer 1.3s infinite linear; border-radius: 6px; }
+  @keyframes gk-av-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+  @media (prefers-reduced-motion: reduce) { .gk-av-skel { animation: none; } }
+  .gk-av-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--c-line); margin-bottom: 14px; overflow-x: auto; }
+  .gk-av-tab { display: inline-flex; align-items: center; gap: 7px; padding: 10px 14px; background: none; border: 0; border-bottom: 2.5px solid transparent; margin-bottom: -1px; font: inherit; font-size: 13.5px; font-weight: 600; color: var(--c-slate); white-space: nowrap; cursor: pointer; transition: color .15s ease, border-color .15s ease; }
+  .gk-av-tab:hover { color: var(--c-ink); }
+  .gk-av-tab.is-active { color: var(--c-ink); border-bottom-color: var(--c-navy); }
+  .gk-av-tab.is-active svg { color: var(--c-navy); }
+  .gk-av-tab:focus-visible, .gk-av-crumbs button:focus-visible { outline: 2px solid var(--c-cyan); outline-offset: 2px; border-radius: 4px; }
+  .gk-av-section-title { margin: 0; font-size: 16px; font-weight: 650; color: var(--c-ink); }
+  .gk-av-section-title span { color: var(--c-slate); font-weight: 600; }
+  .gk-av-panel { background: var(--c-card); border: 1px solid var(--c-line); border-radius: 12px; padding: 14px 16px; }
+  .gk-av-balance-cell { background: var(--c-av-balance-bg); color: var(--c-av-balance-fg) !important; }
+  .gk-av-foot-cap { font-family: inherit; font-size: 10.5px; font-weight: 600; color: var(--c-slate); text-transform: uppercase; letter-spacing: .03em; margin-bottom: 1px; }
+  .gk-av-desc { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+  .gk-av-cmp-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .gk-av-cmp-tile { border: 1px solid var(--c-line); border-radius: 10px; padding: 10px 12px; font-size: 12px; color: var(--c-slate); }
+  .gk-av-cmp-tile strong { display: block; font-size: 18px; color: var(--c-ink); font-variant-numeric: tabular-nums; margin: 2px 0; }
+  .gk-av-cmp-tile--credit strong { color: #16a34a; }
+  .gk-av-cmp-tile--debit strong { color: #dc2626; }
+  .gk-av-bars { display: flex; flex-direction: column; gap: 10px; }
+  .gk-av-bar-row { display: grid; grid-template-columns: 64px 1fr auto; align-items: center; gap: 10px; font-size: 12.5px; }
+  .gk-av-bar-label { font-weight: 600; color: var(--c-ink); }
+  .gk-av-bar-track { height: 18px; background: color-mix(in srgb, var(--c-line) 60%, transparent); border-radius: 6px; overflow: hidden; }
+  .gk-av-bar-fill { display: block; height: 100%; border-radius: 6px; min-width: 2px; }
+  .gk-av-bar-fill--credit { background: #16a34a; }
+  .gk-av-bar-fill--debit { background: #dc2626; }
+  .gk-av-bar-value { font-family: var(--font-mono, monospace); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--c-ink); }
+  .gk-av-share { display: flex; height: 22px; border-radius: 6px; overflow: hidden; background: var(--c-line); }
+  .gk-av-share span { display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 700; }
+  .gk-av-share-credit { background: #16a34a; }
+  .gk-av-share-debit { background: #dc2626; }
+  .gk-av-dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+  .gk-av-dot--credit { background: #16a34a; }
+  .gk-av-dot--debit { background: #dc2626; }
+  .gk-av-kind-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .gk-av-kind-table th, .gk-av-kind-table td { padding: 6px 8px; border-bottom: 1px solid var(--c-line); text-align: left; color: var(--c-ink); }
+  .gk-av-kind-table th { font-size: 11.5px; color: var(--c-slate); text-transform: uppercase; letter-spacing: .03em; }
+  .gk-av-kind-table tfoot td { font-weight: 700; background: var(--c-av-total-bg); border-bottom: 0; }
+  @media (max-width: 1180px) { .gk-av-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } .gk-av-card--balance { grid-column: span 3; } }
+  @media (max-width: 640px) {
+    .gk-av-name { font-size: 21px; }
+    .gk-av-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .gk-av-card--balance { grid-column: span 2; }
+    .gk-av-card { padding: 12px; flex-direction: column; gap: 8px; }
+    .gk-av-card--balance { flex-direction: row; }
+    .gk-av-card-icon { width: 34px; height: 34px; }
+    .gk-av-card-value { font-size: 17px; white-space: nowrap; overflow-wrap: normal; }
+    .gk-av-card-label { white-space: normal; }
+    .gk-av-card--balance .gk-av-card-value { font-size: 22px; }
+    .gk-av-actions { width: 100%; }
+    .gk-av-cmp-grid { grid-template-columns: 1fr; }
+  }
+
 `;
 // APPEARANCE & BRANDING round 2: FONT_SANS now reads the CSS variable
 // (defaulting to the original Inter stack in THEME_CSS's :root block) so
@@ -9705,19 +9795,176 @@ const ACTIVITY_KIND_LABEL = { deposit: "Credit", withdrawal: "Debit", exchange: 
    means the column has a fixed width. */
 const ACCOUNT_TX_TABLE_KEY = "account.transactions";
 const ACCOUNT_TX_WIDTH_KEY = "account.view.transactions";
+// ACCOUNT VIEW PRO round: the ledger reads left to right as
+// # | Date | Reference | Description | Credit | Debit | Balance, with Type,
+// Status, Staff and Actions kept after the money columns.
 const ACCOUNT_TX_COLUMNS = [
   { key: "idx", label: "#", wkey: null },
   { key: "date", label: "Date", sortField: "date", wkey: "date" },
-  { key: "kind", label: "Type", sortField: "kind", wkey: "kind" },
+  { key: "reference", label: "Reference", wkey: "Reference" },
   { key: "description", label: "Description", sortField: "description", wkey: "description" },
   { key: "deposit", label: "Credit", head: "Credit", sortField: "depositAmt", wkey: "depositAmt" },
   { key: "withdraw", label: "Debit", head: "Debit", sortField: "withdrawalAmt", wkey: "withdrawalAmt" },
   { key: "balance", label: "Balance", sortField: "balanceAfter", wkey: "balanceAfter" },
+  { key: "kind", label: "Type", sortField: "kind", wkey: "kind" },
   { key: "status", label: "Status", sortField: "status", wkey: "status" },
-  { key: "reference", label: "Reference", wkey: "Reference" },
   { key: "staff", label: "Staff", sortField: "staffName", wkey: "staffName" },
   { key: "actions", label: "Actions", required: true, wkey: null },
 ];
+
+// ---------------------------------------------------------------------------
+// ACCOUNT VIEW PRO round — helpers for the redesigned View Account page.
+// Every figure comes from the account's own activity feed returned by
+// GET /api/accounts/:id (complete history, see routes/accounts.js); nothing
+// here changes how a balance or a ledger row is computed.
+// ---------------------------------------------------------------------------
+const AV_DATE_PRESETS = [["all", "All Time"], ["today", "Today"], ["7", "Last 7 Days"], ["30", "Last 30 Days"], ["month", "This Month"], ["custom", "Custom Range"]];
+function avLocalDay(d) {
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+function avPresetRange(key) {
+  const now = new Date();
+  const today = avLocalDay(now);
+  if (key === "today") return { from: today, to: today };
+  if (key === "7" || key === "30") { const d = new Date(now); d.setDate(d.getDate() - (Number(key) - 1)); return { from: avLocalDay(d), to: today }; }
+  if (key === "month") return { from: avLocalDay(new Date(now.getFullYear(), now.getMonth(), 1)), to: today };
+  return { from: "", to: "" };
+}
+function avDetectPreset(from, to) {
+  if (!from && !to) return "all";
+  for (const [k] of AV_DATE_PRESETS) {
+    if (k === "all" || k === "custom") continue;
+    const r = avPresetRange(k);
+    if (r.from === from && r.to === to) return k;
+  }
+  return "custom";
+}
+function avPeriodText(from, to) {
+  if (!from && !to) return "All time";
+  if (from && to && from === to) return fmtDate(from);
+  if (from && to) return `${fmtDate(from)} – ${fmtDate(to)}`;
+  return from ? `From ${fmtDate(from)}` : `Up to ${fmtDate(to)}`;
+}
+// Totals over exactly the rows the table shows (all pages): Credits and
+// Debits use the same per-row amounts as the table's Credit/Debit columns,
+// so the cards, the totals row and the comparison can never disagree.
+function avTotals(rows) {
+  let credit = 0, debit = 0, creditCount = 0, debitCount = 0;
+  const byKind = {};
+  let closing = null;
+  for (const r of rows) {
+    credit += r.depositAmt || 0;
+    debit += r.withdrawalAmt || 0;
+    if (r.depositAmt > 0) creditCount += 1;
+    if (r.withdrawalAmt > 0) debitCount += 1;
+    byKind[r.kind] = (byKind[r.kind] || 0) + 1;
+    if (closing === null && r.balanceAfter != null) closing = r.balanceAfter; // rows arrive newest first
+  }
+  const round = (v) => Math.round(v * 100) / 100;
+  return { credit: round(credit), debit: round(debit), net: round(credit - debit), count: rows.length, creditCount, debitCount, byKind, closing };
+}
+function AvCard({ tone, icon, label, value, sub, loading }) {
+  return (
+    <div className={`gk-av-card gk-av-card--${tone}`} role="group" aria-label={label}>
+      <span className="gk-av-card-icon" aria-hidden="true"><NavIcon name={icon} size={20} /></span>
+      <div className="gk-av-card-body">
+        <div className="gk-av-card-label">{label}</div>
+        {loading ? <div className="gk-av-skel" style={{ width: "70%", height: 22 }} /> : <div className="gk-av-card-value">{value}</div>}
+        {sub && !loading && <div className="gk-av-card-sub">{sub}</div>}
+      </div>
+    </div>
+  );
+}
+function AccountSummaryCards({ account, totals, periodText, filtered, loading }) {
+  const cur = account ? account.currency : "USD";
+  const scope = filtered ? `${periodText} · filtered` : periodText;
+  return (
+    <div className="gk-av-cards">
+      <AvCard tone="balance" icon="wallet" label="Current Balance" loading={loading}
+        value={account ? fmtMoney(account.balance, cur) : ""} sub={account ? `${cur} · today` : ""} />
+      <AvCard tone="credit" icon="arrowDownLeft" label="Total Credits" loading={loading}
+        value={fmtMoney(totals.credit, cur)} sub={`${totals.creditCount} credit${totals.creditCount === 1 ? "" : "s"} · ${scope}`} />
+      <AvCard tone="debit" icon="arrowUpRight" label="Total Debits" loading={loading}
+        value={fmtMoney(totals.debit, cur)} sub={`${totals.debitCount} debit${totals.debitCount === 1 ? "" : "s"} · ${scope}`} />
+      <AvCard tone="net" icon="chartCombined" label="Net Change" loading={loading}
+        value={`${totals.net > 0 ? "+" : totals.net < 0 ? "−" : ""}${fmtMoney(Math.abs(totals.net), cur)}`} sub={`Credits − Debits · ${scope}`} />
+      <AvCard tone="count" icon="receipt" label="Total Transactions" loading={loading}
+        value={String(totals.count)} sub={scope} />
+    </div>
+  );
+}
+function CompareCreditsDebitsModal({ account, totals, from, to, filtered, onRange, onClose }) {
+  const cur = account.currency;
+  const [preset, setPreset] = useState(() => avDetectPreset(from, to));
+  const max = Math.max(totals.credit, totals.debit, 0.0001);
+  const both = totals.credit + totals.debit;
+  const creditPct = both > 0 ? Math.round((totals.credit / both) * 1000) / 10 : 0;
+  const debitPct = both > 0 ? Math.round((100 - creditPct) * 10) / 10 : 0;
+  const kinds = [["deposit", "Credits"], ["withdrawal", "Debits"], ["exchange", "Exchanges"], ["transfer", "Transfers"]];
+  function pick(k) {
+    setPreset(k);
+    if (k !== "custom") onRange(avPresetRange(k));
+  }
+  return (
+    <Modal title="Compare: Credits & Debits" subtitle={`${toTitleCase(account.name)} · ${account.accountNumber} · ${cur}`} onClose={onClose} width={620}>
+      <div className="gk-filterbar gk-filterbar--inset" style={{ marginBottom: 12 }}>
+        <Field label="Period" width={160}>
+          <Select value={preset} onChange={(e) => pick(e.target.value)} aria-label="Comparison period">
+            {AV_DATE_PRESETS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+          </Select>
+        </Field>
+        {preset === "custom" && (
+          <>
+            <Field label="From" width={140}><Input type="date" value={from} onChange={(e) => onRange({ from: e.target.value, to })} /></Field>
+            <Field label="To" width={140}><Input type="date" value={to} onChange={(e) => onRange({ from, to: e.target.value })} /></Field>
+          </>
+        )}
+      </div>
+      <div style={{ fontSize: 12, color: C.slate, marginBottom: 10 }}>
+        {avPeriodText(from, to)}{filtered ? " · other table filters (type, status, search) also apply" : ""} · {cur} only — never mixed with another currency.
+      </div>
+      <div className="gk-av-cmp-grid">
+        <div className="gk-av-cmp-tile gk-av-cmp-tile--credit"><div>Total Credits</div><strong>{fmtMoney(totals.credit, cur)}</strong><span>{totals.creditCount} transaction{totals.creditCount === 1 ? "" : "s"}</span></div>
+        <div className="gk-av-cmp-tile gk-av-cmp-tile--debit"><div>Total Debits</div><strong>{fmtMoney(totals.debit, cur)}</strong><span>{totals.debitCount} transaction{totals.debitCount === 1 ? "" : "s"}</span></div>
+        <div className="gk-av-cmp-tile"><div>Net Change</div><strong style={{ color: totals.net >= 0 ? C.depositGreen : C.withdrawRed }}>{totals.net > 0 ? "+" : totals.net < 0 ? "−" : ""}{fmtMoney(Math.abs(totals.net), cur)}</strong><span>Credits − Debits for this period</span></div>
+      </div>
+      {totals.count === 0 ? <Empty text="No credits or debits in this period." /> : (
+        <>
+          <div className="gk-av-bars" role="img" aria-label={`Credits ${fmtMoney(totals.credit, cur)}, Debits ${fmtMoney(totals.debit, cur)}`}>
+            {[["Credits", totals.credit, "credit"], ["Debits", totals.debit, "debit"]].map(([label, v, tone]) => (
+              <div key={label} className="gk-av-bar-row">
+                <span className="gk-av-bar-label">{label}</span>
+                <span className="gk-av-bar-track"><span className={`gk-av-bar-fill gk-av-bar-fill--${tone}`} style={{ width: `${(v / max) * 100}%` }} /></span>
+                <span className="gk-av-bar-value">{fmtMoney(v, cur)}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 14 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: C.ink, marginBottom: 6 }}>Share of money moved</div>
+            <div className="gk-av-share" aria-label={`Credits ${creditPct}%, Debits ${debitPct}%`}>
+              {creditPct > 0 && <span className="gk-av-share-credit" style={{ width: `${creditPct}%` }}>{creditPct >= 12 ? `${creditPct}%` : ""}</span>}
+              {debitPct > 0 && <span className="gk-av-share-debit" style={{ width: `${debitPct}%` }}>{debitPct >= 12 ? `${debitPct}%` : ""}</span>}
+            </div>
+            <div style={{ display: "flex", gap: 14, fontSize: 11.5, color: C.slate, marginTop: 5 }}>
+              <span><span className="gk-av-dot gk-av-dot--credit" /> Credits {creditPct}%</span>
+              <span><span className="gk-av-dot gk-av-dot--debit" /> Debits {debitPct}%</span>
+            </div>
+          </div>
+          <table className="gk-av-kind-table" style={{ marginTop: 14 }}>
+            <thead><tr><th scope="col">Transaction type</th><th scope="col" style={{ textAlign: "right" }}>Count</th></tr></thead>
+            <tbody>{kinds.map(([k, l]) => <tr key={k}><td>{l}</td><td style={{ textAlign: "right" }}>{totals.byKind[k] || 0}</td></tr>)}</tbody>
+            <tfoot><tr><td>Total</td><td style={{ textAlign: "right" }}>{totals.count}</td></tr></tfoot>
+          </table>
+        </>
+      )}
+      <div style={{ fontSize: 11.5, color: C.slate, marginTop: 12 }}>
+        Net Change is the movement in this period only. The account's Current Balance is <strong style={{ color: C.ink }}>{fmtMoney(account.balance, cur)}</strong>.
+      </div>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 14 }}><Btn tone="ghost" onClick={onClose}>Close</Btn></div>
+    </Modal>
+  );
+}
 const ACCOUNT_TX_EXPORT_NOTE = "These settings change only how this table looks on your screen. PDF, Excel and printed statements always keep their standard, complete columns.";
 
 function AccountTxCustomizeButton({ layoutState, resize, notify }) {
@@ -9775,9 +10022,20 @@ function AccountDetailModal({ call, dl, preview, print, notify, perm, accountId,
   // Customer Information per spec section 4. Purely a display switch — none
   // of the underlying data/handlers below change based on this.
   const [activeTab, setActiveTab] = useState("transactions");
+  // ACCOUNT VIEW PRO round: Compare: Credits & Debits panel, and an error
+  // state for the page itself (a failed load used to leave a spinner forever).
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [loadError, setLoadError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const reload = useCallback(() => { call(`/api/accounts/${accountId}`).then(setData).catch((e) => notify(e.message, true)); }, [call, accountId, notify]);
-  useEffect(reload, [reload]);
+  const reload = useCallback(() => {
+    setRefreshing(true);
+    return call(`/api/accounts/${accountId}`)
+      .then((d) => { setData(d); setLoadError(null); })
+      .catch((e) => { setLoadError(e.message); notify(e.message, true); })
+      .finally(() => setRefreshing(false));
+  }, [call, accountId, notify]);
+  useEffect(() => { reload(); }, [reload]);
 
   const filteredActivity = useMemo(() => {
     const q = activitySearch.trim().toLowerCase();
@@ -9790,6 +10048,9 @@ function AccountDetailModal({ call, dl, preview, print, notify, perm, accountId,
         if (q && !(
           (r.description || "").toLowerCase().includes(q) ||
           (r.staffName || "").toLowerCase().includes(q) ||
+          (r.referenceNumber || "").toLowerCase().includes(q) ||
+          (r.reference || "").toLowerCase().includes(q) ||
+          (ACTIVITY_KIND_LABEL[r.kind] || r.kind || "").toLowerCase().includes(q) ||
           (r.id || "").toLowerCase().includes(q)
         )) return false;
         return true;
@@ -9832,8 +10093,37 @@ function AccountDetailModal({ call, dl, preview, print, notify, perm, accountId,
     deposit: filteredActivity.reduce((s, r) => s + r.depositAmt, 0),
     withdrawal: filteredActivity.reduce((s, r) => s + r.withdrawalAmt, 0),
   }), [filteredActivity]);
+  // ACCOUNT VIEW PRO round: one set of totals for the summary cards, the
+  // table's totals row and the comparison panel — all over the same rows.
+  const totals = useMemo(() => avTotals(filteredActivity), [filteredActivity]);
+  const otherFiltersOn = activityType !== "all" || activityStatus !== "all" || !!activitySearch.trim();
+  const periodText = avPeriodText(activityFrom, activityTo);
+  const datePreset = avDetectPreset(activityFrom, activityTo);
+  const [customDates, setCustomDates] = useState(false);
+  // Balance over time: each row's own recorded balance-after, oldest first,
+  // within the selected date range (type/search filters don't apply — a
+  // balance line needs every movement).
+  const balanceSeries = useMemo(() => {
+    const rows = (data?.activity || []).filter((r) => r.balanceAfter != null
+      && (!activityFrom || r.date.slice(0, 10) >= activityFrom) && (!activityTo || r.date.slice(0, 10) <= activityTo)).slice().reverse();
+    return { labels: rows.map((r) => fmtDate(r.date)), data: rows.map((r) => Number(r.balanceAfter) || 0) };
+  }, [data, activityFrom, activityTo]);
 
-  if (!data) return asPage ? <div style={{ padding: 40 }}><Spinner /></div> : <Modal title="Loading…" onClose={onClose}><Spinner /></Modal>;
+  if (!data) {
+    if (loadError) {
+      const err = <div style={{ padding: 30, textAlign: "center" }}><div role="alert" style={{ color: C.red, fontSize: 13, marginBottom: 10 }}>Could not load this account. {loadError}</div><Btn tone="ghost" icon="refresh" onClick={reload}>Try again</Btn>{asPage && <span style={{ marginLeft: 8 }}><Btn tone="ghost" icon="arrowLeft" onClick={onBack || onClose}>Back to accounts</Btn></span>}</div>;
+      return asPage ? err : <Modal title="Account" onClose={onClose}>{err}</Modal>;
+    }
+    const skel = (
+      <div style={{ padding: "12px 20px" }} aria-busy="true" aria-label="Loading account">
+        <div className="gk-av-skel" style={{ width: 160, height: 12, marginBottom: 14 }} />
+        <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16 }}><div className="gk-av-skel" style={{ width: 48, height: 48, borderRadius: 12 }} /><div style={{ flex: 1 }}><div className="gk-av-skel" style={{ width: "40%", height: 22, marginBottom: 8 }} /><div className="gk-av-skel" style={{ width: "60%", height: 12 }} /></div></div>
+        <AccountSummaryCards account={null} totals={avTotals([])} periodText="" loading />
+        <div className="gk-av-skel" style={{ height: 240, marginTop: 16 }} />
+      </div>
+    );
+    return asPage ? skel : <Modal title="Loading…" onClose={onClose}>{skel}</Modal>;
+  }
   const account = data.account;
   const summary = data.summary;
   // TWO-STEP ACCOUNT LEDGER LOGIC: a quotation's two ledger legs are real,
@@ -9864,96 +10154,84 @@ function AccountDetailModal({ call, dl, preview, print, notify, perm, accountId,
   // ACCOUNT VIEW TABBED REDESIGN round: the five sections the spec asks to
   // separate — only the active one's content renders below (spec section 14:
   // "Do NOT display all five sections simultaneously").
+  // ACCOUNT VIEW PRO round: the four sections this page really has. (Notes
+  // and an Activity Log are not separate features of an account in this
+  // system, so no empty tabs are shown for them.)
   const TABS = [
-    ["transactions", "Transactions"],
-    ["info", account && account.accountType === "company" ? "Company Information" : "Customer Information"],
-    ["summary", "Account Summary"],
-    ["statement", "Account Statement"],
+    ["transactions", "Transactions", "receipt"],
+    ["info", "Account Details", account.accountType === "company" ? "landmark" : "userRound"],
+    ["summary", "Balances Over Time", "trendUp"],
+    ["statement", "Statement", "sheet"],
   ];
+  const canManage = perm("accountsManage");
+  const canExchange = canManage && (perm("exchangeCreate") || perm("exchangeAll"));
+  const canQuote = perm("quotationsManage") && onNewQuotation && account.accountType === "company";
+  const moreItems = [
+    canManage && { label: "Debit", icon: "arrowUpRight", disabled: !isActive, onClick: () => setMoveOpen("withdraw") },
+    canExchange && { label: "Exchange", icon: "exchange", disabled: !isActive, onClick: () => { onExchange?.(account); onClose(); } },
+    canQuote && { label: "New quotation for this account", icon: "quotations", disabled: !isActive, onClick: () => { onNewQuotation(account); onClose(); } },
+    { label: "Compare: Credits & Debits", icon: "chartCombined", onClick: () => setCompareOpen(true) },
+    { label: "Refresh", icon: "refresh", onClick: reload },
+    canManage && (isActive
+      ? { label: "Deactivate account", icon: "ban", onClick: () => setDeactivateOpen(true) }
+      : { label: "Reactivate account", icon: "circleCheck", onClick: reactivateAccount }),
+    canManage && !isActive && perm("accountsDelete") && { label: "Delete permanently", icon: "trash", onClick: () => setDeleteAccountOpen(true) },
+  ].filter(Boolean);
 
   // ACCOUNT VIEW FULL-PAGE round: headerBlock/contentBlock/nestedModalsBlock
-  // below are exactly the same JSX this component always rendered — only
-  // pulled into named variables so the final `asPage ? page : modal` branch
-  // (at the very bottom of this function) can reuse them in either outer
-  // chrome without duplicating a single line of markup, data, or logic.
+  // are reused in either outer chrome (page or modal).
   const headerBlock = (
     <>
-      {/* SCROLL ARCHITECTURE round: header card, deactivated banner, action
-          bar, new-quotation banner, and tab navigation are all inside this
-          fixed (non-scrolling) wrapper — only the active tab's content below
-          scrolls, in its own single scroll region (spec sections 1, 2, 6). */}
       <div style={{ padding: "10px 20px 0", flexShrink: 0 }}>
-      {/* ACCOUNT VIEW COMPACT HEADER round: a slim identity strip — plain
-          white background with a single bottom divider (no card/box/shadow),
-          noticeably smaller type and tight vertical padding so the header
-          reads as a compact banking-app strip rather than a large card.
-          Same two fields as before (identity on the left, balance on the
-          right), just restyled — nothing here is computed any differently
-          (spec: no functionality/data change, layout/typography only). */}
-      <div className="gk-acct-header-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, background: C.card, borderBottom: `1px solid ${C.line}`, padding: "2px 2px 6px", marginBottom: 6 }}>
-        <div style={{ minWidth: 180 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: C.ink, letterSpacing: "-0.01em", lineHeight: 1.15 }}>{toTitleCase(account.name)}</div>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 9.5, fontWeight: 700, padding: "1px 6px", borderRadius: 20, background: isActive ? C.depositBadgeBg : C.withdrawBadgeBg, color: isActive ? C.depositBadgeText : C.withdrawBadgeText }}>
-              <span style={{ width: 4, height: 4, borderRadius: "50%", background: isActive ? C.depositGreen : C.withdrawRed, display: "inline-block", flexShrink: 0 }} />
-              {isActive ? "Active" : "Inactive"}
-            </span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2, flexWrap: "wrap" }}>
-            <span style={{ fontFamily: FONT_MONO, fontSize: 10.5, color: C.slate, fontWeight: 600 }}>{account.accountNumber}</span>
-            <Pill tone="cyan">{account.currency}</Pill>
-            <Pill tone="navy">{account.accountType === "company" ? "Company" : "Customer"}</Pill>
+      {/* ACCOUNT VIEW PRO round: breadcrumb, identity and the account's
+          actions in one compact header. Credit / Transfer / Edit stay
+          visible; everything else is in the ⋯ menu. Actions follow exactly
+          the same permissions as before. */}
+      <nav className="gk-av-crumbs" aria-label="Breadcrumb">
+        <button type="button" onClick={onBack || onClose}><NavIcon name="arrowLeft" size={14} />Accounts</button>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">View Account</span>
+      </nav>
+      <div className="gk-av-head">
+        <div className="gk-av-id">
+          <span className="gk-av-avatar" aria-hidden="true"><NavIcon name={account.accountType === "company" ? "landmark" : "userRound"} size={24} /></span>
+          <div style={{ minWidth: 0 }}>
+            <h1 className="gk-av-name">{toTitleCase(account.name)}</h1>
+            <div className="gk-av-meta">
+              <span className="gk-av-meta-item"><NavIcon name="hash" size={13} /><span style={{ fontFamily: FONT_MONO }}>{account.accountNumber}</span></span>
+              <span className="gk-av-meta-item">{account.accountType === "company" ? "Company Account" : "Customer Account"}</span>
+              <span className="gk-av-meta-item"><strong>{account.currency}</strong></span>
+              <span className={`gk-av-status${isActive ? "" : " is-off"}`}><NavIcon name={isActive ? "circleCheck" : "ban"} size={12} />{isActive ? "Active" : "Inactive"}</span>
+            </div>
           </div>
         </div>
-        <div className="gk-acct-header-balance" style={{ textAlign: "right" }}>
-          <div style={{ fontSize: 9.5, fontWeight: 700, color: C.slate, textTransform: "uppercase", letterSpacing: "0.04em" }}>Current Balance</div>
-          <div style={{ fontFamily: FONT_MONO, fontSize: 17, fontWeight: 800, color: account.balance >= 0 ? C.balancePositive : C.balanceNegative, lineHeight: 1.05 }}>{fmtMoney(account.balance, account.currency)}</div>
-          <div style={{ fontSize: 10, color: C.slate, marginTop: 0 }}>Available <span style={{ fontFamily: FONT_MONO, fontWeight: 700, color: C.ink }}>{fmtMoney(summary.availableBalance, account.currency)}</span></div>
+        <div className="gk-av-actions">
+          {canManage && <Btn tone="deposit" icon="plus" disabled={!isActive} onClick={() => setMoveOpen("deposit")}>Credit</Btn>}
+          {canManage && <Btn tone="ghost" icon="arrowLeftRight" disabled={!isActive} onClick={() => setTransferOpen(true)}>Transfer</Btn>}
+          {canManage && <Btn tone="ghost" icon="edit" disabled={!isActive} onClick={() => setEditAccountOpen(true)}>Edit</Btn>}
+          <OverflowMenu items={moreItems} label="More account actions" />
         </div>
-
-        {/* Phone/Email/ID/Location intentionally NOT repeated here — per
-            feedback, that contact info lives only in the Customer
-            Information tab's Customer Details card now, so it isn't shown
-            twice. */}
       </div>
 
       {!isActive && (
-        <div style={{ marginBottom: 18, padding: "10px 12px", background: C.redBg, border: `1px solid ${C.red}`, borderRadius: 8, fontSize: 12.5, color: C.ink }}>
+        <div style={{ marginBottom: 12, padding: "10px 12px", background: C.redBg, border: `1px solid ${C.red}`, borderRadius: 8, fontSize: 12.5, color: C.ink }}>
           <b>This account is deactivated</b> — its balance and history are preserved, but it can't take part in any new credit, debit, exchange, transfer, or quotation charge until it's reactivated.
           {account.deactivatedAt && <div style={{ color: C.slate, marginTop: 3 }}>Deactivated {fmtDateTime(account.deactivatedAt)} by {account.deactivatedBy}{account.deactivationReason ? ` — "${account.deactivationReason}"` : ""}</div>}
         </div>
       )}
-
-      {/* Quick Actions bar intentionally NOT shown here anymore — per
-          feedback, these same buttons (Deposit/Withdraw/Transfer/Exchange/
-          Edit Account/Deactivate.../Delete permanently) already live in the
-          Customer Information tab's "Quick Actions" card, so they aren't
-          duplicated at the top of every tab as well. Nothing here changes
-          what those actions do — moveOpen/setTransferOpen/setEditAccountOpen/
-          setDeactivateOpen/reactivateAccount/setDeleteAccountOpen are all
-          still wired up exactly the same from the Customer Information tab. */}
-
-      {perm("quotationsManage") && onNewQuotation && account.accountType === "company" && (
-        <div style={{ marginBottom: 20 }}><Btn tone="accent" disabled={!isActive} onClick={() => { onNewQuotation(account); onClose(); }}>+ New quotation for this account</Btn></div>
-      )}
-      {perm("quotationsManage") && onNewQuotation && account.accountType !== "company" && (
-        <div style={{ marginBottom: 20, fontSize: 11.5, color: C.slate }}>Quotations are for company accounts only.</div>
+      {data.activityComplete === false && (
+        <div role="note" style={{ marginBottom: 12, padding: "8px 12px", background: C.amberBg, borderRadius: 8, fontSize: 12, color: C.ink }}>
+          This account has a very long history: the page shows its most recent 5,000 entries of each kind. Totals below cover those entries; use the Statement tab for the complete record.
+        </div>
       )}
 
-      {/* ACCOUNT VIEW TABBED REDESIGN round: horizontal tab navigation — only
-          the active tab's section renders below (spec sections 4 and 14).
-          Scrolls horizontally on narrow screens instead of wrapping/breaking
-          the layout (spec section 13). */}
-      <div style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: `1px solid ${C.line}`, overflowX: "auto" }}>
-        {TABS.map(([key, label]) => (
-          <button key={key} onClick={() => setActiveTab(key)}
-            style={{
-              padding: "10px 16px", fontSize: 13, fontWeight: 700, whiteSpace: "nowrap", fontFamily: FONT_SANS,
-              background: "transparent", border: "none", cursor: "pointer",
-              color: activeTab === key ? C.navy : C.slate,
-              borderBottom: activeTab === key ? `2.5px solid ${C.navy}` : "2.5px solid transparent",
-              marginBottom: -1, transition: "color 0.15s ease, border-color 0.15s ease",
-            }}><TabLabel k={key} l={label} /></button>
+      <AccountSummaryCards account={account} totals={totals} periodText={periodText} filtered={otherFiltersOn} />
+
+      <div className="gk-av-tabs" role="tablist" aria-label="Account sections">
+        {TABS.map(([key, label, icon]) => (
+          <button key={key} type="button" role="tab" aria-selected={activeTab === key} className={`gk-av-tab${activeTab === key ? " is-active" : ""}`} onClick={() => setActiveTab(key)}>
+            <NavIcon name={icon} size={15} />{label}
+          </button>
         ))}
       </div>
       </div>
@@ -10029,26 +10307,9 @@ function AccountDetailModal({ call, dl, preview, print, notify, perm, accountId,
               </span>
             </div>
 
-            {perm("accountsManage") && (
-              <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 10, padding: "16px 18px" }}>
-                <div style={{ fontWeight: 700, fontSize: 12, color: C.ink, textTransform: "uppercase", letterSpacing: "0.03em", marginBottom: 10 }}>Quick Actions</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  <Btn size="sm" tone="deposit" icon="deposits" disabled={!isActive} onClick={() => setMoveOpen("deposit")}>Credit</Btn>
-                  <Btn size="sm" tone="withdraw" disabled={!isActive} onClick={() => setMoveOpen("withdraw")}>Debit</Btn>
-                  <Btn size="sm" tone="transfer" icon="exchange" disabled={!isActive} onClick={() => setTransferOpen(true)}>Transfer</Btn>
-                  {(perm("exchangeCreate") || perm("exchangeAll")) && (
-                    <Btn size="sm" tone="subtle" icon="exchange" disabled={!isActive} onClick={() => { onExchange?.(account); onClose(); }}>Exchange</Btn>
-                  )}
-                  <Btn size="sm" tone="ghost" icon="edit" disabled={!isActive} onClick={() => setEditAccountOpen(true)}>Edit Account</Btn>
-                  {isActive
-                    ? <Btn size="sm" tone="danger" onClick={() => setDeactivateOpen(true)}>Deactivate</Btn>
-                    : <Btn size="sm" tone="primary" onClick={reactivateAccount}>Reactivate</Btn>}
-                </div>
-                {!isActive && perm("accountsDelete") && (
-                  <div style={{ marginTop: 8 }}><Btn size="sm" tone="danger" onClick={() => setDeleteAccountOpen(true)}>Delete permanently</Btn></div>
-                )}
-              </div>
-            )}
+            {/* ACCOUNT VIEW PRO round: the Quick Actions card moved to the page
+                header (Credit / Transfer / Edit + the ⋯ menu), so it isn't
+                shown twice. */}
 
           </div>
         </div>
@@ -10064,13 +10325,14 @@ function AccountDetailModal({ call, dl, preview, print, notify, perm, accountId,
             almost all of the tab's vertical space (spec sections 3 and "the
             transactions table is the main visual focus"). No subtitle, no
             extra copy. */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 8, flexShrink: 0, minHeight: 30 }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: C.ink }}>Transactions <span style={{ color: C.slate, fontWeight: 600 }}>({activityPg.total})</span></div>
-          <div style={{ display: "flex", gap: 6, alignItems: "center", position: "relative" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 8, flexShrink: 0, minHeight: 30, flexWrap: "wrap" }}>
+          <h2 className="gk-av-section-title" style={{ whiteSpace: "nowrap" }}>Credits &amp; Debits <span>({activityPg.total})</span></h2>
+          <div style={{ display: "flex", gap: 6, alignItems: "center", position: "relative", flexWrap: "wrap", justifyContent: "flex-end" }}>
             {txResize.hasCustom && <Btn size="sm" tone="ghost" icon="undo" onClick={txResize.resetWidths}>Reset column widths</Btn>}
+            <Btn size="sm" tone="ghost" icon="chartCombined" onClick={() => setCompareOpen(true)}>Compare: Credits &amp; Debits</Btn>
             <AccountTxCustomizeButton layoutState={txLayout} resize={txResize} notify={notify} />
-            <Btn size="sm" tone="ghost" icon="refresh" onClick={reload}>Refresh</Btn>
-            <Btn size="sm" tone="ghost" icon="download" onClick={() => setExportMenuOpen((o) => !o)}>Export</Btn>
+            <Btn size="sm" tone="ghost" icon="refresh" disabled={refreshing} onClick={reload}>{refreshing ? "Refreshing…" : "Refresh"}</Btn>
+            <Btn size="sm" tone="ghost" icon="download" aria-haspopup="menu" aria-expanded={exportMenuOpen} onClick={() => setExportMenuOpen((o) => !o)}>Export</Btn>
             {exportMenuOpen && (
               <div onMouseLeave={() => setExportMenuOpen(false)} style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, boxShadow: "0 6px 20px rgba(8,20,30,0.15)", zIndex: 5, minWidth: 140, overflow: "hidden" }}>
                 <button type="button" onClick={() => { dl(`/api/accounts/${account.id}/statement.pdf` + qs({ from: activityFrom, to: activityTo }), `${account.accountNumber}-transactions.pdf`); setExportMenuOpen(false); }} style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 12px", fontSize: 12.5, background: "transparent", border: "none", cursor: "pointer", color: C.ink }}>Export PDF</button>
@@ -10084,18 +10346,32 @@ function AccountDetailModal({ call, dl, preview, print, notify, perm, accountId,
             filtering logic untouched, just joined by two more client-side
             filters (search, status) computed the same way. */}
         <div className="gk-filterbar gk-filterbar--inset" style={{ flexShrink: 0 }}>
-          <Field label="Search" width={170}><SearchInput className="gk-acct-filter-input" value={activitySearch} onChange={(e) => setActivitySearch(e.target.value)} placeholder="Description, staff, ref…" /></Field>
+          <Field label="Search" width={170}><SearchInput className="gk-acct-filter-input" value={activitySearch} onChange={(e) => setActivitySearch(e.target.value)} placeholder="Reference, description, type…" aria-label="Search transactions" /></Field>
           <Field label="Type" width={130}><Select className="gk-acct-filter-input" value={activityType} onChange={(e) => setActivityType(e.target.value)}>{typeOptions.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</Select></Field>
           <Field label="Status" width={130}><Select className="gk-acct-filter-input" value={activityStatus} onChange={(e) => setActivityStatus(e.target.value)}>{statusOptions.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</Select></Field>
-          <Field label="From" width={128}><Input className="gk-acct-filter-input" type="date" value={activityFrom} onChange={(e) => setActivityFrom(e.target.value)} /></Field>
-          <Field label="To" width={128}><Input className="gk-acct-filter-input" type="date" value={activityTo} onChange={(e) => setActivityTo(e.target.value)} /></Field>
+          <Field label="Date range" width={140}>
+            <Select className="gk-acct-filter-input" aria-label="Date range" value={customDates ? "custom" : datePreset} onChange={(e) => {
+              const k = e.target.value;
+              if (k === "custom") { setCustomDates(true); return; }
+              setCustomDates(false);
+              const r = avPresetRange(k); setActivityFrom(r.from); setActivityTo(r.to);
+            }}>
+              {AV_DATE_PRESETS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+            </Select>
+          </Field>
+          {(customDates || datePreset === "custom") && (
+            <>
+              <Field label="From" width={128}><Input className="gk-acct-filter-input" type="date" value={activityFrom} onChange={(e) => setActivityFrom(e.target.value)} /></Field>
+              <Field label="To" width={128}><Input className="gk-acct-filter-input" type="date" value={activityTo} onChange={(e) => setActivityTo(e.target.value)} /></Field>
+            </>
+          )}
           <Field label="Show entries" width={100}>
             <Select className="gk-acct-filter-input" value={activityPg.pageSize} onChange={(e) => activityPg.setPageSize(Number(e.target.value))}>
               {[10, 25, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
             </Select>
           </Field>
-          {(activityType !== "all" || activityStatus !== "all" || activitySearch || activityFrom || activityTo) && (
-            <Btn size="sm" tone="ghost" onClick={() => { setActivityType("all"); setActivityStatus("all"); setActivitySearch(""); setActivityFrom(""); setActivityTo(""); }}>Clear Filters</Btn>
+          {(activityType !== "all" || activityStatus !== "all" || activitySearch || activityFrom || activityTo || customDates) && (
+            <Btn size="sm" tone="ghost" onClick={() => { setActivityType("all"); setActivityStatus("all"); setActivitySearch(""); setActivityFrom(""); setActivityTo(""); setCustomDates(false); }}>Clear Filters</Btn>
           )}
         </div>
         {/* TABLE SCROLL RESTORE round: this wrap now fills all remaining
@@ -10134,8 +10410,8 @@ function AccountDetailModal({ call, dl, preview, print, notify, perm, accountId,
                         );
                         case "kind": return <td key={c.key} style={tdD}><Pill tone={ACTIVITY_KIND_TONE[r.kind]}>{ACTIVITY_KIND_LABEL[r.kind]}</Pill></td>;
                         case "description": return (
-                          <td key={c.key} style={tdD}>
-                            {r.description}
+                          <td key={c.key} style={tdD} title={r.description && r.description.length > 60 ? r.description : undefined}>
+                            <span className="gk-av-desc">{r.description}</span>
                             {r.cashAccount && <div style={{ fontSize: 10.5, color: C.slate, marginTop: 1 }}>Cash Account: {r.cashAccount.name}</div>}
                           </td>
                         );
@@ -10149,7 +10425,7 @@ function AccountDetailModal({ call, dl, preview, print, notify, perm, accountId,
                             {r.withdrawalAmt > 0 ? `-${fmtMoney(r.withdrawalAmt, account.currency)}` : "—"}
                           </td>
                         );
-                        case "balance": return <td key={c.key} style={{ ...tdMonoD, fontWeight: 700 }}>{r.balanceAfter != null ? fmtMoney(r.balanceAfter, account.currency) : "—"}</td>;
+                        case "balance": return <td key={c.key} className="gk-av-balance-cell" style={{ ...tdMonoD, fontWeight: 700 }}>{r.balanceAfter != null ? fmtMoney(r.balanceAfter, account.currency) : "—"}</td>;
                         case "status": return (
                           <td key={c.key} style={tdD}>
                             {(r.kind === "exchange" || r.kind === "transfer") && (r.status === "voided" ? <Pill tone="red">Voided</Pill> : <Pill tone="green">Active</Pill>)}
@@ -10160,7 +10436,12 @@ function AccountDetailModal({ call, dl, preview, print, notify, perm, accountId,
                             {(r.kind === "deposit" || r.kind === "withdrawal") && r.status && <Pill tone={statusTone(r.status)}>{r.status}</Pill>}
                           </td>
                         );
-                        case "reference": return <td key={c.key} style={{ ...tdMonoD, fontSize: 11, color: C.slate }}>{r.reference || r.id}</td>;
+                        case "reference": return (
+                          <td key={c.key} style={{ ...tdMonoD, textAlign: "left", fontSize: 11.5, color: C.ink }}>
+                            {r.referenceNumber || r.reference || <span style={{ color: C.slate, fontSize: 10.5 }} title="Internal record id (no reference number)">{r.id}</span>}
+                            {r.referenceNumber && r.reference && r.reference !== r.referenceNumber && <div style={{ fontSize: 10.5, color: C.slate, marginTop: 1 }}>{r.reference}</div>}
+                          </td>
+                        );
                         case "staff": return <td key={c.key} style={tdD}>{r.staffName}</td>;
                         case "actions": return (
                           <td key={c.key} style={tdD}>
@@ -10187,15 +10468,30 @@ function AccountDetailModal({ call, dl, preview, print, notify, perm, accountId,
                     // "Total" sits in the last non-amount column before the
                     // first amount column (Type, in the shipped order), so the
                     // label follows the layout instead of a fixed position.
-                    const firstAmt = txColumns.findIndex((c) => c.key === "deposit" || c.key === "withdraw");
+                    const isAmt = (c) => c.key === "deposit" || c.key === "withdraw" || c.key === "balance";
+                    const firstAmt = txColumns.findIndex(isAmt);
                     let labelIdx = -1;
-                    for (let k = (firstAmt < 0 ? txColumns.length : firstAmt) - 1; k >= 0; k--) if (txColumns[k].key !== "deposit" && txColumns[k].key !== "withdraw") { labelIdx = k; break; }
-                    if (labelIdx < 0) labelIdx = txColumns.findIndex((c) => c.key !== "deposit" && c.key !== "withdraw");
+                    for (let k = (firstAmt < 0 ? txColumns.length : firstAmt) - 1; k >= 0; k--) if (!isAmt(txColumns[k])) { labelIdx = k; break; }
+                    if (labelIdx < 0) labelIdx = txColumns.findIndex((c) => !isAmt(c));
+                    // ACCOUNT VIEW PRO round: totals over ALL matching rows (every
+                    // page). The Balance cell is the closing balance of the
+                    // selected period (the newest matching row's recorded
+                    // balance-after) — or, with no date filter, the account's
+                    // current balance. With a type/status/search filter the
+                    // rows are not a continuous ledger, so the current
+                    // balance is shown and labeled as such.
+                    const cur = account.currency;
+                    const useClosing = !otherFiltersOn && (activityFrom || activityTo) && totals.closing != null;
+                    const balVal = useClosing ? totals.closing : account.balance;
+                    const balLabel = useClosing ? "Closing balance" : "Current balance";
+                    const ft = { background: "var(--c-av-total-bg)", color: C.ink, borderTop: `2px solid var(--c-av-total-line)`, borderRight: `1px solid ${C.line}`, padding: "9px 12px", fontFamily: FONT_SANS, fontSize: 12.5, fontWeight: 700, verticalAlign: "top" };
+                    const ftMono = { ...ft, fontFamily: FONT_MONO, fontVariantNumeric: "tabular-nums", textAlign: "right" };
                     return txColumns.map((c, k) => {
-                      if (c.key === "deposit") return <td key={c.key} style={{ ...tdFootMono, fontWeight: 700, color: "#7fe0b8" }}>+{fmtMoney(activityFooterTotals.deposit, account.currency)}</td>;
-                      if (c.key === "withdraw") return <td key={c.key} style={{ ...tdFootMono, fontWeight: 700, color: "#f5a898" }}>-{fmtMoney(activityFooterTotals.withdrawal, account.currency)}</td>;
-                      if (k === labelIdx) return <td key={c.key} style={{ ...tdFoot, fontWeight: 700 }}>Total</td>;
-                      return <td key={c.key} style={tdFoot}></td>;
+                      if (c.key === "deposit") return <td key={c.key} style={{ ...ftMono, color: C.depositGreen }}><div className="gk-av-foot-cap">Credit ({cur})</div>+{fmtMoney(activityFooterTotals.deposit, cur)}</td>;
+                      if (c.key === "withdraw") return <td key={c.key} style={{ ...ftMono, color: C.withdrawRed }}><div className="gk-av-foot-cap">Debit ({cur})</div>-{fmtMoney(activityFooterTotals.withdrawal, cur)}</td>;
+                      if (c.key === "balance") return <td key={c.key} style={{ ...ftMono, color: "var(--c-av-balance-fg)" }}><div className="gk-av-foot-cap">{balLabel} ({cur})</div>{fmtMoney(balVal, cur)}</td>;
+                      if (k === labelIdx) return <td key={c.key} style={ft}>Total<div className="gk-av-foot-cap" style={{ textAlign: "left" }}>{totals.count} transaction{totals.count === 1 ? "" : "s"} · all pages{otherFiltersOn ? " · filtered" : ""}</div></td>;
+                      return <td key={c.key} style={ft}></td>;
                     });
                   })()}
                 </tr>
@@ -10213,6 +10509,18 @@ function AccountDetailModal({ call, dl, preview, print, notify, perm, accountId,
            footnote as before, untouched math. --- */}
       {activeTab === "summary" && (
       <div style={{ marginBottom: 8 }}>
+        {/* ACCOUNT VIEW PRO round: the account's balance after every
+            recorded movement (its own ledger balance-after values), within
+            the selected date range. */}
+        <div className="gk-av-panel" style={{ marginBottom: 14 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+            <h2 className="gk-av-section-title" style={{ margin: 0 }}>Balance over time</h2>
+            <span style={{ fontSize: 12, color: C.slate }}>{periodText} · {account.currency}</span>
+          </div>
+          <LineAreaChart labels={balanceSeries.labels} series={[{ name: `Balance (${account.currency})`, data: balanceSeries.data, color: "var(--c-navy)" }]}
+            height={230} format={(v) => fmtMoney(v, account.currency)} emptyText="No balance movements in this period." />
+        </div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: C.ink, margin: "4px 0 8px" }}>All-time totals</div>
         <div className="gk-acct-kpi-grid" style={{ gap: 10, marginBottom: 10 }}>
           <StatCard label="Current balance" value={fmtMoney(account.balance, account.currency)} accent={C.navy} />
           <StatCard label="Available balance" value={fmtMoney(summary.availableBalance, account.currency)} accent={C.navy} sub="Same as current balance — accounts may carry debt" />
@@ -10262,6 +10570,11 @@ function AccountDetailModal({ call, dl, preview, print, notify, perm, accountId,
   // byte-for-byte in both page and modal mode.
   const nestedModalsBlock = (
     <>
+      {compareOpen && (
+        <CompareCreditsDebitsModal account={account} totals={totals} from={activityFrom} to={activityTo} filtered={otherFiltersOn}
+          onRange={(r) => { setActivityFrom(r.from); setActivityTo(r.to); setCustomDates(avDetectPreset(r.from, r.to) === "custom"); }}
+          onClose={() => setCompareOpen(false)} />
+      )}
       {moveOpen && (
         <NewLedgerMoveModal
           currency={account.currency} call={call} presetAccount={account} initialMoveType={moveOpen}
@@ -10359,9 +10672,9 @@ function AccountDetailModal({ call, dl, preview, print, notify, perm, accountId,
   if (asPage) {
     return (
       <div className="gk-account-page" style={{ background: C.paper, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 20px 0 20px" }}>
-          <Btn tone="primary" size="sm" onClick={onBack || onClose}>← Back</Btn>
-        </div>
+        {/* ACCOUNT VIEW PRO round: the breadcrumb ("← Accounts › View
+            Account") in the header is the way back now. */}
+        <div style={{ height: 8 }} />
         {headerBlock}
         {contentBlock}
         {nestedModalsBlock}
