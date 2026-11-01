@@ -808,6 +808,40 @@ const THEME_CSS = `
   .gk-av-status.is-off { background: #fee2e2; color: #b91c1c; }
   .gk-av-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   /* COMPACT SUMMARY CARDS round: five ~60px cards in one row on desktop. */
+  /* DAILY REPORTS round */
+  .gk-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+  .gk-dr-crumb { display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--c-slate); margin-bottom: 4px; }
+  .gk-dr-crumb [aria-current] { color: var(--c-ink); font-weight: 600; }
+  .gk-dr-status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; background: var(--c-card); border: 1px solid var(--c-line); border-radius: 8px; padding: 7px 12px; margin-bottom: 10px; font-size: 12px; }
+  .gk-dr-meta { display: inline-flex; align-items: center; gap: 5px; color: var(--c-slate); }
+  .gk-dr-meta b { color: var(--c-ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .gk-dr-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+  .gk-dr-cards[data-live="1"] .gk-av-card--balance { background: #7a5410; }
+  .gk-dr-cardhead { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; font-size: 12px; color: var(--c-slate); }
+  .gk-dr-cardtag { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .gk-dr-filters { align-items: flex-end; flex-wrap: wrap; }
+  .gk-dr-exports { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+  .gk-dr-num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .gk-dr-table td { vertical-align: middle; }
+  .gk-dr-row:hover td { background: color-mix(in srgb, var(--c-cyan) 6%, transparent); }
+  .gk-dr-row:focus-visible { outline: 2px solid var(--c-navy); outline-offset: -2px; }
+  .gk-dr-iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--c-line); background: var(--c-card); color: var(--c-navy); cursor: pointer; }
+  .gk-dr-iconbtn:hover { background: color-mix(in srgb, var(--c-cyan) 10%, var(--c-card)); }
+  .gk-dr-iconbtn:focus-visible { outline: 2px solid var(--c-navy); outline-offset: 1px; }
+  .gk-dr-error { display: flex; align-items: center; gap: 6px; color: #b91c1c; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 10px 12px; font-size: 12.5px; }
+  .gk-dr-warn { display: flex; align-items: flex-start; gap: 8px; color: #7a5410; background: #fdf6e7; border: 1px solid #f0d9a8; border-radius: 6px; padding: 9px 12px; font-size: 12.5px; margin-bottom: 12px; }
+  .gk-dr-small { font-size: 11px; color: var(--c-slate); }
+  .gk-dr-subhead { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 12.5px; padding: 9px 12px; border-bottom: 1px solid var(--c-line); }
+  .gk-dr-detail-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .gk-dr-kvgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px 14px; }
+  .gk-dr-kv { display: flex; flex-direction: column; gap: 2px; padding: 7px 10px; border: 1px solid var(--c-line); border-radius: 7px; background: var(--c-card); font-size: 12px; }
+  .gk-dr-kv > span { color: var(--c-slate); font-size: 11px; }
+  .gk-dr-kv > b { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .gk-dr-settings-grid { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+  .gk-dr-toggle { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; padding-bottom: 6px; }
+  .gk-dr-manual { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; border: 1px solid var(--c-line); border-radius: 8px; padding: 10px 12px; margin: 14px 0; font-size: 12.5px; }
+  @media (max-width: 1100px) { .gk-dr-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 560px) { .gk-dr-cards { grid-template-columns: 1fr; } .gk-dr-exports { margin-left: 0; } }
   @media (max-width: 960px) { .gk-tpl-editor { grid-template-columns: 1fr !important; } }
   .gk-av-cards { display: grid; grid-template-columns: 1.15fr repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
   .gk-av-card { display: flex; align-items: center; gap: 9px; min-height: 58px; box-sizing: border-box; background: var(--c-card); border: 1px solid var(--c-line); border-radius: 9px; padding: 7px 11px; box-shadow: 0 1px 2px rgba(15, 42, 54, 0.05); min-width: 0; }
@@ -4684,7 +4718,15 @@ function App() {
     // Hand — placed between the money-movement menus and Reports. Gated on
     // the granular expenses.view key (Admin + Super Admin by default).
     { type: "item", key: "expenses", label: "Company Expenses", icon: "receipt", show: hasRaw("expenses.view") },
-    { type: "item", key: "reports", label: "Reports", icon: "reports", show: perm("reports") },
+    // DAILY REPORTS round: Reports is now a group — the existing Reports page
+    // plus the Daily Reports page (one page, opened on the matching tab).
+    { type: "group", key: "reportsGroup", label: "Reports", icon: "reports", children: [
+      { key: "reports", label: "Reports Overview", icon: "reports", show: perm("reports") },
+      { key: "daily-reports", label: "Daily Reports", icon: "calendar", show: hasRaw("dailyReports.view") },
+      { key: "daily-reports-balance", label: "Balance Sheet Report", icon: "landmark", show: hasRaw("dailyReports.view") },
+      { key: "daily-reports-cash", label: "Cash Account Report", icon: "wallet", show: hasRaw("dailyReports.view") },
+      { key: "daily-reports-history", label: "Financial History", icon: "history", show: hasRaw("dailyReports.view") },
+    ] },
     // ROLE MANAGEMENT round, Phase 2: was a flat item ("Users & Roles" ->
     // the Users list only); now a group with the Roles Management screen as
     // its own sub-item, gated separately (a user can manage Users without
@@ -4998,6 +5040,7 @@ function App() {
             {view === "history-slsh" && perm("reports") && hasRaw("currency.slsh") && <TransactionHistoryModule currency="SLSH" call={call} dl={dl} preview={preview} print={print} notify={notify} perm={perm} rate={rate} saleRate={saleRate} onOpenQuotations={(qStatus, quotationId) => { setView(quotationStatusView(qStatus)); if (quotationId) setQuotationFocusId(quotationId); }} focusEntryId={historyFocusEntryId} onConsumeFocusEntry={() => setHistoryFocusEntryId(null)} hasRaw={hasRaw} onOpenAccountView={openAccountView} />}
             {view === "expenses" && hasRaw("expenses.view") && <ExpensesModule call={call} dl={dl} notify={notify} hasRaw={hasRaw} token={token} />}
             {view === "reports" && <ReportsModule call={call} dl={dl} notify={notify} perm={perm} hasRaw={hasRaw} />}
+            {view.startsWith("daily-reports") && hasRaw("dailyReports.view") && <DailyReportsModule call={call} dl={dl} preview={preview} notify={notify} initialTab={{ "daily-reports-balance": "balance", "daily-reports-cash": "cash" }[view] || "snapshot"} />}
             {view === "users" && perm("users") && <UsersModule call={call} notify={notify} currentUser={user} hasRaw={hasRaw} />}
             {view === "roles" && hasRaw("roles.view") && <RolesModule call={call} notify={notify} currentUser={user} hasRaw={hasRaw} />}
             {view === "usersRoles-overview" && perm("users") && <SystemOverviewModule call={call} notify={notify} />}
@@ -14656,6 +14699,595 @@ function DeleteRoleModal({ role, allRoles, call, notify, onClose, onDone }) {
 /* =========================================================================
    REPORTS
    ========================================================================= */
+/* =========================================================================
+   DAILY REPORTS round — Daily Reports (Balance Sheet & Cash Account).
+   Everything shown here comes from /api/daily-reports/* (src/routes/
+   dailyReports.js): stored daily snapshots (never recalculated), the
+   Balance Sheet history with gaps shown as gaps, and the Cash Account
+   history replayed from the cash ledger. The live position is only ever
+   shown on request and is labelled LIVE.
+   ========================================================================= */
+const DR_TABS = [["snapshot", "Daily Snapshot", "calendar"], ["balance", "Balance Sheet History", "landmark"], ["cash", "Cash Account History", "wallet"]];
+const DR_PRESETS = [["today", "Today"], ["yesterday", "Yesterday"], ["last7", "Last 7 Days"], ["last30", "Last 30 Days"], ["thisMonth", "This Month"], ["lastMonth", "Last Month"], ["thisYear", "This Year"], ["custom", "Custom Date Range"]];
+function drAddDays(d, n) { const [y, m, dd] = d.split("-").map(Number); return new Date(Date.UTC(y, m - 1, dd + n)).toISOString().slice(0, 10); }
+function drPresetRange(key, today) {
+  const t = today || new Date().toISOString().slice(0, 10);
+  const [y, m] = t.split("-").map(Number);
+  const first = (yy, mm) => new Date(Date.UTC(yy, mm - 1, 1)).toISOString().slice(0, 10);
+  switch (key) {
+    case "today": return { from: t, to: t };
+    case "yesterday": { const d = drAddDays(t, -1); return { from: d, to: d }; }
+    case "last7": return { from: drAddDays(t, -6), to: t };
+    case "last30": return { from: drAddDays(t, -29), to: t };
+    case "thisMonth": return { from: first(y, m), to: t };
+    case "lastMonth": { const f = first(m === 1 ? y - 1 : y, m === 1 ? 12 : m - 1); return { from: f, to: drAddDays(first(y, m), -1) }; }
+    case "thisYear": return { from: `${y}-01-01`, to: t };
+    default: return null;
+  }
+}
+const DR_STATE = {
+  saved: ["green", "checkCircle2", "Snapshot Saved"], saved_late: ["amber", "clock", "Snapshot Saved (late)"],
+  pending: ["slate", "clock", "Snapshot Pending"], delayed: ["amber", "triangleAlert", "Snapshot Delayed"],
+  failed: ["red", "circleAlert", "Snapshot Failed"], disabled: ["slate", "pause", "Auto Snapshot Disabled"],
+};
+function drSigned(v, cur) {
+  if (v == null) return "—";
+  if (v === 0) return fmtMoney(0, cur);
+  return `${v > 0 ? "+" : "−"}${fmtMoney(Math.abs(v), cur)}`;
+}
+function DrAmount({ v, cur, signed: isSigned, strong }) {
+  if (v == null) return <span style={{ color: C.slate }}>—</span>;
+  const color = v < 0 ? C.balanceNegative : isSigned && v > 0 ? C.balancePositive : C.ink;
+  return <span className="gk-dr-num" style={{ color, fontWeight: strong ? 700 : 600 }}>{isSigned ? drSigned(v, cur) : fmtMoney(v, cur)}</span>;
+}
+function DrTrend({ v, cur }) {
+  if (v == null) return <span style={{ color: C.slate }}>—</span>;
+  const up = v > 0, down = v < 0;
+  return (
+    <span className="gk-dr-num" style={{ display: "inline-flex", alignItems: "center", gap: 4, color: up ? C.balancePositive : down ? C.balanceNegative : C.slate, fontWeight: 600 }}>
+      {(up || down) && <NavIcon name={up ? "trendUp" : "trendDown"} size={13} />}
+      <span>{drSigned(v, cur)}</span>
+      {(up || down) && <span className="gk-sr-only">{up ? "increase" : "decrease"}</span>}
+    </span>
+  );
+}
+function DrSourcePill({ s }) {
+  return (
+    <span style={{ display: "inline-flex", gap: 5, flexWrap: "wrap" }}>
+      <Pill tone={s.source === "automatic" ? "emerald" : "cyan"}>{s.source === "automatic" ? "Automatic" : "Manual"}</Pill>
+      {s.late ? <Pill tone="amber">Late</Pill> : <Pill tone="green">Saved</Pill>}
+    </span>
+  );
+}
+function drFmtWhen(iso, tz) {
+  if (!iso) return "—";
+  try { return new Date(iso).toLocaleString("en-GB", { timeZone: tz || undefined, day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); } catch (e) { return fmtDateTime(iso); }
+}
+
+function DrDateFilter({ preset, setPreset, range, setRange, today }) {
+  return (
+    <>
+      <Field label="Period" width={170}>
+        <Select aria-label="Period" value={preset} onChange={(e) => { const k = e.target.value; setPreset(k); const r = drPresetRange(k, today); if (r) setRange(r); }}>
+          {DR_PRESETS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+        </Select>
+      </Field>
+      <Field label="From" width={140}><Input type="date" aria-label="From" value={range.from} max={range.to} onChange={(e) => { setPreset("custom"); setRange({ ...range, from: e.target.value }); }} /></Field>
+      <Field label="To" width={140}><Input type="date" aria-label="To" value={range.to} min={range.from} onChange={(e) => { setPreset("custom"); setRange({ ...range, to: e.target.value }); }} /></Field>
+    </>
+  );
+}
+function DrExportButtons({ canExport, base, params, name, dl, preview }) {
+  if (!canExport) return null;
+  return (
+    <div className="gk-dr-exports">
+      <Btn tone="subtle" size="sm" icon="print" onClick={() => preview(`${base}.pdf${qs(params)}`)}>Print</Btn>
+      <Btn tone="subtle" size="sm" icon="filePdf" onClick={() => dl(`${base}.pdf${qs(params)}`, `${name}.pdf`)}>Export PDF</Btn>
+      <Btn tone="subtle" size="sm" icon="sheet" onClick={() => dl(`${base}.xlsx${qs(params)}`, `${name}.xlsx`)}>Export Excel</Btn>
+    </div>
+  );
+}
+
+function DailyReportsModule({ call, dl, preview, notify, initialTab }) {
+  const [tab, setTab] = useState(initialTab || "snapshot");
+  useEffect(() => { if (initialTab) setTab(initialTab); }, [initialTab]);
+  const [status, setStatus] = useState(null);
+  const [statusErr, setStatusErr] = useState("");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  const loadStatus = useCallback(() => {
+    call("/api/daily-reports/status").then((s) => { setStatus(s); setStatusErr(""); }).catch((e) => setStatusErr(e.message));
+  }, [call]);
+  useEffect(() => { loadStatus(); }, [loadStatus, reloadKey]);
+  const refresh = () => setReloadKey((k) => k + 1);
+  const st = status ? DR_STATE[status.state] || DR_STATE.pending : null;
+  return (
+    <div className="gk-dr">
+      <nav className="gk-dr-crumb" aria-label="Breadcrumb"><span>Reports</span><NavIcon name="chevron" size={12} /><span aria-current="page">Daily Reports</span></nav>
+      <SectionHeader title="Daily Reports — Balance Sheet & Cash Account" icon="calendar"
+        sub="Automatic daily financial snapshots, historical balances, and financial comparisons."
+        actions={<>
+          <Btn tone="subtle" size="sm" icon="refresh" onClick={refresh}>Refresh</Btn>
+          {status && status.canManage && <Btn tone="primary" size="sm" icon="settings2" onClick={() => setSettingsOpen(true)}>Snapshot Settings</Btn>}
+        </>} />
+      <div className="gk-dr-status" role="status" aria-live="polite" data-state={status ? status.state : "loading"}>
+        {statusErr ? <span style={{ color: C.red }}><NavIcon name="circleAlert" size={14} /> {statusErr}</span> : !status ? <span style={{ color: C.slate }}>Loading status…</span> : (
+          <>
+            <Pill tone={st[0]}><span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><NavIcon name={st[1]} size={12} />{st[2]}</span></Pill>
+            <Pill tone={status.enabled ? "emerald" : "slate"}>{status.enabled ? "Auto Snapshot Enabled" : "Auto Snapshot Disabled"}</Pill>
+            <span className="gk-dr-meta"><NavIcon name="archive" size={13} /><span>Last saved:</span> <b>{status.lastSuccess ? `${status.lastSuccess.businessDate} · ${drFmtWhen(status.lastSuccess.capturedAt, status.timezone)}` : "none yet"}</b></span>
+            <span className="gk-dr-meta"><NavIcon name="calendarClock" size={13} /><span>Next:</span> <b>{status.nextRunAt ? drFmtWhen(status.nextRunAt, status.timezone) : "—"}</b></span>
+            <span className="gk-dr-meta"><NavIcon name="globe" size={13} /><span>{status.timezone} · {status.runTime}</span></span>
+            <span className="gk-dr-meta"><NavIcon name="companies" size={13} /><span>{status.company}</span></span>
+          </>
+        )}
+      </div>
+      <div className="gk-av-tabs" role="tablist" aria-label="Daily Reports sections">
+        {DR_TABS.map(([k, l, ic]) => (
+          <button key={k} type="button" role="tab" aria-selected={tab === k} className={`gk-av-tab${tab === k ? " is-active" : ""}`} onClick={() => setTab(k)}>
+            <NavIcon name={ic} size={15} />{l}
+          </button>
+        ))}
+      </div>
+      {tab === "snapshot" && <DrSnapshotTab key={`s${reloadKey}`} call={call} dl={dl} preview={preview} notify={notify} status={status} />}
+      {tab === "balance" && <DrBalanceTab key={`b${reloadKey}`} call={call} dl={dl} preview={preview} notify={notify} status={status} />}
+      {tab === "cash" && <DrCashTab key={`c${reloadKey}`} call={call} dl={dl} preview={preview} notify={notify} status={status} />}
+      {settingsOpen && <DrSettingsModal call={call} notify={notify} onClose={() => setSettingsOpen(false)} onChanged={refresh} />}
+    </div>
+  );
+}
+
+function DrCards({ snap, live, change, loading }) {
+  const card = (tone, icon, label, value, sub) => <AvCard tone={tone} icon={icon} label={label} value={value} sub={sub} loading={loading} />;
+  const src = live ? { usd: live.currencies.USD && { balanceSheet: live.currencies.USD.balanceSheet, cash: live.currencies.USD.cashInHand, debt: live.currencies.USD.debt, credit: live.currencies.USD.credit, cashAccounts: live.currencies.USD.cashAccounts },
+    slsh: live.currencies.SLSH && { balanceSheet: live.currencies.SLSH.balanceSheet, cash: live.currencies.SLSH.cashInHand, debt: live.currencies.SLSH.debt, credit: live.currencies.SLSH.credit, cashAccounts: live.currencies.SLSH.cashAccounts } } : snap;
+  if (!loading && !src) return <Empty text="No snapshot has been saved yet. The first automatic snapshot will be taken at the scheduled time." />;
+  const sub = (k, cur) => {
+    const x = src && src[k];
+    if (!x) return "";
+    const brk = `Debt ${fmtMoney(x.debt, cur)} + Cash ${fmtMoney(x.cash, cur)} − Credit ${fmtMoney(x.credit, cur)}`;
+    const ch = !live && change && change[k] ? ` · ${drSigned(change[k].balanceSheet, cur)} vs ${change.previousDate}` : "";
+    return `${brk}${ch}`;
+  };
+  return (
+    <div className="gk-dr-cards" data-live={live ? "1" : "0"}>
+      {(loading || (src && src.usd)) && card("balance", "dollar", "Balance Sheet (USD)", src && src.usd ? fmtMoney(src.usd.balanceSheet, "USD") : "", sub("usd", "USD"))}
+      {(loading || (src && src.slsh)) && card("balance", "banknote", "Balance Sheet (SLSH)", src && src.slsh ? fmtMoney(src.slsh.balanceSheet, "SLSH") : "", sub("slsh", "SLSH"))}
+      {(loading || (src && src.usd)) && card("count", "wallet", "Cash Account (USD)", src && src.usd ? fmtMoney(src.usd.cash, "USD") : "", src && src.usd ? `${src.usd.cashAccounts} active cash account(s)` : "")}
+      {(loading || (src && src.slsh)) && card("count", "wallet", "Cash Account (SLSH)", src && src.slsh ? fmtMoney(src.slsh.cash, "SLSH") : "", src && src.slsh ? `${src.slsh.cashAccounts} active cash account(s)` : "")}
+    </div>
+  );
+}
+
+const DR_SORT_FIELDS = { date: "date", balanceUsd: "bsUsd", balanceSlsh: "bsSlsh", cashBalanceUsd: "cashUsd", cashBalanceSlsh: "cashSlsh" };
+function DrSnapshotTab({ call, dl, preview, notify, status }) {
+  const today = status && status.today;
+  const [preset, setPreset] = useState("last30");
+  const [range, setRange] = useState(() => drPresetRange("last30", today));
+  useEffect(() => { if (today && preset !== "custom") setRange(drPresetRange(preset, today)); }, [today]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [source, setSource] = useState("");
+  const [state, setState] = useState("");
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState({ key: "date", dir: "desc" });
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
+  const [latest, setLatest] = useState(undefined);
+  const [live, setLive] = useState(null);
+  const [openId, setOpenId] = useState(null);
+  const params = { from: range.from, to: range.to, source: source || undefined, status: state || undefined, search: search.trim() || undefined, sort: DR_SORT_FIELDS[sort.key], dir: sort.dir };
+  const pkey = JSON.stringify(params);
+  useEffect(() => { setPage(1); }, [pkey]);
+  useEffect(() => {
+    setLoading(true); setErr("");
+    call("/api/daily-reports/snapshots" + qs({ ...params, page, pageSize }))
+      .then(setData).catch((e) => setErr(e.message)).finally(() => setLoading(false));
+  }, [pkey, page, pageSize]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    call("/api/daily-reports/snapshots" + qs({ from: "2000-01-01", sort: "captured", dir: "desc", pageSize: 1 }))
+      .then((d) => setLatest(d.snapshots[0] || null)).catch(() => setLatest(null));
+  }, [call]);
+  const toggleLive = () => {
+    if (live) return setLive(null);
+    call("/api/daily-reports/live").then(setLive).catch((e) => notify(e.message, true));
+  };
+  const onSort = (f) => setSort((s) => (s.key === f ? { key: f, dir: s.dir === "asc" ? "desc" : "asc" } : { key: f, dir: "desc" }));
+  const reset = () => { setPreset("last30"); setRange(drPresetRange("last30", today)); setSource(""); setState(""); setSearch(""); setSort({ key: "date", dir: "desc" }); };
+  const cur = data ? data.currencies : ["USD", "SLSH"];
+  const hasU = cur.includes("USD"), hasS = cur.includes("SLSH");
+  const total = data ? data.total : 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  return (
+    <div>
+      <div className="gk-dr-cardhead">
+        <span className="gk-dr-cardtag">{live ? <><Pill tone="amber">LIVE</Pill> Current position — not a stored snapshot</> : latest ? <><Pill tone="emerald">Historical</Pill> Latest stored snapshot · {latest.businessDate} ({latest.source}) · captured {drFmtWhen(latest.capturedAt, latest.timezone)}</> : null}</span>
+        <Btn tone="ghost" size="sm" icon={live ? "archive" : "activity"} onClick={toggleLive}>{live ? "Show latest snapshot" : "Show live position"}</Btn>
+      </div>
+      <DrCards snap={latest} live={live} change={latest && latest.change} loading={latest === undefined} />
+      <div className="gk-filterbar gk-dr-filters">
+        <DrDateFilter preset={preset} setPreset={setPreset} range={range} setRange={setRange} today={today} />
+        <Field label="Source" width={140}><Select aria-label="Source" value={source} onChange={(e) => setSource(e.target.value)}><option value="">All</option><option value="automatic">Automatic</option><option value="manual">Manual</option></Select></Field>
+        <Field label="Snapshot status" width={150}><Select aria-label="Snapshot status" value={state} onChange={(e) => setState(e.target.value)}><option value="">All</option><option value="on_time">Saved on time</option><option value="late">Saved late</option></Select></Field>
+        <Field label="Search" width={170}><Input aria-label="Search snapshots" placeholder="Date, source, user…" value={search} onChange={(e) => setSearch(e.target.value)} /></Field>
+        <Btn tone="ghost" size="sm" icon="undo" onClick={reset}>Reset Filters</Btn>
+        <DrExportButtons canExport={status && status.canExport} base="/api/daily-reports/snapshots/export" params={params} name={`daily-snapshots-${range.from}-to-${range.to}`} dl={dl} preview={preview} />
+      </div>
+      <div className="gk-table-wrap" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 6 }}>
+        {err ? <div className="gk-dr-error" role="alert"><NavIcon name="circleAlert" size={15} /> {err}</div> : loading && !data ? <Spinner /> : total === 0 ? <Empty text="No snapshots match these filters. Days without a snapshot are listed on the Balance Sheet History tab." /> : (
+          <TableScrollShell>
+            <table className="gk-table gk-dr-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead><tr>
+                <th style={th} scope="col">#</th>
+                <SortTh label="Snapshot Date" field="date" sortKey={sort.key} sortDir={sort.dir} onSort={onSort} />
+                <th style={th} scope="col">Company</th>
+                {hasU && <SortTh label="Balance Sheet — USD" field="balanceUsd" sortKey={sort.key} sortDir={sort.dir} onSort={onSort} />}
+                {hasS && <SortTh label="Balance Sheet — SLSH" field="balanceSlsh" sortKey={sort.key} sortDir={sort.dir} onSort={onSort} />}
+                {hasU && <SortTh label="Cash Account — USD" field="cashBalanceUsd" sortKey={sort.key} sortDir={sort.dir} onSort={onSort} />}
+                {hasS && <SortTh label="Cash Account — SLSH" field="cashBalanceSlsh" sortKey={sort.key} sortDir={sort.dir} onSort={onSort} />}
+                <th style={{ ...th, textAlign: "right" }} scope="col">Exchange Rate</th>
+                <th style={{ ...th, textAlign: "right" }} scope="col">Daily Change</th>
+                <th style={th} scope="col">Snapshot Status</th>
+                <th style={th} scope="col">Actions</th>
+              </tr></thead>
+              <tbody>
+                {data.snapshots.map((s, i) => (
+                  <tr key={s.id} className="gk-dr-row" tabIndex={0} onClick={() => setOpenId(s.id)} onKeyDown={(e) => { if (e.key === "Enter") setOpenId(s.id); }} style={{ cursor: "pointer" }}>
+                    <td style={td}>{(page - 1) * pageSize + i + 1}</td>
+                    <td style={{ ...td, whiteSpace: "nowrap", fontWeight: 600 }}>{s.businessDate}</td>
+                    <td style={{ ...td, whiteSpace: "nowrap" }}>{s.company}</td>
+                    {hasU && <td style={{ ...td, textAlign: "right" }}><DrAmount v={s.usd.balanceSheet} cur="USD" strong /></td>}
+                    {hasS && <td style={{ ...td, textAlign: "right" }}><DrAmount v={s.slsh.balanceSheet} cur="SLSH" strong /></td>}
+                    {hasU && <td style={{ ...td, textAlign: "right" }}><DrAmount v={s.usd.cash} cur="USD" /></td>}
+                    {hasS && <td style={{ ...td, textAlign: "right" }}><DrAmount v={s.slsh.cash} cur="SLSH" /></td>}
+                    <td style={{ ...td, textAlign: "right" }} className="gk-dr-num">{s.exchangeRate ? Number(s.exchangeRate).toLocaleString("en-US") : <span style={{ color: C.slate }}>Not set</span>}</td>
+                    <td style={{ ...td, textAlign: "right" }}>
+                      {s.change ? <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+                        {hasU && <DrTrend v={s.change.usd.balanceSheet} cur="USD" />}
+                        {hasS && <DrTrend v={s.change.slsh.balanceSheet} cur="SLSH" />}
+                      </div> : <span style={{ color: C.slate }}>First snapshot</span>}
+                    </td>
+                    <td style={td}><DrSourcePill s={s} /></td>
+                    <td style={td} onClick={(e) => e.stopPropagation()}>
+                      <div style={{ display: "flex", gap: 4 }}>
+                        <button type="button" className="gk-dr-iconbtn" aria-label={`View snapshot ${s.businessDate}`} title="View Snapshot" onClick={() => setOpenId(s.id)}><NavIcon name="eye" size={15} /></button>
+                        {status && status.canExport && <button type="button" className="gk-dr-iconbtn" aria-label={`Print snapshot ${s.businessDate}`} title="Print Report" onClick={() => preview(`/api/daily-reports/snapshots/${s.id}/report.pdf`)}><NavIcon name="print" size={15} /></button>}
+                        {status && status.canExport && <button type="button" className="gk-dr-iconbtn" aria-label={`Export snapshot ${s.businessDate} to Excel`} title="Export Report" onClick={() => dl(`/api/daily-reports/snapshots/${s.id}/report.xlsx`, `daily-snapshot-${s.businessDate}.xlsx`)}><NavIcon name="download" size={15} /></button>}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableScrollShell>
+        )}
+        {data && total > 0 && <TableFooter firstIdx={(page - 1) * pageSize + 1} lastIdx={Math.min(total, page * pageSize)} total={total} page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={(n) => { setPageSize(n); setPage(1); }} />}
+      </div>
+      {openId && <DrSnapshotDetail id={openId} call={call} dl={dl} preview={preview} canExport={status && status.canExport} onClose={() => setOpenId(null)} />}
+    </div>
+  );
+}
+
+function DrSnapshotDetail({ id, call, dl, preview, canExport, onClose }) {
+  const [d, setD] = useState(null);
+  const [err, setErr] = useState("");
+  const [tab, setTab] = useState("summary");
+  useEffect(() => { call(`/api/daily-reports/snapshots/${id}`).then(setD).catch((e) => setErr(e.message)); }, [id, call]);
+  const s = d && d.snapshot, ch = d && d.change;
+  const curs = s ? [["USD", "usd"], ["SLSH", "slsh"]].filter(([, k]) => s[k]) : [];
+  const tabs = [["summary", "Summary"], ["cash", "Cash Account"], ["breakdown", "Balance Sheet Breakdown"], ["changes", "Daily Changes"], ...(d && d.runs ? [["audit", "Audit History"]] : [])];
+  const kv = (label, value) => <div className="gk-dr-kv"><span>{label}</span><b>{value}</b></div>;
+  return (
+    <Modal title={s ? `Snapshot · ${s.businessDate}` : "Snapshot"} subtitle={s ? "Stored historical figures — not today's live balances" : undefined} onClose={onClose} wide>
+      {err ? <div className="gk-dr-error" role="alert">{err}</div> : !s ? <Spinner /> : (
+        <div className="gk-dr-detail" data-snapshot-id={s.id}>
+          <div className="gk-dr-detail-head">
+            <DrSourcePill s={s} />
+            {canExport && <div className="gk-dr-exports">
+              <Btn tone="subtle" size="sm" icon="print" onClick={() => preview(`/api/daily-reports/snapshots/${s.id}/report.pdf`)}>Print</Btn>
+              <Btn tone="subtle" size="sm" icon="filePdf" onClick={() => dl(`/api/daily-reports/snapshots/${s.id}/report.pdf`, `daily-snapshot-${s.businessDate}.pdf`)}>Export PDF</Btn>
+              <Btn tone="subtle" size="sm" icon="sheet" onClick={() => dl(`/api/daily-reports/snapshots/${s.id}/report.xlsx`, `daily-snapshot-${s.businessDate}.xlsx`)}>Export Excel</Btn>
+            </div>}
+          </div>
+          <div className="gk-av-tabs" role="tablist" aria-label="Snapshot sections">
+            {tabs.map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={tab === k} className={`gk-av-tab${tab === k ? " is-active" : ""}`} onClick={() => setTab(k)}>{l}</button>)}
+          </div>
+          {tab === "summary" && (
+            <div className="gk-dr-kvgrid">
+              {kv("Company", s.company)}{kv("Business date", s.businessDate)}{kv("Captured at", drFmtWhen(s.capturedAt, s.timezone))}
+              {kv("Time zone", s.timezone)}{kv("Source", s.source === "automatic" ? "Automatic" : `Manual · ${s.createdByName || ""}`)}
+              {s.scheduledFor && kv("Scheduled for", drFmtWhen(s.scheduledFor, s.timezone))}
+              {curs.map(([c, k]) => <React.Fragment key={c}>{kv(`Balance Sheet (${c})`, <DrAmount v={s[k].balanceSheet} cur={c} strong />)}{kv(`Cash Account (${c})`, <DrAmount v={s[k].cash} cur={c} />)}{kv(`Total Debt (${c})`, <DrAmount v={s[k].debt} cur={c} />)}{kv(`Total Credits (${c})`, <DrAmount v={s[k].credit} cur={c} />)}</React.Fragment>)}
+              {kv("Exchange rate (stored)", s.exchangeRate ? `${Number(s.exchangeRate).toLocaleString("en-US")} SLSH per 1 USD` : "Not set")}
+              {s.combined && (s.combined.available
+                ? <>{kv("Net Balance Sheet (USD equivalent)", <DrAmount v={s.combined.usdEquivalent} cur="USD" strong />)}{kv("Net Balance Sheet (SLSH equivalent)", <DrAmount v={s.combined.slshEquivalent} cur="SLSH" strong />)}</>
+                : kv("Net Balance Sheet", "Unavailable — no Cash Account rate was set at capture time"))}
+              {kv("Compared with", ch ? ch.previousDate : "No earlier snapshot")}
+            </div>
+          )}
+          {tab === "cash" && (
+            (s.cashAccounts || []).length === 0 ? <Empty text="No active cash accounts at capture time." /> : (
+              <TableScrollShell><table className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead><tr><th style={th} scope="col">Cash account</th><th style={th} scope="col">Type</th><th style={th} scope="col">Currency</th><th style={{ ...th, textAlign: "right" }} scope="col">Balance at capture</th></tr></thead>
+                <tbody>{s.cashAccounts.map((a) => <tr key={a.id}><td style={td}>{a.name}</td><td style={td}>{a.type}</td><td style={td}>{a.currency}</td><td style={{ ...td, textAlign: "right" }}><DrAmount v={a.balance} cur={a.currency} /></td></tr>)}</tbody>
+              </table></TableScrollShell>
+            )
+          )}
+          {tab === "breakdown" && (
+            <TableScrollShell><table className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead><tr><th style={th} scope="col">Currency</th><th style={{ ...th, textAlign: "right" }} scope="col">Debt</th><th style={{ ...th, textAlign: "right" }} scope="col">+ Cash Account</th><th style={{ ...th, textAlign: "right" }} scope="col">− Credit</th><th style={{ ...th, textAlign: "right" }} scope="col">= Balance Sheet</th></tr></thead>
+              <tbody>{curs.map(([c, k]) => <tr key={c}><td style={{ ...td, fontWeight: 700 }}>{c}</td>
+                <td style={{ ...td, textAlign: "right" }}><DrAmount v={s[k].debt} cur={c} /><div className="gk-dr-small">{s[k].debtAccounts} account(s)</div></td>
+                <td style={{ ...td, textAlign: "right" }}><DrAmount v={s[k].cash} cur={c} /><div className="gk-dr-small">{s[k].cashAccounts} cash account(s)</div></td>
+                <td style={{ ...td, textAlign: "right" }}><DrAmount v={s[k].credit} cur={c} /><div className="gk-dr-small">{s[k].creditAccounts} account(s)</div></td>
+                <td style={{ ...td, textAlign: "right" }}><DrAmount v={s[k].balanceSheet} cur={c} strong /></td></tr>)}</tbody>
+            </table></TableScrollShell>
+          )}
+          {tab === "changes" && (!ch ? <Empty text="This is the first stored snapshot — there is nothing earlier to compare with." /> : (
+            <TableScrollShell><table className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead><tr><th style={th} scope="col">Item</th>{curs.map(([c]) => <th key={c} style={{ ...th, textAlign: "right" }} scope="col">Change ({c})</th>)}</tr></thead>
+              <tbody>{[["Balance Sheet", "balanceSheet"], ["Debt", "debt"], ["Cash Account", "cash"], ["Credit", "credit"]].map(([l, f]) => (
+                <tr key={f}><td style={td}>{l} <span className="gk-dr-small">vs {ch.previousDate}</span></td>{curs.map(([c, k]) => <td key={c} style={{ ...td, textAlign: "right" }}><DrTrend v={ch[k][f]} cur={c} /></td>)}</tr>
+              ))}</tbody>
+            </table></TableScrollShell>
+          ))}
+          {tab === "audit" && d.runs && (
+            <TableScrollShell><table className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead><tr><th style={th} scope="col">When</th><th style={th} scope="col">Source</th><th style={th} scope="col">Trigger</th><th style={th} scope="col">Outcome</th><th style={th} scope="col">By</th><th style={th} scope="col">Details</th></tr></thead>
+              <tbody>{d.runs.map((r) => <tr key={r.id}><td style={td}>{drFmtWhen(r.started_at, s.timezone)}</td><td style={td}>{r.source}</td><td style={td}>{r.trigger_type}</td><td style={td}><Pill tone={r.status === "succeeded" ? "green" : r.status === "failed" || r.status === "missed" ? "red" : "slate"}>{r.status}</Pill></td><td style={td}>{r.actor_name}</td><td style={td}>{r.error || (r.snapshot_id ? `Snapshot ${r.snapshot_id}` : "")}</td></tr>)}</tbody>
+            </table></TableScrollShell>
+          )}
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+function DrBalanceTab({ call, dl, preview, status }) {
+  const today = status && status.today;
+  const [preset, setPreset] = useState("last30");
+  const [range, setRange] = useState(() => drPresetRange("last30", today));
+  useEffect(() => { if (today && preset !== "custom") setRange(drPresetRange(preset, today)); }, [today]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [openId, setOpenId] = useState(null);
+  const pg = usePagination(useMemo(() => (data ? [...data.days].filter((d) => d.reason !== "future").reverse() : EMPTY_ARR), [data]), { initialPageSize: 25 });
+  useEffect(() => {
+    setLoading(true); setErr("");
+    call("/api/daily-reports/balance-history" + qs(range)).then(setData).catch((e) => setErr(e.message)).finally(() => setLoading(false));
+  }, [range.from, range.to]); // eslint-disable-line react-hooks/exhaustive-deps
+  const cur = data ? data.currencies : ["USD", "SLSH"];
+  const curs = [["USD", "usd"], ["SLSH", "slsh"]].filter(([c]) => cur.includes(c));
+  const reasonText = { missed: "No snapshot available — missed", failed: "No snapshot available — failed", pending: "Pending — not captured yet today", no_snapshot: "No snapshot available" };
+  return (
+    <div>
+      <div className="gk-filterbar gk-dr-filters">
+        <DrDateFilter preset={preset} setPreset={setPreset} range={range} setRange={setRange} today={today} />
+        <Btn tone="ghost" size="sm" icon="undo" onClick={() => { setPreset("last30"); setRange(drPresetRange("last30", today)); }}>Reset Filters</Btn>
+        <DrExportButtons canExport={status && status.canExport} base="/api/daily-reports/balance-history/export" params={range} name={`balance-sheet-history-${range.from}-to-${range.to}`} dl={dl} preview={preview} />
+      </div>
+      {err ? <div className="gk-dr-error" role="alert"><NavIcon name="circleAlert" size={15} /> {err}</div> : loading && !data ? <Spinner /> : (
+        <>
+          <div className="gk-dr-cards">
+            {curs.map(([c, k]) => (
+              <AvCard key={c} tone="net" icon="compareArrows" label={`Period change (${c})`}
+                value={data.period && data.period[k] ? drSigned(data.period[k].change, c) : "—"}
+                sub={data.period && data.period[k] ? `${fmtMoney(data.period[k].start, c)} on ${data.period.from} → ${fmtMoney(data.period[k].end, c)} on ${data.period.to}` : "Needs two stored snapshots in the period"} />
+            ))}
+            <AvCard tone="count" icon="archive" label="Days with a snapshot" value={`${data.available}`} sub={`${data.missing} day(s) without a snapshot`} />
+          </div>
+          <div className="gk-table-wrap" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, marginBottom: 14 }}>
+            <TableScrollShell>
+              <table className="gk-table gk-dr-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead><tr>
+                  <th style={th} scope="col">Date</th>
+                  {curs.map(([c]) => <React.Fragment key={c}><th style={{ ...th, textAlign: "right" }} scope="col">Debt ({c})</th><th style={{ ...th, textAlign: "right" }} scope="col">Cash ({c})</th><th style={{ ...th, textAlign: "right" }} scope="col">Credit ({c})</th><th style={{ ...th, textAlign: "right" }} scope="col">Balance Sheet ({c})</th><th style={{ ...th, textAlign: "right" }} scope="col">Daily Change ({c})</th></React.Fragment>)}
+                  <th style={th} scope="col">Snapshot</th>
+                </tr></thead>
+                <tbody>
+                  {pg.pageRows.map((d) => d.available ? (
+                    <tr key={d.businessDate} className="gk-dr-row" tabIndex={0} style={{ cursor: "pointer" }} onClick={() => setOpenId(d.snapshot.id)} onKeyDown={(e) => { if (e.key === "Enter") setOpenId(d.snapshot.id); }}>
+                      <td style={{ ...td, fontWeight: 600, whiteSpace: "nowrap" }}>{d.businessDate}</td>
+                      {curs.map(([c, k]) => <React.Fragment key={c}>
+                        <td style={{ ...td, textAlign: "right" }}><DrAmount v={d.snapshot[k].debt} cur={c} /></td>
+                        <td style={{ ...td, textAlign: "right" }}><DrAmount v={d.snapshot[k].cash} cur={c} /></td>
+                        <td style={{ ...td, textAlign: "right" }}><DrAmount v={d.snapshot[k].credit} cur={c} /></td>
+                        <td style={{ ...td, textAlign: "right" }}><DrAmount v={d.snapshot[k].balanceSheet} cur={c} strong /></td>
+                        <td style={{ ...td, textAlign: "right" }}><DrTrend v={d.change ? d.change[k].balanceSheet : null} cur={c} /></td>
+                      </React.Fragment>)}
+                      <td style={td}><DrSourcePill s={d.snapshot} /></td>
+                    </tr>
+                  ) : (
+                    <tr key={d.businessDate} className="gk-dr-missing" data-missing={d.reason}>
+                      <td style={{ ...td, fontWeight: 600, whiteSpace: "nowrap" }}>{d.businessDate}</td>
+                      <td style={{ ...td, color: C.slate, fontStyle: "italic" }} colSpan={curs.length * 5}>{reasonText[d.reason] || "No snapshot available"}</td>
+                      <td style={td}><Pill tone={d.reason === "missed" || d.reason === "failed" ? "red" : "slate"}>{d.reason === "pending" ? "Pending" : "None"}</Pill></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </TableScrollShell>
+            {pg.total > 0 && <TableFooter firstIdx={pg.firstIdx} lastIdx={pg.lastIdx} total={pg.total} page={pg.page} totalPages={pg.totalPages} onPageChange={pg.setPage} pageSize={pg.pageSize} onPageSizeChange={pg.setPageSize} />}
+          </div>
+          {data.months.length > 0 && (
+            <div className="gk-table-wrap" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 6 }}>
+              <div className="gk-dr-subhead"><NavIcon name="trendUp" size={14} /> Monthly comparison — last stored snapshot of each month</div>
+              <TableScrollShell><table className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead><tr><th style={th} scope="col">Month</th><th style={th} scope="col">Last snapshot</th>{curs.map(([c]) => <React.Fragment key={c}><th style={{ ...th, textAlign: "right" }} scope="col">Balance Sheet ({c})</th><th style={{ ...th, textAlign: "right" }} scope="col">vs previous month ({c})</th></React.Fragment>)}</tr></thead>
+                <tbody>{data.months.map((m) => <tr key={m.month}><td style={td}>{m.month}</td><td style={td}>{m.last.businessDate}</td>{curs.map(([c, k]) => <React.Fragment key={c}><td style={{ ...td, textAlign: "right" }}><DrAmount v={m.last[k].balanceSheet} cur={c} strong /></td><td style={{ ...td, textAlign: "right" }}><DrTrend v={m.change ? m.change[k] : null} cur={c} /></td></React.Fragment>)}</tr>)}</tbody>
+              </table></TableScrollShell>
+            </div>
+          )}
+        </>
+      )}
+      {openId && <DrSnapshotDetail id={openId} call={call} dl={dl} preview={preview} canExport={status && status.canExport} onClose={() => setOpenId(null)} />}
+    </div>
+  );
+}
+
+const DR_MOVE_LABELS = [["cashIn", "Cash In"], ["cashOut", "Cash Out"], ["transferIn", "Transfers In"], ["transferOut", "Transfers Out"], ["exchangeIn", "Exchange In"], ["exchangeOut", "Exchange Out"]];
+function DrCashTab({ call, dl, preview, status }) {
+  const today = status && status.today;
+  const [preset, setPreset] = useState("last30");
+  const [range, setRange] = useState(() => drPresetRange("last30", today));
+  useEffect(() => { if (today && preset !== "custom") setRange(drPresetRange(preset, today)); }, [today]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [accounts, setAccounts] = useState([]);
+  const [accountId, setAccountId] = useState("");
+  const [currency, setCurrency] = useState("");
+  const [type, setType] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(true);
+  useEffect(() => { call("/api/daily-reports/cash-accounts").then((d) => setAccounts(d.accounts)).catch(() => {}); }, [call]);
+  const params = { from: range.from, to: range.to, accountId: accountId || undefined, currency: currency || undefined, type: type || undefined };
+  const pkey = JSON.stringify(params);
+  useEffect(() => { setPage(1); }, [pkey]);
+  useEffect(() => {
+    setLoading(true); setErr("");
+    call("/api/daily-reports/cash-history" + qs({ ...params, page, pageSize })).then(setData).catch((e) => setErr(e.message)).finally(() => setLoading(false));
+  }, [pkey, page, pageSize]); // eslint-disable-line react-hooks/exhaustive-deps
+  const reset = () => { setPreset("last30"); setRange(drPresetRange("last30", today)); setAccountId(""); setCurrency(""); setType(""); };
+  const shownAccounts = accounts.filter((a) => !currency || a.currency === currency);
+  const totalPages = data ? Math.max(1, Math.ceil(data.total / pageSize)) : 1;
+  return (
+    <div>
+      <div className="gk-filterbar gk-dr-filters">
+        <DrDateFilter preset={preset} setPreset={setPreset} range={range} setRange={setRange} today={today} />
+        <Field label="Currency" width={110}><Select aria-label="Currency" value={currency} onChange={(e) => { setCurrency(e.target.value); setAccountId(""); }}><option value="">All</option><option value="USD">USD</option><option value="SLSH">SLSH</option></Select></Field>
+        <Field label="Cash Account" width={190}><Select aria-label="Cash Account" value={accountId} onChange={(e) => setAccountId(e.target.value)}><option value="">All cash accounts</option>{shownAccounts.map((a) => <option key={a.id} value={a.id}>{a.name} ({a.currency}){a.status !== "active" ? " — deactivated" : ""}</option>)}</Select></Field>
+        <Field label="Movement type" width={150}><Select aria-label="Movement type" value={type} onChange={(e) => setType(e.target.value)}><option value="">All</option>{DR_MOVE_LABELS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</Select></Field>
+        <Btn tone="ghost" size="sm" icon="undo" onClick={reset}>Reset Filters</Btn>
+        <DrExportButtons canExport={status && status.canExport} base="/api/daily-reports/cash-history/export" params={params} name={`cash-account-history-${range.from}-to-${range.to}`} dl={dl} preview={preview} />
+      </div>
+      {err ? <div className="gk-dr-error" role="alert"><NavIcon name="circleAlert" size={15} /> {err}</div> : loading && !data ? <Spinner /> : (
+        <>
+          {data.discrepancies > 0 && (
+            <div className="gk-dr-warn" role="alert" data-reconcile="difference"><NavIcon name="triangleAlert" size={15} />
+              <span><b>Reconciliation difference.</b> For {data.discrepancies} cash account(s) the stored balance does not equal the sum of its ledger entries. Nothing was changed — check the account's movements (details below).</span>
+            </div>
+          )}
+          {data.summaries.length === 0 ? <Empty text="No cash accounts match these filters." /> : (
+            <div className="gk-table-wrap" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, marginBottom: 14 }}>
+              <div className="gk-dr-subhead"><NavIcon name="wallet" size={14} /> Period summary · {data.from} → {data.to}</div>
+              <TableScrollShell><table className="gk-table gk-dr-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead><tr><th style={th} scope="col">Account</th><th style={th} scope="col">Currency</th><th style={{ ...th, textAlign: "right" }} scope="col">Opening Balance</th>
+                  {DR_MOVE_LABELS.map(([k, l]) => <th key={k} style={{ ...th, textAlign: "right" }} scope="col">{l}</th>)}
+                  <th style={{ ...th, textAlign: "right" }} scope="col">Closing Balance</th><th style={th} scope="col">Reconciliation</th></tr></thead>
+                <tbody>{data.summaries.map((s) => (
+                  <tr key={s.accountId}>
+                    <td style={{ ...td, fontWeight: 600 }}>{s.account}{s.status !== "active" && <span className="gk-dr-small"> · deactivated</span>}</td><td style={td}>{s.currency}</td>
+                    <td style={{ ...td, textAlign: "right" }}><DrAmount v={s.openingBalance} cur={s.currency} /></td>
+                    {DR_MOVE_LABELS.map(([k]) => <td key={k} style={{ ...td, textAlign: "right" }}><DrAmount v={s[k]} cur={s.currency} /></td>)}
+                    <td style={{ ...td, textAlign: "right" }}><DrAmount v={s.closingBalance} cur={s.currency} strong /></td>
+                    <td style={td}>{!s.reconciliation.checked ? <span className="gk-dr-small">Checked only for periods ending today</span>
+                      : s.reconciliation.ok ? <Pill tone="green">Reconciled</Pill>
+                      : <span><Pill tone="red">Difference {fmtMoney(s.reconciliation.difference, s.currency)}</Pill><div className="gk-dr-small">Stored {fmtMoney(s.reconciliation.storedBalance, s.currency)} · ledger {fmtMoney(s.reconciliation.ledgerBalance, s.currency)}</div></span>}</td>
+                  </tr>
+                ))}</tbody>
+              </table></TableScrollShell>
+            </div>
+          )}
+          <div className="gk-table-wrap" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 6 }}>
+            <div className="gk-dr-subhead"><NavIcon name="calendar" size={14} /> Daily history (days with movements)</div>
+            {data.total === 0 ? <Empty text="No cash movements in this period." /> : (
+              <TableScrollShell><table className="gk-table gk-dr-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead><tr><th style={th} scope="col">Date</th><th style={th} scope="col">Account</th><th style={th} scope="col">Currency</th><th style={{ ...th, textAlign: "right" }} scope="col">Opening Balance</th><th style={{ ...th, textAlign: "right" }} scope="col">Cash In</th><th style={{ ...th, textAlign: "right" }} scope="col">Cash Out</th><th style={{ ...th, textAlign: "right" }} scope="col">Closing Balance</th><th style={th} scope="col">Details</th></tr></thead>
+                <tbody>{data.rows.map((r) => (
+                  <tr key={`${r.date}-${r.accountId}`}>
+                    <td style={{ ...td, whiteSpace: "nowrap", fontWeight: 600 }}>{r.date}</td><td style={td}>{r.account}</td><td style={td}>{r.currency}</td>
+                    <td style={{ ...td, textAlign: "right" }}><DrAmount v={r.openingBalance} cur={r.currency} /></td>
+                    <td style={{ ...td, textAlign: "right" }}><DrAmount v={r.cashInTotal} cur={r.currency} /></td>
+                    <td style={{ ...td, textAlign: "right" }}><DrAmount v={r.cashOutTotal} cur={r.currency} /></td>
+                    <td style={{ ...td, textAlign: "right" }}><DrAmount v={r.closingBalance} cur={r.currency} strong /></td>
+                    <td style={td}><span className="gk-dr-small">{DR_MOVE_LABELS.filter(([k]) => r[k]).map(([k, l]) => `${l} ${fmtMoney(r[k], r.currency)}`).join(" · ")}</span></td>
+                  </tr>
+                ))}</tbody>
+              </table></TableScrollShell>
+            )}
+            {data.total > 0 && <TableFooter firstIdx={(page - 1) * pageSize + 1} lastIdx={Math.min(data.total, page * pageSize)} total={data.total} page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={(n) => { setPageSize(n); setPage(1); }} />}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+const DR_TIMEZONES = ["Africa/Mogadishu", "Africa/Nairobi", "Africa/Addis_Ababa", "Africa/Djibouti", "Asia/Dubai", "Asia/Riyadh", "Europe/London", "Europe/Istanbul", "America/New_York", "UTC"];
+function DrSettingsModal({ call, notify, onClose, onChanged }) {
+  const [data, setData] = useState(null);
+  const [form, setForm] = useState(null);
+  const [runs, setRuns] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const [confirmRun, setConfirmRun] = useState(false);
+  const load = useCallback(() => {
+    call("/api/daily-reports/settings").then((d) => { setData(d); setForm({ enabled: d.settings.enabled, runTime: d.settings.runTime, timezone: d.settings.timezone }); }).catch((e) => notify(e.message, true));
+    call("/api/daily-reports/runs?limit=30").then((d) => setRuns(d.runs)).catch(() => {});
+  }, [call, notify]);
+  useEffect(() => { load(); }, [load]);
+  const dirty = data && form && (form.enabled !== data.settings.enabled || form.runTime !== data.settings.runTime || form.timezone !== data.settings.timezone);
+  async function save() {
+    setBusy(true);
+    try { await call("/api/daily-reports/settings", { method: "PATCH", body: form }); notify("Snapshot settings saved."); load(); onChanged(); } catch (e) { notify(e.message, true); } finally { setBusy(false); }
+  }
+  async function runNow() {
+    setBusy(true);
+    try { const r = await call("/api/daily-reports/snapshots/run", { method: "POST", body: { confirm: true } }); notify(`Manual snapshot saved for ${r.snapshot.businessDate}.`); setConfirmRun(false); load(); onChanged(); } catch (e) { notify(e.message, true); } finally { setBusy(false); }
+  }
+  async function retry(r) {
+    setBusy(true);
+    try { await call(`/api/daily-reports/runs/${r.id}/retry`, { method: "POST" }); notify("Snapshot saved."); load(); onChanged(); } catch (e) { notify(e.message, true); } finally { setBusy(false); }
+  }
+  const st = data && data.status;
+  return (
+    <Modal title="Automatic Snapshot Settings" subtitle="Applies to this company only" onClose={onClose} wide>
+      {!form ? <Spinner /> : (
+        <div className="gk-dr-settings">
+          <div className="gk-dr-settings-grid">
+            <label className="gk-dr-toggle"><input type="checkbox" checked={form.enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} /> Take an automatic snapshot every day</label>
+            <Field label="Snapshot time (24-hour)" width={170}><Input type="time" aria-label="Snapshot time" value={form.runTime} onChange={(e) => setForm({ ...form, runTime: e.target.value })} /></Field>
+            <Field label="Company time zone" width={220}>
+              <Input aria-label="Company time zone" list="gk-dr-tz" value={form.timezone} onChange={(e) => setForm({ ...form, timezone: e.target.value })} />
+              <datalist id="gk-dr-tz">{DR_TIMEZONES.map((z) => <option key={z} value={z} />)}</datalist>
+            </Field>
+            <Btn tone="primary" size="sm" icon="save" disabled={!dirty || busy} onClick={save}>Save settings</Btn>
+          </div>
+          {st && <div className="gk-dr-kvgrid" style={{ marginTop: 12 }}>
+            <div className="gk-dr-kv"><span>Current job status</span><b>{(DR_STATE[st.state] || DR_STATE.pending)[2]}</b></div>
+            <div className="gk-dr-kv"><span>Last successful</span><b>{st.lastSuccess ? `${st.lastSuccess.businessDate} · ${drFmtWhen(st.lastSuccess.capturedAt, st.timezone)}` : "None yet"}</b></div>
+            <div className="gk-dr-kv"><span>Next scheduled</span><b>{st.nextRunAt ? drFmtWhen(st.nextRunAt, st.timezone) : "Disabled"}</b></div>
+            <div className="gk-dr-kv"><span>Last failed / missed</span><b>{st.lastFailure ? `${st.lastFailure.businessDate} · ${st.lastFailure.status}` : "None"}</b></div>
+            {st.todayError && <div className="gk-dr-kv"><span>Today's error</span><b style={{ color: C.red }}>{st.todayError}</b></div>}
+          </div>}
+          <div className="gk-dr-manual">
+            <div><b>Manual snapshot</b><div className="gk-dr-small">Stores today's position now as a separate <i>manual</i> snapshot (one per day). The automatic end-of-day snapshot still runs at its time. Nothing in the books changes.</div></div>
+            {!confirmRun ? <Btn tone="subtle" size="sm" icon="archive" disabled={busy} onClick={() => setConfirmRun(true)}>Run manual snapshot</Btn> : (
+              <span style={{ display: "inline-flex", gap: 6 }}><Btn tone="primary" size="sm" disabled={busy} onClick={runNow}>Confirm — save snapshot now</Btn><Btn tone="ghost" size="sm" onClick={() => setConfirmRun(false)}>Cancel</Btn></span>
+            )}
+          </div>
+          <div className="gk-dr-subhead"><NavIcon name="history" size={14} /> Snapshot execution history</div>
+          {runs.length === 0 ? <Empty text="No snapshot has run yet." /> : (
+            <TableScrollShell><table className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead><tr><th style={th} scope="col">Business date</th><th style={th} scope="col">Started</th><th style={th} scope="col">Source</th><th style={th} scope="col">Trigger</th><th style={th} scope="col">Outcome</th><th style={th} scope="col">By</th><th style={th} scope="col">Details</th><th style={th} scope="col"> </th></tr></thead>
+              <tbody>{runs.map((r) => (
+                <tr key={r.id} data-run-status={r.status}>
+                  <td style={td}>{r.business_date}</td><td style={td}>{drFmtWhen(r.started_at, st && st.timezone)}</td><td style={td}>{r.source}</td><td style={td}>{r.trigger_type}</td>
+                  <td style={td}><Pill tone={r.status === "succeeded" ? "green" : r.status === "failed" || r.status === "missed" ? "red" : "slate"}>{r.status}</Pill></td>
+                  <td style={td}>{r.actor_name}</td><td style={td}><span className="gk-dr-small">{r.error || ""}</span></td>
+                  <td style={td}>{(r.status === "failed" || r.status === "missed") && st && r.business_date === st.today && <Btn tone="ghost" size="sm" icon="undo" disabled={busy} onClick={() => retry(r)}>Retry</Btn>}</td>
+                </tr>
+              ))}</tbody>
+            </table></TableScrollShell>
+          )}
+        </div>
+      )}
+    </Modal>
+  );
+}
+
 function ReportsModule({ call, dl, notify, perm, hasRaw }) {
   const [tab, setTab] = useState("exchange");
   const tabs = [["exchange", "Exchange summary"], ["quotations", "Quotation report"], ["position", "Currency position"], ["staff", "Staff activity"], ["audit", "Audit log"]];

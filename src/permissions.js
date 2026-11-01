@@ -67,6 +67,8 @@ const ACTION_LABELS = {
   deletePayment: "Delete Payment",
   // COMPANY EXPENSES round.
   cancel: "Cancel / Reverse", manageCategories: "Manage Categories",
+  // DAILY REPORTS round.
+  manage: "Manage Snapshots (settings, manual run, retry)",
 };
 
 const MODULES = {
@@ -144,6 +146,14 @@ const MODULES = {
   // other role only when a Super Admin grants them. "view" also covers the
   // expense dashboard and reports; "export" gates CSV/PDF/Excel downloads.
   expenses: { label: "Company Expenses", actions: ["view", "create", "update", "cancel", "manageCategories", "export"] },
+  // DAILY REPORTS round: daily Balance Sheet / Cash Account snapshots and
+  // their history. Granular-only and granted to NO role by default (they
+  // show company-wide balances, like cash.*): Super Admin has them through
+  // ALL_ACCESS; anyone else only when a Super Admin grants them.
+  //   view   — Daily Reports page, snapshot history, details, Cash Account history
+  //   export — PDF / Excel downloads and printing of those reports
+  //   manage — schedule settings, manual snapshot, retry of a failed run
+  dailyReports: { label: "Daily Reports", actions: ["view", "export", "manage"] },
 };
 
 function permKey(moduleKey, action) {

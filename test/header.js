@@ -40,7 +40,7 @@ async function waitUp() {
 const PAGES = [
   ["Dashboard", "Dashboard"], ["USD Accounts", "USD Accounts"], ["SLSH Accounts", "SLSH Accounts"],
   ["USD Payment", null], ["Money Exchange", "Money Exchange"],
-  ["USD Transactions", null], ["Company Expenses", "Company Expenses"], ["Reports", "Reports"],
+  ["USD Transactions", null], ["Company Expenses", "Company Expenses"], ["Reports Overview", "Reports"],
   ["Users", null], ["Roles", null], ["General", null], ["Deactivated Accounts", null],
 ];
 

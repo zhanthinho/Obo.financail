@@ -45,7 +45,8 @@
     "test:mark-paid": "node test/mark-paid.js",
     "test:reconciliation": "node test/reconciliation.js",
     "test:account-view": "node test/account-view.js",
-    "test:templates": "node test/templates.js"
+    "test:templates": "node test/templates.js",
+    "test:daily-reports": "node test/daily-reports.js"
   },
   "dependencies": {
     "exceljs": "^4.4.0",

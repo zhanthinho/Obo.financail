@@ -36,6 +36,7 @@ function tryBootstrap() {
     ready = true;
     lastBootError = null;
     require("./backup").startScheduler();
+    require("./daily-snapshots").startScheduler();
     return true;
   } catch (e) {
     lastBootError = e;
@@ -92,6 +93,7 @@ require("./routes/backups").register(router);
 require("./routes/dataReset").register(router);
 require("./routes/loans").register(router);
 require("./routes/expenses").register(router);
+require("./routes/dailyReports").register(router);
 require("./routes/platform").register(router);
 
 // MYSQL round: the health check makes a real round-trip to MySQL (bounded by

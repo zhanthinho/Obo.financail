@@ -259,6 +259,20 @@ restorable with `node scripts/backup.js restore --company CMP-000N --name … --
 - workspace switching, including a browser check that no data from the previous company remains on screen
 - database-level `company_id` guards and existing financial workflows
 
+## Daily Reports (automatic daily snapshots)
+
+**Reports → Daily Reports / Balance Sheet Report / Cash Account Report / Financial History.**
+
+- Every day, at the time set in **Snapshot Settings**, each company's Balance Sheet position is stored as a snapshot. The default is 23:59 in the `Africa/Mogadishu` time zone. The figures come from the same calculation as the live Balance Sheet (`src/balance-sheet.js`): Debt + Cash Account − Credit, with USD and SLSH kept separate. Each snapshot also stores the Cash Account rate in force and the combined total made with that rate.
+- A snapshot is never changed afterwards. New transactions and rate changes do not touch stored snapshots.
+- The database allows one automatic and one manual snapshot per company per day.
+- A snapshot taken more than 10 minutes after its scheduled time is marked **late**.
+- A day whose time passed while the server was off is recorded as **missed**. It is never filled in later, because a snapshot is the position at the moment it is taken.
+- A failed run is retried automatically 3 times that day. After that, an administrator can **Retry** it, but only on the same day.
+- **Offline use:** the scheduler runs only while the FINMAN server is running. Snapshots are stored in the same local MySQL database. Leave the server running at the snapshot time, or set an earlier time in Snapshot Settings.
+- **Permissions:** `dailyReports.view`, `dailyReports.export` and `dailyReports.manage` (settings, manual snapshot, retry). Super Admin has all three. Other roles get them only when a Super Admin grants them.
+- **Tests:** `npm run test:daily-reports`.
+
 ## API reference
 
 All endpoints except `/api/health` and `/api/auth/login` require
