@@ -167,6 +167,13 @@ function existingTables(raw, prefix) {
   return new Set(raw("SELECT TABLE_NAME AS n FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE()").map((r) => r.n).filter((n) => n.startsWith(prefix)));
 }
 
+// SAME NAME, DIFFERENT CURRENCY round: account names used to be unique
+// across the whole company (UNIQUE(name)); now the same name may exist once
+// per currency (uq_clients_name_currency). The old index is dropped once
+// the new one is in place. No row is changed — every existing account
+// already satisfied the stricter old rule.
+const RETIRED_TENANT_INDEXES = { clients: { uq_clients_name: "uq_clients_name_currency" } };
+
 // "col IN ('a','b',...)" -> { col, values } (null for any other expression).
 function parseInCheck(expr) {
   const m = /^\(*[`"]?(\w+)[`"]?\s+in\s*\((.*)\)\)*$/i.exec(String(expr).trim());
@@ -232,6 +239,19 @@ function ensureScope(raw, { kind, companyId }) {
   for (const t of tablesFor(kind)) {
     if (!have.has(prefix + t.name)) continue;
     for (const name of widenEnumChecks(raw, prefix + t.name, t.checks)) altered.push(`${prefix + t.name}~${name}`);
+  }
+  // Indexes an older schema had and the current one replaces — dropped only
+  // AFTER their replacement exists (added just above), never before.
+  for (const [table, names] of Object.entries(kind === "tenant" ? RETIRED_TENANT_INDEXES : {})) {
+    const full = prefix + table;
+    if (!have.has(full)) continue;
+    const live = new Set(raw("SELECT DISTINCT INDEX_NAME AS n FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?", [full]).map((r) => r.n));
+    for (const [oldName, replacement] of Object.entries(names)) {
+      if (live.has(oldName) && live.has(replacement)) {
+        raw(`ALTER TABLE ${q(full)} DROP INDEX ${q(oldName)}`);
+        altered.push(`${full}-${oldName}`);
+      }
+    }
   }
   if (kind === "control") {
     for (const t of EXTRA_CONTROL_TABLES) {

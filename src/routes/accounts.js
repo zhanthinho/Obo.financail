@@ -160,6 +160,22 @@ function withLedgerTotals(rows, allowedCurrencyList, requestedCurrency) {
   return { accounts, summary: byCur };
 }
 
+// SAME NAME, DIFFERENT CURRENCY round — one account name may exist once per
+// currency in a company (a USD and an SLSH account for the same customer).
+// Names are compared trimmed and case-insensitively, so "Ahmed Hassan" and
+// "AHMED HASSAN " count as the same name. A permanently deleted account
+// still holds its name (its history keeps pointing at it). Each company has its own tables, so this never looks at another
+// company. The database enforces the same rule (uq_clients_name_currency).
+function duplicateNameIn(name, currency, exceptId) {
+  const p = [String(name).trim().toLowerCase(), currency];
+  let sql = "SELECT id, account_number, name, currency, deleted_at FROM clients WHERE LOWER(TRIM(name)) = ? AND currency = ?";
+  if (exceptId) { sql += " AND id <> ?"; p.push(exceptId); }
+  return get(sql + " LIMIT 1", p) || null;
+}
+function duplicateNameMessage(dup, currency) {
+  return `A ${currency} account named "${dup.name}" already exists (${dup.account_number || "no account #"}${dup.deleted_at ? ", deleted" : ""}). The same name can be used once in each currency.`;
+}
+
 const ACCOUNT_LIST_PERMS = ["accounts.view", "exchange.create", "transfers.create", "payments.create", "quotations.create", "quotations.update"];
 
 function register(router) {
@@ -847,7 +863,7 @@ function register(router) {
     const currency = body.currency === "SLSH" ? "SLSH" : "USD";
     if (!requireCurrencyAccess(user, res, currency)) return;
     if (!name || !name.trim()) return badRequest(res, "Account name is required.");
-    if (get("SELECT id FROM clients WHERE name = ?", [name])) return badRequest(res, "An account with this name already exists.");
+    { const dup = duplicateNameIn(name, currency); if (dup) return badRequest(res, duplicateNameMessage(dup, currency)); }
     // NEGATIVE OPENING BALANCE round: a negative opening balance is now
     // allowed — it represents a customer/company that already owed money
     // (debt) before being entered into the system, exactly the same "a
@@ -906,7 +922,9 @@ function register(router) {
     const rawName = body.name !== undefined ? body.name : existing.name;
     const name = accountType === "company" ? (rawName || "").trim() : formatPersonName(rawName);
     if (!name || !name.trim()) return badRequest(res, "Account name is required.");
-    if (name !== existing.name && get("SELECT id FROM clients WHERE name = ?", [name])) return badRequest(res, "An account with this name already exists.");
+    // The account's currency never changes on edit, so the duplicate check
+    // is against the same currency, excluding this account itself.
+    if (name !== existing.name) { const dup = duplicateNameIn(name, existing.currency, existing.id); if (dup) return badRequest(res, duplicateNameMessage(dup, existing.currency)); }
     const contact = body.contact !== undefined ? body.contact : existing.contact;
     const email = body.email !== undefined ? body.email : existing.email;
     const idNumber = body.idNumber !== undefined ? body.idNumber : existing.id_number;

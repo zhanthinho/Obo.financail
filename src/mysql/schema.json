@@ -1862,13 +1862,14 @@
      "expression": null
     },
     {
-     "name": null,
+     "name": "uq_clients_name_currency",
      "unique": true,
      "columns": [
-      "name"
+      "name",
+      "currency"
      ],
      "where": null,
-     "expression": null
+     "expression": "CONCAT(name, '|', CAST(currency AS CHAR(4)))"
     }
    ]
   },

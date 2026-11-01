@@ -227,9 +227,15 @@ function findOrCreateClient(name, contact, address, currencyHint) {
   // that misses do we try the uppercased/person-formatted form, which is
   // how an existing customer account (already stored uppercase) is found.
   const formatted = formatPersonName(raw);
-  let existing = get("SELECT id FROM clients WHERE name = ?", [raw]);
+  // SAME NAME, DIFFERENT CURRENCY round: a name can now exist once per
+  // currency, so the account in the transaction's own currency is
+  // preferred; another currency's account is only used when it is the only
+  // one with that name (the previous behaviour, kept unchanged).
+  const cur = currencyHint === "SLSH" ? "SLSH" : currencyHint === "USD" ? "USD" : null;
+  const byName = (n) => get("SELECT id FROM clients WHERE name = ? ORDER BY CASE WHEN currency = ? THEN 0 ELSE 1 END, created_at ASC LIMIT 1", [n, cur || ""]);
+  let existing = byName(raw);
   if (!existing && formatted !== raw) {
-    existing = get("SELECT id FROM clients WHERE name = ?", [formatted]);
+    existing = byName(formatted);
   }
   if (existing) {
     if (contact || address) {

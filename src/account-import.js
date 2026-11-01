@@ -128,7 +128,8 @@ function classifyRows(rows) {
   const existingByName = new Map();
   for (const c of all("SELECT id, account_number, name, account_type, currency, balance_usd, balance_slsh, status FROM clients WHERE deleted_at IS NULL", [])) {
     if (c.account_number) existingByNumber.set(c.account_number.trim().toLowerCase(), c);
-    existingByName.set(c.name.trim().toLowerCase(), c);
+    // Same name is allowed once per currency, so names match per currency.
+    existingByName.set(`${c.name.trim().toLowerCase()}|${c.currency}`, c);
   }
   const seenNumbersInFile = new Map(); // norm number -> first rowNumber
   const seenNamesInFile = new Map(); // norm name -> first rowNumber
@@ -137,7 +138,7 @@ function classifyRows(rows) {
     if (row.errors.length) { row.status = "invalid"; continue; }
 
     const numNorm = row.accountNumber.trim().toLowerCase();
-    const nameNorm = row.name.trim().toLowerCase();
+    const nameNorm = `${row.name.trim().toLowerCase()}|${row.currency}`;
 
     // In-file duplicates (two rows describing the same account in one file)
     // are always an error — silently picking one would be a surprise.

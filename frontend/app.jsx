@@ -15952,11 +15952,11 @@ function CashTransferFormModal({ accounts, onClose, onSubmit }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <Field label="From"><Select value={fromId} onChange={(e) => { setFromId(e.target.value); setToId(""); }}>
           <option value="">Select source account…</option>
-          {accounts.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)} — {fmtMoney(a.balance, a.currency)}</option>)}
+          {accounts.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)}{a.accountNumber ? ` · ${a.accountNumber}` : ""} — {fmtMoney(a.balance, a.currency)}</option>)}
         </Select></Field>
         <Field label="To"><Select value={toId} onChange={(e) => setToId(e.target.value)} disabled={!fromId}>
           <option value="">Select destination account…</option>
-          {sameCurrencyTargets.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)} — {fmtMoney(a.balance, a.currency)}</option>)}
+          {sameCurrencyTargets.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)}{a.accountNumber ? ` · ${a.accountNumber}` : ""} — {fmtMoney(a.balance, a.currency)}</option>)}
         </Select></Field>
         <Field label={`Amount${fromAcc ? ` (${fromAcc.currency})` : ""}`}><MoneyInput value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
         <Field label="Date"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
@@ -16011,11 +16011,11 @@ function CashExchangeFormModal({ accounts, rate, onClose, onSubmit }) {
         </div>
         <Field label="From (USD or SLSH account)"><Select value={fromId} onChange={(e) => { setFromId(e.target.value); setToId(""); }}>
           <option value="">Select source account…</option>
-          {accounts.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)} ({a.currency}) — {fmtMoney(a.balance, a.currency)}</option>)}
+          {accounts.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)}{a.accountNumber ? ` · ${a.accountNumber}` : ""} ({a.currency}) — {fmtMoney(a.balance, a.currency)}</option>)}
         </Select></Field>
         <Field label="To (opposite currency account)"><Select value={toId} onChange={(e) => setToId(e.target.value)} disabled={!fromId}>
           <option value="">Select destination account…</option>
-          {oppositeTargets.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)} ({a.currency}) — {fmtMoney(a.balance, a.currency)}</option>)}
+          {oppositeTargets.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)}{a.accountNumber ? ` · ${a.accountNumber}` : ""} ({a.currency}) — {fmtMoney(a.balance, a.currency)}</option>)}
         </Select></Field>
         <Field label={`Amount Given${fromAcc ? ` (${fromAcc.currency})` : ""}`}><MoneyInput value={amountGiven} onChange={(e) => setAmountGiven(e.target.value)} /></Field>
         {estimatedReceived != null && <div style={{ fontSize: 12.5, color: C.slate }}>Estimated received at {rateUsed !== "" ? "the rate above" : "current rate"}: <span style={{ fontFamily: FONT_MONO, fontWeight: 700, color: C.ink }}>{fmtMoney(estimatedReceived, toAcc.currency)}</span></div>}
@@ -16054,7 +16054,7 @@ function LoanFormModal({ call, accounts, onClose, onSubmit }) {
         <Field label="Customer"><AccountPicker call={call} accountId={clientId} accountName={clientName} onChange={(id, name) => { setClientId(id); setClientName(name); }} /></Field>
         <Field label="Cash Account (source of funds)"><Select value={cashAccountId} onChange={(e) => setCashAccountId(e.target.value)}>
           <option value="">Select cash account…</option>
-          {accounts.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)} ({a.currency}) — {fmtMoney(a.balance, a.currency)}</option>)}
+          {accounts.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)}{a.accountNumber ? ` · ${a.accountNumber}` : ""} ({a.currency}) — {fmtMoney(a.balance, a.currency)}</option>)}
         </Select></Field>
         <Field label={`Loan Amount${cashAccount ? ` (${cashAccount.currency})` : ""}`}><MoneyInput value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
         <Field label="Date"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
@@ -16090,7 +16090,7 @@ function LoanRepayModal({ loan, accounts, onClose, onSubmit }) {
         <div style={{ fontSize: 12.5, color: C.slate }}>Outstanding: <span style={{ fontFamily: FONT_MONO, fontWeight: 700, color: C.ink }}>{fmtMoney(loan.outstandingAmount, loan.currency)}</span></div>
         <Field label="Credit to Cash Account"><Select value={cashAccountId} onChange={(e) => setCashAccountId(e.target.value)}>
           <option value="">Select cash account…</option>
-          {eligible.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)} ({a.currency})</option>)}
+          {eligible.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)}{a.accountNumber ? ` · ${a.accountNumber}` : ""} ({a.currency})</option>)}
         </Select></Field>
         <Field label={`Amount (${loan.currency})`}><MoneyInput value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
         <Field label="Date"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
@@ -16273,7 +16273,7 @@ function ExpensesModule({ call, dl, notify, hasRaw, token }) {
       <Field label="Paid From" width={160}>
         <Select value={cashAccountId} onChange={(e) => setCashAccountId(e.target.value)}>
           <option value="all">All accounts</option>
-          {accountsFor(currency).map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)} ({a.currency})</option>)}
+          {accountsFor(currency).map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)}{a.accountNumber ? ` · ${a.accountNumber}` : ""} ({a.currency})</option>)}
         </Select>
       </Field>
       {/* The expense list's search (it filters the Expenses table below). */}
@@ -16559,7 +16559,7 @@ function ExpenseFormModal({ call, notify, meta, expense, onClose, onSaved }) {
             <Field label="Paid From Account *">
               <Select value={f.cashAccountId} onChange={(e) => set("cashAccountId", e.target.value)} aria-invalid={!!errors.cashAccountId}>
                 <option value="">{accounts.length ? "Choose a Cash Account…" : `No active ${f.currency} Cash Account`}</option>
-                {accounts.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)} — {a.currency}{a.balance !== undefined ? ` (${fmtMoney(a.balance, a.currency)})` : ""}</option>)}
+                {accounts.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)}{a.accountNumber ? ` · ${a.accountNumber}` : ""} — {a.currency}{a.balance !== undefined ? ` (${fmtMoney(a.balance, a.currency)})` : ""}</option>)}
               </Select>{fieldErr("cashAccountId")}
               {chosen && chosen.balance !== undefined && Number.isFinite(amountNum) && amountNum > 0 && !editing && (
                 <div style={{ fontSize: 11.5, color: chosen.balance - amountNum < 0 ? C.amber : C.slate, marginTop: 4 }}>
