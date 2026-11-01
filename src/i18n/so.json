@@ -2396,5 +2396,20 @@
  "All debits posted to this account (ledger)": "Dhammaan debitka laga jaray akoonkan (ledger)",
  "Reload the latest account data": "Soo celi xogta akoonnada ee ugu dambeysay",
  "Export the matching accounts to Excel": "U dhoofi akoonnada ku habboon Excel",
- "Credits − Debits differ from the stored balance — check this account's ledger": "Kiredit − Debit kama siman haraagga la kaydiyay — eeg ledger-ka akoonkan"
+ "Credits − Debits differ from the stored balance — check this account's ledger": "Kiredit − Debit kama siman haraagga la kaydiyay — eeg ledger-ka akoonkan",
+ "Review, search, and reconcile USD account transactions in one place.": "Dib u eeg, raadi, oo isu-dheelli tir dhaqdhaqaaqa akoonnada USD hal meel.",
+ "Review, search, and reconcile SLSH account transactions in one place.": "Dib u eeg, raadi, oo isu-dheelli tir dhaqdhaqaaqa akoonnada SLSH hal meel.",
+ "Date from": "Taariikhda laga bilaabo",
+ "Date to": "Taariikhda ilaa",
+ "Clear filters": "Tirtir shaandhaynta",
+ "No transactions found": "Wax dhaqdhaqaaq ah lama helin",
+ "Try changing your search or filters.": "Isku day inaad beddesho raadinta ama shaandhaynta.",
+ "money exchange records": "diiwaannada sarrifka",
+ "between accounts": "u dhexeeya akoonnada",
+ "charged to accounts": "lagu dallacay akoonnada",
+ "received": "la helay",
+ "Reload the latest transactions": "Soo celi dhaqdhaqaaqii ugu dambeeyay",
+ "Export the matching transactions to Excel": "U dhoofi dhaqdhaqaaqa ku habboon Excel",
+ "Name or account #": "Magac ama lambarka akoonka",
+ "Search reference, account, description...": "Raadi tixraac, akoon, sharraxaad..."
 }

@@ -808,6 +808,28 @@ const THEME_CSS = `
   .gk-av-status.is-off { background: #fee2e2; color: #b91c1c; }
   .gk-av-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   /* COMPACT SUMMARY CARDS round: five ~60px cards in one row on desktop. */
+  /* TRANSACTION HISTORY CONSOLE round (shares the Accounts console styles) */
+  .gk-th-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+  .gk-th-kpis .gk-acc-kpi { padding: 9px 11px; gap: 9px; }
+  .gk-th-kpis .gk-acc-kpi-icon { width: 34px; height: 34px; border-radius: 9px; }
+  .gk-th-kpis .gk-acc-kpi-value { font-size: 22px; }
+  .gk-th-kpis .gk-acc-kpi-label { white-space: normal; line-height: 1.25; }
+  .gk-th-credit { color: #15803d; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; }
+  .gk-th-debit { color: #dc2626; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; }
+  .gk-th-desc { display: block; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gk-th-clear { background: none; border: 0; padding: 2px; color: var(--c-slate); cursor: pointer; display: inline-flex; }
+  .gk-th-suggest { position: absolute; top: 100%; left: 0; z-index: 20; margin-top: 2px; width: 260px; max-height: 220px; overflow-y: auto; border: 1px solid var(--c-line); border-radius: 6px; background: var(--c-card); box-shadow: 0 4px 14px rgba(0,0,0,0.12); }
+  .gk-th-suggest button { display: block; width: 100%; text-align: left; padding: 7px 10px; border: 0; background: transparent; cursor: pointer; font: inherit; }
+  .gk-th-suggest button:hover, .gk-th-suggest button:focus-visible { background: color-mix(in srgb, var(--c-cyan) 10%, transparent); outline: none; }
+  .gk-th-suggest b { display: block; font-size: 12.5px; }
+  .gk-th-suggest span { font-size: 10.5px; color: var(--c-slate); }
+  .gk-th-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 40px 16px; color: var(--c-slate); text-align: center; font-size: 12.5px; }
+  .gk-th-empty b { color: var(--c-ink); font-size: 14px; }
+  .gk-th-scope { font-size: 11.5px; color: var(--c-slate); margin-top: 8px; line-height: 1.45; }
+  .gk-th-toolbar .gk-acc-field { flex: 0 1 150px; }
+  .gk-th-toolbar .gk-acc-field--search { flex: 1 1 240px; }
+  @media (max-width: 1300px) { .gk-th-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 640px) { .gk-th-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .gk-th-toolbar .gk-acc-field { flex: 1 1 100%; } }
   /* ACCOUNTS CONSOLE round */
   .gk-acc-tabs { display: flex; gap: 8px; margin: 2px 0 12px; flex-wrap: wrap; }
   .gk-acc-tab { display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--c-line); background: var(--c-card); color: var(--c-navy-deep); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
@@ -12219,6 +12241,13 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
   const [accountQuery, setAccountQuery] = useState(""); const [accountResults, setAccountResults] = useState([]);
   const [from, setFrom] = useState(""); const [to, setTo] = useState(""); const [search, setSearch] = useState("");
   const [rows, setRows] = useState([]); const [loading, setLoading] = useState(true);
+  // TRANSACTION HISTORY CONSOLE round: the server's summary of ALL matching
+  // entries (counts, Credits / Debits per currency, recorded exchange
+  // profit) — never a page subtotal — plus refresh / error state.
+  const [summary, setSummary] = useState(null);
+  const [loadError, setLoadError] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+  const reqSeq = useRef(0);
   const [detailEntry, setDetailEntry] = useState(null);
   // DEDICATED PAGE round (Transaction History entry point): mirrors
   // ExchangeModule's own early-return pattern. TransactionDetailModal owns
@@ -12260,8 +12289,10 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
     // backend already returns `notes` on every row (routes/history.js) — no
     // new data, just surfacing what was already there, matching the
     // Description column every other transaction table (Account View) shows.
-    { key: "description", label: "Description", render: (e) => e.notes || "—" },
-    { key: "amount", label: "Amount", render: (e) => <span style={{ fontFamily: FONT_MONO, whiteSpace: "nowrap", fontWeight: 700, color: historyAmountTone(e) }}>{historyAmountPrefix(e)}{e.amountSummary}</span> },
+    { key: "description", label: "Description", render: (e) => e.notes ? <span className="gk-th-desc" title={e.notes}>{e.notes}</span> : <span style={{ color: C.slate }}>—</span> },
+    { key: "credit", label: "Credit", sortField: "credit", render: (e) => e.credit != null ? <span className="gk-acc-num gk-th-credit"><NavIcon name="arrowDownLeft" size={12} />{fmtMoney(e.credit, e.entryCurrency || currency)}</span> : <span style={{ color: C.slate }}>—</span> },
+    { key: "debit", label: "Debit", sortField: "debit", render: (e) => e.debit != null ? <span className="gk-acc-num gk-th-debit"><NavIcon name="arrowUpRight" size={12} />{fmtMoney(e.debit, e.entryCurrency || currency)}</span> : <span style={{ color: C.slate }}>—</span> },
+    { key: "amount", label: "Amount", render: (e) => <span style={{ fontFamily: FONT_MONO, whiteSpace: "nowrap", fontWeight: 700, color: historyAmountTone(e) }}>{historyAmountPrefix(e)}{String(e.amountSummary || "").replace(/ -> /g, " → ")}</span> },
     // GLOBAL RATE & PROFIT round: an exchange's own rate, Cost Rate and
     // margin (as recorded — never re-valued at today's rate). Blank for
     // other record types.
@@ -12273,9 +12304,13 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
   ];
   const columns = resolveColumns(HISTORY_COLUMNS, layoutState.effective);
 
-  const reload = useCallback(() => {
-    call("/api/history" + qs(queryParams)).then((d) => setRows(d.entries)).catch((e) => notify(e.message, true)).finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  const reload = useCallback((isRefresh) => {
+    const seq = ++reqSeq.current;
+    if (isRefresh === true) setRefreshing(true);
+    return call("/api/history" + qs({ ...queryParams, withSummary: "1" }))
+      .then((d) => { if (seq !== reqSeq.current) return; setRows(d.entries); setSummary(d.summary || null); setLoadError(""); })
+      .catch((e) => { if (seq !== reqSeq.current) return; setLoadError(e.message); notify(e.message, true); })
+      .finally(() => { if (seq !== reqSeq.current) return; setLoading(false); setRefreshing(false); });
   }, [currency, type, accountType, status, staffId, accountFilter, from, to, search, call, notify]);
 
   useEffect(() => {
@@ -12315,53 +12350,11 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
   // type across whatever's currently filtered in — not a dollar total, which
   // would be meaningless across exchange/transfer/deposit rows that don't
   // share a common "amount" shape.
-  const typeCounts = useMemo(() => {
-    const c = { exchange: 0, transfer: 0, quotation: 0, ledger: 0, quotationPayments: 0, quotationCharges: 0 };
-    rows.forEach((e) => {
-      if (e.recordType in c) c[e.recordType]++;
-      // QUOTATION PAYMENT INTEGRATION round (spec section 18): break the
-      // lumped "quotation" count down into Payments vs. Charges specifically
-      // — the two numbers the spec's own example summary calls out by name
-      // — computed from sourceType, same source of truth as the Type badge.
-      if (e.recordType === "quotation" && e.sourceType === "quotation_paid") c.quotationPayments++;
-      if (e.recordType === "quotation" && e.sourceType === "quotation_charge" && e.ledgerType === "withdrawal") c.quotationCharges++;
-    });
-    return c;
-  }, [rows]);
-  // Balance footer: unlike the stat strip above (a type breakdown, since
-  // "amount" isn't directly comparable across an exchange's given/received
-  // pair vs. a single-amount transfer/deposit/withdrawal), a Total In/Out/
-  // Net figure IS meaningful here once every row is reduced to its effect
-  // on THIS SPECIFIC account's own balance (accountId, always in the
-  // page's own `currency` since every row is pre-filtered to it): an
-  // exchange debits `amountGiven` from it; a transfer (always shown from
-  // its source-account side) debits `amount`; a quotation leg or a plain
-  // ledger entry moves `amount` in the direction its own type/ledgerType
-  // says. Voided exchanges never actually moved money and are excluded.
-  const historyFooterTotals = useMemo(() => {
-    let totalIn = 0, totalOut = 0;
-    for (const e of rows) {
-      if (e.recordType === "exchange") {
-        if (e.status === "voided") continue;
-        // Defensive second layer (on top of the backend now tagging
-        // accountCurrency from the exchange's own currencyGiven, never a
-        // client's static currency field): only ever fold amountGiven into
-        // THIS page's total when it's actually denominated in this page's
-        // currency. Guards against ever mixing a SLSH figure into a USD
-        // total (or vice versa) even if a future data path reintroduces a
-        // currency-tagging mismatch upstream.
-        if (e.raw.currencyGiven !== currency) continue;
-        totalOut += e.raw.amountGiven;
-      } else if (e.recordType === "transfer") {
-        if (e.raw.currency && e.raw.currency !== currency) continue;
-        totalOut += e.raw.amount;
-      } else if (e.recordType === "quotation" || e.recordType === "ledger") {
-        if (e.raw.currency && e.raw.currency !== currency) continue;
-        if (e.ledgerType === "withdrawal") totalOut += e.raw.amount; else totalIn += e.raw.amount;
-      }
-    }
-    return { totalIn, totalOut, net: totalIn - totalOut };
-  }, [rows, currency]);
+  const counts = summary ? summary.counts : null;
+  const money = summary && summary.money ? (summary.money[currency] || { credits: 0, debits: 0, net: 0 }) : { credits: 0, debits: 0, net: 0 };
+  const otherMoney = summary && summary.money ? Object.entries(summary.money).filter(([c]) => c !== currency) : [];
+  const filtersActive = !!(type !== "all" || accountType !== "all" || status !== "all" || staffId || accountFilter || from || to || search);
+  const clearFilters = () => { setType("all"); setAccountType("all"); setStatus("all"); setStaffId(""); setAccountFilter(null); setAccountQuery(""); setFrom(""); setTo(""); setSearch(""); };
 
   // Same "dedicated page, not appended below the list" intent as Money
   // Exchange's own "+ New transaction" (see ExchangeModule) — while an
@@ -12377,7 +12370,7 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
   return (
     <div>
       {!historyExchangeEditOpen && <>
-      <SectionHeader title={`Transaction History — ${currency}`} sub={`Every credit, debit, exchange, transfer, and quotation charge/settlement for ${currency} accounts, in one searchable place — click any row for full details`}
+      <SectionHeader icon="history" title={`Transaction History — ${currency}`} sub={`Review, search, and reconcile ${currency} account transactions in one place.`}
         actions={<>
           <Btn tone="subtle" onClick={() => dl("/api/history/export.csv" + qs(queryParams), `obo-transaction-history-${currency}.csv`)}>Export CSV</Btn>
           {/* MASTER PROMPT: the old raw "Export PDF" (renderTablePDF) is
@@ -12391,134 +12384,150 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
           <Btn tone="ghost" onClick={() => print("/api/history/statement.pdf" + qs(queryParams))}>Print</Btn>
         </>} />
 
-      <div className="gk-tabbar">
-        {/* QUOTATION PAYMENT INTEGRATION round: "Quotation Payments" added
-            as its own pill, distinct from "Quotations" (every quotation leg
-            — charge, payment, adjustment, and refund together) — so a real
-            incoming payment can be isolated on its own, per the spec's own
-            filter list. */}
-        {[["all", "All"], ["exchange", "Exchanges"], ["transfer", "Transfers"], ["quotation", "Quotations"], ["quotation_payment", "Quotation Payments"], ["deposit", "Credits"], ["withdrawal", "Debits"]].map(([k, l]) => (
-          <button key={k} onClick={() => setType(k)} className={`gk-ph-tab${type === k ? " is-active" : ""}`} aria-pressed={type === k}><TabLabel k={k} l={l} /></button>
+      <div className="gk-acc-tabs gk-th-tabs" role="tablist" aria-label="Transaction category">
+        {[["all", "All", "dashboard"], ["exchange", "Exchanges", "arrowLeftRight"], ["transfer", "Transfers", "transfer"], ["quotation", "Quotations", "fileText"], ["quotation_payment", "Quotation Payments", "receipt"], ["deposit", "Credits", "arrowDownLeft"], ["withdrawal", "Debits", "arrowUpRight"]].map(([k, l, ic]) => (
+          <button key={k} type="button" role="tab" aria-selected={type === k} onClick={() => setType(k)} className={`gk-acc-tab${type === k ? " is-active" : ""}`}>
+            <NavIcon name={ic} size={15} /><span>{l}</span>
+          </button>
         ))}
       </div>
 
-      <div className="gk-filterbar">
-        <Field label="Account Type" width={150}>
-          <Select value={accountType} onChange={(e) => setAccountType(e.target.value)}>
-            <option value="all">Customer & Company</option><option value="customer">Customer only</option><option value="company">Company only</option>
-          </Select>
-        </Field>
-        <Field label="Status" width={140}>
-          <Select value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="all">All</option><option value="active">Active</option><option value="voided">Voided</option>
-            {/* BUGFIX: "Partially Paid" was missing here entirely — a
-                quotation's own partial-payment settlement row had nowhere to
-                be filtered to (see the backend fix in history.js: those rows
-                used to always come back hardcoded "Paid" too, compounding
-                this). */}
-            <option value="pending">Pending</option><option value="partially paid">Partially Paid</option><option value="paid">Paid</option><option value="refunded">Refunded</option>
-          </Select>
-        </Field>
-        <Field label="Staff" width={170}>
-          <Select value={staffId} onChange={(e) => setStaffId(e.target.value)}>
-            <option value="">All staff</option>{staffOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
-          </Select>
-        </Field>
-        <div style={{ position: "relative" }}>
-          <Field label="Account" width={200} hint={accountFilter ? undefined : "Search by name or account #"}>
-            {accountFilter ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, height: 34, padding: "0 10px", border: `1px solid ${C.line}`, borderRadius: 6, background: C.paper }}>
-                <span style={{ fontSize: 12.5, fontWeight: 600, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{accountFilter.name}</span>
-                <button onClick={() => { setAccountFilter(null); setAccountQuery(""); }} style={{ background: "none", border: "none", color: C.slate, cursor: "pointer", fontSize: 13, padding: 0 }} aria-label="Clear account filter">×</button>
-              </div>
-            ) : (
-              <Input placeholder="Search account…" value={accountQuery} onChange={(e) => setAccountQuery(e.target.value)} />
-            )}
-          </Field>
+      <div className="gk-acc-toolbar gk-th-toolbar" role="search">
+        <label className="gk-acc-field">
+          <span className="gk-acc-label">Account type</span>
+          <span className="gk-acc-input"><NavIcon name="usersRound" size={15} />
+            <select aria-label="Account type" value={accountType} onChange={(e) => setAccountType(e.target.value)}>
+              <option value="all">Customer & Company</option><option value="customer">Customer only</option><option value="company">Company only</option>
+            </select>
+          </span>
+        </label>
+        <label className="gk-acc-field">
+          <span className="gk-acc-label">Status</span>
+          <span className="gk-acc-input"><NavIcon name="circleCheck" size={15} />
+            <select aria-label="Status" value={status} onChange={(e) => setStatus(e.target.value)}>
+              <option value="all">All</option><option value="active">Active</option><option value="voided">Voided</option>
+              <option value="pending">Pending</option><option value="partially paid">Partially Paid</option><option value="paid">Paid</option><option value="refunded">Refunded</option>
+            </select>
+          </span>
+        </label>
+        <label className="gk-acc-field">
+          <span className="gk-acc-label">Staff</span>
+          <span className="gk-acc-input"><NavIcon name="users" size={15} />
+            <select aria-label="Staff" value={staffId} onChange={(e) => setStaffId(e.target.value)}>
+              <option value="">All staff</option>{staffOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+            </select>
+          </span>
+        </label>
+        <div className="gk-acc-field" style={{ position: "relative" }}>
+          <span className="gk-acc-label">Account</span>
+          {accountFilter ? (
+            <span className="gk-acc-input"><NavIcon name="landmark" size={15} />
+              <span style={{ flex: 1, fontSize: 12.5, fontWeight: 600, color: C.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{toTitleCase(accountFilter.name)}</span>
+              <button type="button" onClick={() => { setAccountFilter(null); setAccountQuery(""); }} aria-label="Clear account filter" className="gk-th-clear"><NavIcon name="x" size={13} /></button>
+            </span>
+          ) : (
+            <span className="gk-acc-input"><NavIcon name="landmark" size={15} />
+              <input aria-label="Account" placeholder="Name or account #" value={accountQuery} onChange={(e) => setAccountQuery(e.target.value)} />
+            </span>
+          )}
           {!accountFilter && accountResults.length > 0 && (
-            <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 20, marginTop: 2, width: 260, border: `1px solid ${C.line}`, borderRadius: 6, background: C.card, boxShadow: "0 4px 14px rgba(0,0,0,0.12)", maxHeight: 220, overflowY: "auto" }}>
+            <div className="gk-th-suggest" role="listbox">
               {accountResults.map((a) => (
-                <button key={a.id} onClick={() => { setAccountFilter({ id: a.id, name: a.name }); setAccountResults([]); }} style={{ display: "block", width: "100%", textAlign: "left", padding: "7px 10px", border: "none", background: "transparent", cursor: "pointer" }}>
-                  <div style={{ fontWeight: 600, fontSize: 12.5 }}>{toTitleCase(a.name)}</div>
-                  <div style={{ fontSize: 10.5, color: C.slate, fontFamily: FONT_MONO }}>{a.accountNumber}</div>
+                <button key={a.id} type="button" role="option" onClick={() => { setAccountFilter({ id: a.id, name: a.name }); setAccountResults([]); }}>
+                  <b>{toTitleCase(a.name)}</b><span>{a.accountNumber}</span>
                 </button>
               ))}
             </div>
           )}
         </div>
-        <Field label="From" width={140}><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></Field>
-        <Field label="To" width={140}><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></Field>
-        <Field label="Search" width={240} hint="Reference, name, phone, staff, or notes"><SearchInput placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} /></Field>
-      </div>
-      <ActiveFilters
-        filters={[
-          { label: "Account type", value: accountType, defaultValue: "all", onClear: () => setAccountType("all") },
-          { label: "Status", value: status, defaultValue: "all", onClear: () => setStatus("all") },
-          { label: "Staff", value: staffId, display: staffOptions.find(([id]) => id === staffId)?.[1], onClear: () => setStaffId("") },
-          { label: "Account", value: accountFilter?.id || "", display: accountFilter?.name, onClear: () => { setAccountFilter(null); setAccountQuery(""); } },
-          { label: "From", value: from, onClear: () => setFrom("") },
-          { label: "To", value: to, onClear: () => setTo("") },
-          { label: "Search", value: search, onClear: () => setSearch("") },
-        ]}
-        onClearAll={() => { setAccountType("all"); setStatus("all"); setStaffId(""); setAccountFilter(null); setAccountQuery(""); setFrom(""); setTo(""); setSearch(""); }}
-      />
-
-      {/* QUOTATION PAYMENT INTEGRATION round (spec section 18): "Quotation
-          legs" (everything charge+payment+adjustment+refund lumped
-          together) is replaced by two specific, named counts — Quotation
-          Charges and Quotation Payments — matching the spec's own example
-          summary, since those are the two numbers someone reconciling
-          quotation money actually wants at a glance. */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 10, marginBottom: 10 }}>
-        <StatCard label="Entries" value={rows.length} accent={C.navy} />
-        <StatCard label="Exchanges" value={typeCounts.exchange} accent={C.cyan} />
-        <StatCard label="Transfers" value={typeCounts.transfer} accent={C.amber} />
-        <StatCard label="Quotation Charges" value={typeCounts.quotationCharges} accent={C.slate} />
-        <StatCard label="Quotation Payments" value={typeCounts.quotationPayments} accent={C.green} />
-        <StatCard label="Credits & debits" value={typeCounts.ledger} accent={C.slate} />
+        <label className="gk-acc-field">
+          <span className="gk-acc-label">Date from</span>
+          <span className="gk-acc-input"><NavIcon name="calendar" size={15} /><input type="date" aria-label="Date from" value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} /></span>
+        </label>
+        <label className="gk-acc-field">
+          <span className="gk-acc-label">Date to</span>
+          <span className="gk-acc-input"><NavIcon name="calendar" size={15} /><input type="date" aria-label="Date to" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} /></span>
+        </label>
+        <label className="gk-acc-field gk-acc-field--search">
+          <span className="gk-acc-label">Search</span>
+          <span className="gk-acc-input"><NavIcon name="search" size={15} />
+            <input type="search" aria-label="Search transactions" placeholder="Search reference, account, description..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          </span>
+        </label>
+        <div className="gk-acc-toolbar-actions">
+          {filtersActive && <button type="button" className="gk-acc-btn" onClick={clearFilters}><NavIcon name="undo" size={15} /><span>Clear filters</span></button>}
+          <TableCustomizeButton tableKey={tableKey} columnDefs={HISTORY_COLUMNS} layoutState={layoutState} canSetSystemDefault={hasRaw && hasRaw("settings.manageTableDefaults")} notify={notify} />
+          <button type="button" className="gk-acc-btn" title="Export the matching transactions to Excel" onClick={() => dl("/api/history/statement.xlsx" + qs(queryParams), `obo-transaction-statement-${currency}.xlsx`)}><NavIcon name="download" size={15} /><span>Export</span></button>
+          <button type="button" className="gk-acc-btn" onClick={() => reload(true)} disabled={refreshing} aria-busy={refreshing} title="Reload the latest transactions"><NavIcon name="refresh" size={15} className={refreshing ? "gk-spin" : undefined} /><span>{refreshing ? "Refreshing…" : "Refresh"}</span></button>
+        </div>
       </div>
 
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
-        <TableCustomizeButton tableKey={tableKey} columnDefs={HISTORY_COLUMNS} layoutState={layoutState} canSetSystemDefault={hasRaw && hasRaw("settings.manageTableDefaults")} notify={notify} />
+      <div className="gk-th-kpis">
+        {[
+          ["entries", "Entries", "history", counts ? counts.entries : null, "matching the filters", ""],
+          ["exchanges", "Exchanges", "arrowLeftRight", counts ? counts.exchanges : null, "money exchange records", ""],
+          ["transfers", "Transfers", "transfer", counts ? counts.transfers : null, "between accounts", ""],
+          ["qcharges", "Quotation Charges", "fileText", counts ? counts.quotationCharges : null, "charged to accounts", ""],
+          ["qpayments", "Quotation Payments", "receipt", counts ? counts.quotationPayments : null, "received", "is-pos"],
+          ["ledger", "Credits & Debits", "arrowDownLeft", counts ? counts.creditsDebits : null, counts ? `${counts.credits} credit · ${counts.debits} debit` : "", ""],
+        ].map(([k, l, ic, v, sub, cls]) => (
+          <div key={k} className={`gk-acc-kpi ${cls}`} data-kpi={k}>
+            <span className="gk-acc-kpi-icon"><NavIcon name={ic} size={18} /></span>
+            <span className="gk-acc-kpi-body"><span className="gk-acc-kpi-label">{l}</span><span className="gk-acc-kpi-value">{v == null ? "—" : v}</span><span className="gk-acc-kpi-sub">{sub}</span></span>
+          </div>
+        ))}
       </div>
-      <div className="gk-table-wrap" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, display: "flex", flexDirection: "column" }}>
-        {loading ? <Spinner /> : historyPg.total === 0 ? (<><Empty text="No records match these filters." /><TableFooter firstIdx={historyPg.firstIdx} lastIdx={historyPg.lastIdx} total={historyPg.total} page={historyPg.page} totalPages={historyPg.totalPages} onPageChange={historyPg.setPage} pageSize={historyPg.pageSize} onPageSizeChange={historyPg.setPageSize} /></>) : (
+
+      <div className="gk-table-wrap gk-th-table-wrap" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 8, display: "flex", flexDirection: "column" }}>
+        {loading ? <Spinner label="Loading transactions…" /> : loadError && !rows.length ? (
+          <div className="gk-acc-error" role="alert"><NavIcon name="circleAlert" size={16} /><span>Couldn't load the transactions: {loadError}</span><button type="button" className="gk-acc-btn" onClick={() => { setLoading(true); reload(); }}><NavIcon name="refresh" size={14} /><span>Retry</span></button></div>
+        ) : historyPg.total === 0 ? (
+          <div className="gk-th-empty">
+            <NavIcon name="history" size={28} />
+            <b>No transactions found</b>
+            <span>Try changing your search or filters.</span>
+            {filtersActive && <button type="button" className="gk-acc-btn" onClick={clearFilters}><NavIcon name="undo" size={14} /><span>Clear filters</span></button>}
+          </div>
+        ) : (
           <>
           <TableScrollShell height={480}>
-          <ResizableTable tableKey={tableKey} className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+          <ResizableTable tableKey={tableKey} className="gk-table gk-th-table" style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead><tr>
-              <th style={{ ...th, width: 44 }}>#</th>
+              <th style={{ ...th, width: 44 }} scope="col">#</th>
               {columns.map((c) => <SortTh key={c.key} label={c.label} field={c.sortField} {...historySort} onSort={historySort.toggleSort} />)}
             </tr></thead>
             <tbody>
               {historyPg.pageRows.map((e, i) => (
-                <tr key={`${e.recordType}-${e.id}`} onClick={() => setDetailEntry(e)} style={{ cursor: "pointer" }}>
+                <tr key={`${e.recordType}-${e.id}`} onClick={() => setDetailEntry(e)} style={{ cursor: "pointer" }} data-entry-id={e.id} data-record={e.recordType}>
                   <td style={densityStyle(tdMono, density)}>{historyPg.firstIdx + i}</td>
-                  {columns.map((c) => <td key={c.key} style={tableCellStyle(c, density)}>{c.render(e)}</td>)}
+                  {columns.map((c) => <td key={c.key} data-col={c.key} style={["credit", "debit"].includes(c.key) ? { ...tableCellStyle(c, density), textAlign: "right" } : tableCellStyle(c, density)}>{c.render(e)}</td>)}
                 </tr>
               ))}
             </tbody>
             <tfoot>
-              <tr>
+              <tr className="gk-th-totals">
                 <td style={tdFoot}></td>
                 {columns.map((c) => (
-                  <td key={c.key} style={c.key === "amount" ? { ...tdFootMono, whiteSpace: "nowrap" } : c.key === "account" ? { ...tdFoot, fontWeight: 700 } : tdFoot}>
-                    {c.key === "account" ? `Total (${rows.length})` : c.key === "amount" ? (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                        <div>In: +{fmtMoney(historyFooterTotals.totalIn, currency)}</div>
-                        <div>Out: -{fmtMoney(historyFooterTotals.totalOut, currency)}</div>
-                        <div style={{ fontWeight: 700 }}>Net: {historyFooterTotals.net >= 0 ? "+" : ""}{fmtMoney(historyFooterTotals.net, currency)}</div>
-                      </div>
-                    ) : ""}
+                  <td key={c.key} data-total={c.key} style={["credit", "debit", "amount", "margin"].includes(c.key) ? { ...tdFootMono, whiteSpace: "nowrap" } : c.key === "account" ? { ...tdFoot, fontWeight: 700 } : tdFoot}>
+                    {c.key === "account" ? `Total — ${counts ? counts.entries : rows.length} matching entries`
+                      : c.key === "credit" ? fmtMoney(money.credits, currency)
+                      : c.key === "debit" ? fmtMoney(money.debits, currency)
+                      : c.key === "amount" ? <span title="Net movement = Credits − Debits of the credit/debit and quotation entries in this currency. Exchanges and transfers are shown by their amounts only and are not added in.">Net: {money.net > 0 ? "+" : money.net < 0 ? "−" : ""}{fmtMoney(Math.abs(money.net), currency)}</span>
+                      : c.key === "margin" && summary && summary.profit ? <span title={`Exchange profit as recorded on each exchange (${summary.profit.basis}).`}>{fmtMoney(summary.profit.usd, "USD")}</span>
+                      : ""}
                   </td>
                 ))}
               </tr>
             </tfoot>
           </ResizableTable>
           </TableScrollShell>
-          <TableFooter firstIdx={historyPg.firstIdx} lastIdx={historyPg.lastIdx} total={historyPg.total} page={historyPg.page} totalPages={historyPg.totalPages} onPageChange={historyPg.setPage} pageSize={historyPg.pageSize} onPageSizeChange={historyPg.setPageSize} />
+          <TableFooter firstIdx={historyPg.firstIdx} lastIdx={historyPg.lastIdx} total={historyPg.total} page={historyPg.page} totalPages={historyPg.totalPages} onPageChange={historyPg.setPage} pageSize={historyPg.pageSize} onPageSizeChange={historyPg.setPageSize} pageSizeOptions={[10, 25, 50, 100]} />
           </>
         )}
+      </div>
+      <div className="gk-th-scope">
+        Totals cover all {counts ? counts.entries : rows.length} matching entries in {currency}. Credit / Debit and Net count credit, debit and quotation entries only — exchanges and transfers are shown by their amounts and never added twice.
+        {otherMoney.length > 0 && <> Other currency in these results: {otherMoney.map(([c, m]) => `${c} net ${fmtMoney(m.net, c)}`).join(", ")} (kept separate).</>}
       </div>
       </>}
 

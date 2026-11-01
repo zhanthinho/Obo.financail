@@ -1,7 +1,7 @@
 "use strict";
 const { all, get } = require("../db");
 const { sendJSON, sendCSV, sendPDF, sendXLSX } = require("../http-helpers");
-const { requireAuth, requirePerm, can } = require("../rbac");
+const { requireAuth, requirePerm, can, allowedCurrencies } = require("../rbac");
 const { computeMargin } = require("../exchange-calc");
 const { costRateLookup } = require("../domain");
 const { getCompanySettings, getDefaultPdfTemplate, getDefaultExcelTemplate, quotationPaymentSummary, addAudit } = require("../domain");
@@ -344,17 +344,80 @@ function describeFilters(query) {
   return parts.length ? parts.join(" · ") : null;
 }
 
+// TRANSACTION HISTORY CONSOLE round ---------------------------------------
+// Credit / Debit per entry, using the SAME classification as the Transaction
+// Statement totals above (computeHistoryTotals): plain credits/debits and
+// the quotation ledger legs move an account balance in the ledger's own
+// currency; an exchange or a transfer is shown by its amount only — the
+// account postings an exchange or transfer creates are separate ledger rows
+// (with a source_type) that this page never lists a second time, so nothing
+// is counted twice.
+function ledgerDirection(e) {
+  if (e.recordType === "ledger") return e.ledgerType === "deposit" ? "credit" : "debit";
+  if (e.recordType === "quotation") return e.ledgerType === "withdrawal" ? "debit" : "credit";
+  return null;
+}
+function decorate(e) {
+  const dir = ledgerDirection(e);
+  const amount = Number((e.raw || {}).amount);
+  const cur = (e.raw || {}).currency;
+  return { ...e, credit: dir === "credit" ? amount : null, debit: dir === "debit" ? amount : null, entryCurrency: cur || e.accountCurrency };
+}
+// Summary of ALL matching entries (not one page), per currency — USD and
+// SLSH are never added together. Exchange profit is the figure stored on
+// each exchange when it was made (profit_usd, USD), voided exchanges
+// excluded, and only for users allowed to see exchange profit.
+function historySummary(entries, includeProfit) {
+  const r2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+  const counts = { entries: entries.length, exchanges: 0, transfers: 0, quotationCharges: 0, quotationPayments: 0, quotations: 0, creditsDebits: 0, credits: 0, debits: 0 };
+  const money = {};
+  let profitUsd = 0, profitCount = 0;
+  for (const e of entries) {
+    if (e.recordType === "exchange") counts.exchanges += 1;
+    else if (e.recordType === "transfer") counts.transfers += 1;
+    else if (e.recordType === "ledger") { counts.creditsDebits += 1; if (e.ledgerType === "deposit") counts.credits += 1; else counts.debits += 1; }
+    else if (e.recordType === "quotation") {
+      counts.quotations += 1;
+      if (e.sourceType === "quotation_paid") counts.quotationPayments += 1;
+      if (e.sourceType === "quotation_charge" && e.ledgerType === "withdrawal") counts.quotationCharges += 1;
+    }
+    if (e.credit != null || e.debit != null) {
+      const m = money[e.entryCurrency] || (money[e.entryCurrency] = { credits: 0, debits: 0 });
+      if (e.credit != null) m.credits += e.credit; else m.debits += e.debit;
+    }
+    if (includeProfit && e.recordType === "exchange" && e.status !== "voided" && e.profitUsd != null) { profitUsd += Number(e.profitUsd) || 0; profitCount += 1; }
+  }
+  for (const k of Object.keys(money)) { money[k] = { credits: r2(money[k].credits), debits: r2(money[k].debits), net: r2(money[k].credits - money[k].debits) }; }
+  return { counts, money, profit: includeProfit ? { usd: r2(profitUsd), exchanges: profitCount, basis: "recorded at exchange time, voided excluded" } : null };
+}
+
+// Currency access (currency.usd / currency.slsh) applies here too: a user
+// limited to one currency can't read the other currency's history, and a
+// request without a currency only returns the currencies they may see.
+function scopedHistory(user, res, query, opts) {
+  const allowed = allowedCurrencies(user);
+  if (query.currency && !allowed.includes(query.currency)) {
+    sendJSON(res, 403, { error: `You don't have access to ${query.currency} accounts.` });
+    return null;
+  }
+  return queryHistory(query, opts).filter((e) => allowed.includes(e.accountCurrency)).map(decorate);
+}
+
 function register(router) {
   router.get("/api/history", (req, res, params, query) => {
     const user = requireAuth(req, res); if (!user) return;
     if (!requirePerm(user, res, "reports")) return;
-    sendJSON(res, 200, { entries: queryHistory(query, { includeProfit: can(user, "profit.viewExchange") }) });
+    const includeProfit = can(user, "profit.viewExchange");
+    const entries = scopedHistory(user, res, query, { includeProfit }); if (!entries) return;
+    const out = { entries };
+    if (query.withSummary === "1") out.summary = historySummary(entries, includeProfit);
+    sendJSON(res, 200, out);
   });
 
   router.get("/api/history/export.csv", (req, res, params, query) => {
     const user = requireAuth(req, res); if (!user) return;
     if (!requirePerm(user, res, "reports")) return;
-    const entries = queryHistory(query);
+    const entries = scopedHistory(user, res, query, {}); if (!entries) return;
     // QUOTATION PAYMENT INTEGRATION round (spec section 21): added Quotation
     // and Payment Method columns — populated only for quotation-tagged rows
     // (e.quotationNumber/e.paymentMethod are undefined for every other
@@ -371,7 +434,7 @@ function register(router) {
   router.get("/api/history/export.pdf", async (req, res, params, query) => {
     const user = requireAuth(req, res); if (!user) return;
     if (!requirePerm(user, res, "reports")) return;
-    const entries = queryHistory(query);
+    const entries = scopedHistory(user, res, query, {}); if (!entries) return;
     const pdf = await renderReportPDF({
       title: "Transaction History",
       meta: `${entries.length} record(s)`,
@@ -394,7 +457,7 @@ function register(router) {
   router.get("/api/history/statement.pdf", async (req, res, params, query) => {
     const user = requireAuth(req, res); if (!user) return;
     if (!requirePerm(user, res, "reports")) return;
-    const entries = queryHistory(query);
+    const entries = scopedHistory(user, res, query, {}); if (!entries) return;
     const rows = entries.map((e) => ({ date: e.date, reference: e.reference, type: historyTypeLabel(e), accountName: e.accountName, amountSummary: e.amountSummary, status: e.status || "—" }));
     const pdf = await renderTransactionStatementPDF({
       company: getCompanySettings(), rows, filterSummary: describeFilters(query),
@@ -408,7 +471,7 @@ function register(router) {
   router.get("/api/history/statement.xlsx", async (req, res, params, query) => {
     const user = requireAuth(req, res); if (!user) return;
     if (!requirePerm(user, res, "reports")) return;
-    const entries = queryHistory(query);
+    const entries = scopedHistory(user, res, query, {}); if (!entries) return;
     const rows = entries.map((e) => ({ date: e.date, reference: e.reference, type: historyTypeLabel(e), accountName: e.accountName, amountSummary: e.amountSummary, status: e.status || "—" }));
     const xlsx = await buildTransactionStatementWorkbook({
       company: getCompanySettings(), rows, filterSummary: describeFilters(query),
@@ -420,4 +483,4 @@ function register(router) {
   });
 }
 
-module.exports = { register, queryHistory };
+module.exports = { register, queryHistory, historySummary };
