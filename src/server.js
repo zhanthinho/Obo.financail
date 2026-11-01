@@ -175,7 +175,7 @@ const server = http.createServer((req, res) => {
     // messages and export labels (never data, permissions or company scope).
     const reqLang = String(req.headers["x-lang"] || query.lang || "").toLowerCase() === "so" ? "so" : "en";
     res.oboLang = reqLang;
-    tenantContext.runRequest(async () => match.handler(req, res, match.params, query), reqLang).catch((err) => {
+    tenantContext.runRequest(async () => match.handler(req, res, match.params, query), reqLang, { method: req.method, path: String(req.url || "").split("?")[0].slice(0, 200) }).catch((err) => {
       if (err && err.code === "NO_COMPANY_CONTEXT") {
         // A code path tried to touch company data without an authorized
         // company — refused (fail closed), never answered from any database.

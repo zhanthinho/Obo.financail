@@ -117,6 +117,8 @@ function clearLink(clientId) {
   run("UPDATE clients SET linked_account_id = NULL WHERE id = ?", [clientId]);
 }
 
+const ACCOUNT_LIST_PERMS = ["accounts.view", "exchange.create", "transfers.create", "payments.create", "quotations.create", "quotations.update"];
+
 function register(router) {
   router.get("/api/accounts", (req, res, params, query) => {
     const user = requireAuth(req, res); if (!user) return;
@@ -137,6 +139,12 @@ function register(router) {
     // Money Exchange, Quotation client-linking, account linking, Transfer
     // destination search — in one place, matching spec item 2/3's "apply
     // everywhere" and "must not appear in search results/dropdowns" rules.
+    // ADVANCED RBAC round: "View Accounts" (accounts.view) is now enforced
+    // here — before, any signed-in user with currency access could list
+    // every account and its balance. The account pickers of the screens
+    // that need them (exchange, transfer, payment, quotation) keep working
+    // for users who may use those screens.
+    if (!ACCOUNT_LIST_PERMS.some((k) => can(user, k))) return requirePerm(user, res, "accounts.view");
     const allowed = allowedCurrencies(user);
     if (allowed.length === 0) return sendJSON(res, 200, { accounts: [] });
     const clauses = ["status = 'active'", "deleted_at IS NULL"], sqlParams = [];

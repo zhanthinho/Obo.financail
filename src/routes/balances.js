@@ -2,13 +2,18 @@
 const { isFiniteMoney } = require("../util");
 const { get, run } = require("../db");
 const { sendJSON, badRequest, readJSONBody } = require("../http-helpers");
-const { requireAuth, requirePerm } = require("../rbac");
+const { requireAuth, requirePerm, can } = require("../rbac");
 const { addAudit, currencyPosition } = require("../domain");
 const { nowISO } = require("../util");
 
 function register(router) {
   router.get("/api/balances", (req, res) => {
     const user = requireAuth(req, res); if (!user) return;
+    // ADVANCED RBAC round: the company's currency position is financial
+    // information — it used to be returned to ANY signed-in user. Now only
+    // to those who manage it (rateManage, the Opening Balances screen) or
+    // read reports (where the same figures appear).
+    if (!can(user, "rateManage") && !can(user, "reports")) return requirePerm(user, res, "reports");
     sendJSON(res, 200, currencyPosition());
   });
 

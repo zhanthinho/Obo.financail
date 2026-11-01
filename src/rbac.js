@@ -361,8 +361,27 @@ function sessionVersionClaims(userRow) {
   return { rolePermVer: role ? role.permissions_version : null, userPermVer: userRow.permissions_version };
 }
 
+// ADVANCED RBAC round: refused requests are written to the company audit
+// log ("Access denied"), at most once per user + permission per minute so a
+// screen that keeps polling can't flood the log. Only the permission key,
+// the user and the endpoint are recorded — never request bodies or tokens.
+const deniedSeen = new Map();
+function auditDenied(user, what) {
+  try {
+    const store = tenantContext.requestStore();
+    const where = store && store.method ? ` · ${store.method} ${store.path}` : "";
+    const k = `${user && user.id}|${what}${where}`;
+    const now = Date.now();
+    if (deniedSeen.has(k) && now - deniedSeen.get(k) < 60000) return;
+    deniedSeen.set(k, now);
+    if (deniedSeen.size > 5000) deniedSeen.clear();
+    require("./domain").addAudit(user, "Access denied", `${what}${where}`);
+  } catch (e) { /* auditing must never turn a 403 into a 500 */ }
+}
+
 function requirePerm(user, res, key) {
   if (!can(user, key)) {
+    auditDenied(user, `missing permission ${key}`);
     sendJSON(res, 403, { error: `Your role (${roleDisplayName(user)}) does not have permission to do this.` });
     return false;
   }
@@ -401,6 +420,7 @@ function hasCurrencyAccess(user, currency) {
 // read the same way: `if (!requireCurrencyAccess(user, res, c.currency)) return;`
 function requireCurrencyAccess(user, res, currency) {
   if (!hasCurrencyAccess(user, currency)) {
+    auditDenied(user, `no ${currency} currency access`);
     sendJSON(res, 403, { error: `Your role (${roleDisplayName(user)}) does not have access to ${currency} accounts.` });
     return false;
   }
@@ -522,6 +542,7 @@ function permissionsOutsideActorScope(actor, keys) {
 function requireWithinActorScope(actor, res, keys, verb = "grant") {
   const disallowed = permissionsOutsideActorScope(actor, keys);
   if (disallowed.length) {
+    auditDenied(actor, `tried to ${verb} permission(s) outside own scope: ${disallowed.slice(0, 8).join(", ")}`);
     sendJSON(res, 403, {
       error: `You cannot ${verb} permission(s) you do not have yourself: ${disallowed.join(", ")}.`,
     });
@@ -549,6 +570,7 @@ function requireRoleWithinActorScope(actor, res, role) {
 }
 
 module.exports = {
+  auditDenied,
   PERMS,
   ROLE_LABELS,
   can,

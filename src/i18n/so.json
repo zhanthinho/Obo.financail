@@ -2362,5 +2362,22 @@
  "Pending — not captured yet today": "Wuu sugayaa — maanta weli lama qaadin",
  "View Snapshot": "Eeg Sawirka",
  "Print Report": "Daabac Warbixinta",
- "Export Report": "Dhoofi Warbixinta"
+ "Export Report": "Dhoofi Warbixinta",
+ "Sensitive": "Xasaasi",
+ "Critical": "Muhiim-halis",
+ "Selected": "La doortay",
+ "Sensitive selected": "Xasaasiga la doortay",
+ "Critical selected": "Kuwa halista ah ee la doortay",
+ "Sensitive / Critical": "Xasaasi / Halis",
+ "Ticking a module selects its": "Calaamadinta qayb waxay doorataa",
+ "Templates": "Qaababka",
+ "Copy an existing role": "Koobi door jira",
+ "Unsaved changes": "Isbeddello aan la kaydin",
+ "Save Role": "Kaydi Doorka",
+ "Create Role": "Samee Doorka",
+ "Select all": "Dooro dhammaan",
+ "Discard changes": "Iska daa isbeddellada",
+ "Save with critical permissions": "Kaydi iyadoo leh oggolaansho halis ah",
+ "This is your own role — its permissions can only be changed by a Super Admin.": "Kani waa doorkaaga — oggolaanshihiisa waxaa beddeli kara Super Admin oo keliya.",
+ "This is a protected built-in role — only a Super Admin can change its permissions.": "Kani waa door la ilaaliyo — Super Admin oo keliya ayaa beddeli kara oggolaanshihiisa."
 }

@@ -160,7 +160,45 @@ function permKey(moduleKey, action) {
   return `${moduleKey}.${action}`;
 }
 
-// Flat list, e.g. [{ key: "accounts.view", module: "accounts", moduleLabel: "Accounts", action: "view", label: "View Accounts" }, ...]
+// ADVANCED RBAC round — every permission has a SENSITIVITY LEVEL:
+//   standard  — day-to-day viewing/printing and ordinary records;
+//   sensitive — money movements, profit/cost visibility, rates, exports,
+//               cash accounts, expenses, audit log, user details;
+//   critical  — deleting or reversing financial records, opening balances,
+//               user/role/permission administration, company settings.
+// The level never changes what a permission DOES — it drives the role
+// editor's badges, the "only standard ones" module tick, the explicit
+// confirmation the server requires before a critical permission is newly
+// granted (routes/roles.js), and the summary counts.
+const CRITICAL = new Set([
+  "accounts.delete", "accounts.importOpeningBalance",
+  "exchange.delete", "transfers.delete", "quotations.delete", "quotations.deletePayment", "payments.delete",
+  "settings.update",
+  "users.delete", "users.resetPassword", "users.assignRole", "users.managePermissions",
+  "roles.create", "roles.update", "roles.delete", "roles.managePermissions",
+  "rates.delete", "cash.delete", "loans.writeOff", "loans.delete", "expenses.cancel",
+]);
+const SENSITIVE = new Set([
+  "accounts.deactivate", "accounts.activate", "accounts.export", "accounts.import",
+  "exchange.update", "exchange.manageRate", "exchange.export",
+  "transfers.create", "transfers.update",
+  "quotations.settle", "quotations.export",
+  "payments.create", "payments.update", "payments.export",
+  "reports.export", "auditLog.view",
+  "users.view", "users.create", "users.update", "users.deactivate", "users.activate",
+  "roles.view", "dashboard.export",
+  "rates.create", "rates.updateDaily", "rates.updateSale", "rates.exportHistory",
+  "profit.viewCompany", "profit.viewExchange", "profit.viewDashboard", "profit.viewReports", "profit.export",
+  "cash.view", "cash.create", "cash.update", "cash.deactivate", "cash.activate", "cash.deposit", "cash.withdraw", "cash.transfer", "cash.exchange",
+  "loans.view", "loans.create", "loans.repay",
+  "expenses.create", "expenses.update", "expenses.manageCategories", "expenses.export",
+  "dailyReports.view", "dailyReports.export", "dailyReports.manage",
+]);
+function permissionLevel(key) {
+  return CRITICAL.has(key) ? "critical" : SENSITIVE.has(key) ? "sensitive" : "standard";
+}
+
+// Flat list, e.g. [{ key: "accounts.view", module: "accounts", moduleLabel: "Accounts", action: "view", label: "View Accounts", level: "standard" }, ...]
 const PERMISSION_CATALOG = [];
 for (const [moduleKey, mod] of Object.entries(MODULES)) {
   for (const action of mod.actions) {
@@ -170,6 +208,7 @@ for (const [moduleKey, mod] of Object.entries(MODULES)) {
       moduleLabel: mod.label,
       action,
       label: `${ACTION_LABELS[action] || action} — ${mod.label}`,
+      level: permissionLevel(permKey(moduleKey, action)),
     });
   }
 }
@@ -256,4 +295,47 @@ const LEGACY_KEY_MAP = {
   settingsManage: ["settings.view", "settings.update"],
 };
 
-module.exports = { MODULES, ACTION_LABELS, PERMISSION_CATALOG, PERMISSION_KEYS, isValidPermissionKey, LEGACY_KEY_MAP, permKey };
+// ADVANCED RBAC round — ROLE TEMPLATES: starting points offered when a
+// new role is created (never applied to existing roles, never linked to
+// the role afterwards). Each is a plain permission list built from the
+// catalog above, so a template can only ever contain real permissions.
+const ALL_KEYS = PERMISSION_CATALOG.map((p) => p.key);
+const pick = (pred) => ALL_KEYS.filter(pred);
+const isReadOnlyAction = (k) => /\.(view|viewAll|viewHistory|print|usd|slsh)$/.test(k);
+const ROLE_TEMPLATES = [
+  {
+    key: "company_admin", name: "Company Admin",
+    description: "Runs one company's users, accounts and daily operations. No role/permission administration, no deletions of financial records, no company settings changes.",
+    permissions: pick((k) => permissionLevel(k) !== "critical" && !k.startsWith("roles.")),
+  },
+  {
+    key: "accountant", name: "Accountant",
+    description: "Views financial records, records permitted credits and debits, and runs financial reports. No users, roles, settings or deletions.",
+    permissions: pick((k) => [
+      "accounts.view", "accounts.export", "accounts.print", "exchange.view", "exchange.viewAll", "exchange.print", "transfers.view",
+      "quotations.view", "quotations.print", "payments.view", "payments.create", "payments.update", "payments.export", "payments.print",
+      "reports.view", "reports.export", "reports.print", "currency.usd", "currency.slsh", "rates.view", "rates.viewHistory",
+      "cash.view", "expenses.view", "expenses.export", "dailyReports.view", "dailyReports.export",
+    ].includes(k)),
+  },
+  {
+    key: "cashier", name: "Cashier",
+    description: "Daily cash operations and customer transactions. No cost rates, profit, reports, roles or configuration.",
+    permissions: pick((k) => [
+      "accounts.view", "accounts.print", "payments.view", "payments.create", "payments.print", "exchange.view", "exchange.create", "exchange.print",
+      "transfers.view", "transfers.create", "quotations.view", "currency.usd", "currency.slsh", "rates.view",
+    ].includes(k)),
+  },
+  {
+    key: "exchange_operator", name: "Exchange Operator",
+    description: "Creates and views their own money exchanges at the rates already set. Cannot change rates, delete exchanges, see profit or manage roles.",
+    permissions: pick((k) => ["exchange.view", "exchange.create", "exchange.print", "accounts.view", "currency.usd", "currency.slsh", "rates.view"].includes(k)),
+  },
+  {
+    key: "auditor", name: "Auditor / Read-Only",
+    description: "Views authorized records, reports and the audit log. Cannot create, change, delete, settle or approve anything.",
+    permissions: pick((k) => (isReadOnlyAction(k) || k === "auditLog.view") && !k.startsWith("users.") && !k.startsWith("roles.") && !k.startsWith("settings.")),
+  },
+];
+
+module.exports = { MODULES, ACTION_LABELS, PERMISSION_CATALOG, PERMISSION_KEYS, isValidPermissionKey, LEGACY_KEY_MAP, permKey, permissionLevel, ROLE_TEMPLATES };

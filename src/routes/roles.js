@@ -7,8 +7,8 @@
 // this side, unlike the 50+ existing call sites elsewhere in the app.
 const { get, all, run, tx, db } = require("../db");
 const { sendJSON, badRequest, notFound, readJSONBody } = require("../http-helpers");
-const { requireAuth, requirePerm, assertRoleMutable, assertCanManageUser, isSuperAdmin, loadRoleForUser, resolveUserPermissions, requireWithinActorScope, ALL_ACCESS } = require("../rbac");
-const { PERMISSION_CATALOG, isValidPermissionKey } = require("../permissions");
+const { requireAuth, requirePerm, assertRoleMutable, assertCanManageUser, isSuperAdmin, loadRoleForUser, resolveUserPermissions, requireWithinActorScope, ALL_ACCESS, auditDenied } = require("../rbac");
+const { PERMISSION_CATALOG, isValidPermissionKey, permissionLevel, ROLE_TEMPLATES } = require("../permissions");
 const { addAudit } = require("../domain");
 const { uid, nowISO } = require("../util");
 
@@ -32,12 +32,31 @@ function roleJSON(role) {
     // ROLE MANAGEMENT round, Phase 2: the Role Management table's
     // "Permissions" column — null (Super Admin) reads as "All" client-side.
     permissionCount: permissions === null ? null : permissions.length,
+    levelCounts: permissions === null ? null : levelCounts(permissions),
     userCount,
     createdAt: role.created_at,
     createdBy: role.created_by,
     updatedAt: role.updated_at,
     updatedBy: role.updated_by,
   };
+}
+
+// ADVANCED RBAC round: a CRITICAL permission (permissions.js) is only
+// granted when the request says so explicitly (confirmCritical: true) — a
+// client can't hand out user administration or record deletion by
+// accident, e.g. by ticking a whole module.
+function requireCriticalConfirmation(body, res, newlyGranted) {
+  const crit = newlyGranted.filter((k) => permissionLevel(k) === "critical");
+  if (crit.length && !(body && body.confirmCritical === true)) {
+    sendJSON(res, 400, { error: `Granting critical permission(s) needs explicit confirmation: ${crit.join(", ")}.`, code: "CRITICAL_CONFIRMATION_REQUIRED", critical: crit });
+    return false;
+  }
+  return true;
+}
+function levelCounts(keys) {
+  const out = { standard: 0, sensitive: 0, critical: 0 };
+  for (const k of keys || []) out[permissionLevel(k)] += 1;
+  return out;
 }
 
 function permsSetToArrayOrAll(granted) {
@@ -58,6 +77,12 @@ function register(router) {
     if (!requirePerm(user, res, "roles.view")) return;
     const roles = all("SELECT * FROM roles ORDER BY is_super_admin DESC, is_protected DESC, name ASC");
     sendJSON(res, 200, { roles: roles.map(roleJSON) });
+  });
+
+  router.get("/api/roles/templates", (req, res) => {
+    const user = requireAuth(req, res); if (!user) return;
+    if (!requirePerm(user, res, "roles.view")) return;
+    sendJSON(res, 200, { templates: ROLE_TEMPLATES.map((t) => ({ ...t, levelCounts: levelCounts(t.permissions) })) });
   });
 
   router.get("/api/roles/:id", (req, res, params) => {
@@ -86,6 +111,10 @@ function register(router) {
     let requested;
     if (Array.isArray(body.permissions)) {
       requested = Array.from(new Set(body.permissions));
+    } else if (body.templateKey) {
+      const t = ROLE_TEMPLATES.find((x) => x.key === body.templateKey);
+      if (!t) return badRequest(res, "Unknown role template.");
+      requested = [...t.permissions];
     } else if (body.startFromRoleId) {
       const template = get("SELECT * FROM roles WHERE id = ?", [body.startFromRoleId]);
       if (!template) return badRequest(res, "Unknown startFromRoleId.");
@@ -103,6 +132,7 @@ function register(router) {
     // holding roles.create could mint a role with more access than they
     // have and hand it to a user they control.
     if (!requireWithinActorScope(user, res, requested, "grant")) return;
+    if (!requireCriticalConfirmation(body, res, requested)) return;
 
     const id = uid("role");
     // key is a stable, URL/identifier-safe slug — only the seeded system
@@ -137,6 +167,7 @@ function register(router) {
     // whatever permissions it carries — an actor can't use it to hand
     // themselves (or whoever they assign the copy to) more than they have.
     if (!requireWithinActorScope(user, res, sourcePerms, "grant")) return;
+    if (!requireCriticalConfirmation(body, res, sourcePerms)) return;
     const id = uid("role");
     const key = `custom_${id}`;
     const now = nowISO();
@@ -184,6 +215,14 @@ function register(router) {
     if (changingPerms) {
       if (!requirePerm(user, res, "roles.managePermissions")) return;
       if (!assertRoleMutable(role, res, "editPermissions")) return;
+      // ADVANCED RBAC round: nobody but a Super Admin changes the
+      // permissions of the role they hold themselves (no self-escalation,
+      // no accidental self-lockout), or of a built-in protected role.
+      if (!isSuperAdmin(user)) {
+        const own = loadRoleForUser(user);
+        if (own && own.id === role.id) { auditDenied(user, `tried to change own role's permissions (${role.name})`); return sendJSON(res, 403, { error: "You cannot change the permissions of your own role — ask a Super Admin." }); }
+        if (role.is_protected) { auditDenied(user, `tried to change protected role ${role.name}`); return sendJSON(res, 403, { error: `The ${role.name} role is a protected built-in role — only a Super Admin can change its permissions.` }); }
+      }
       requested = Array.from(new Set(body.permissions));
       const invalid = requested.filter((k) => !isValidPermissionKey(k));
       if (invalid.length) return badRequest(res, `Unknown permission key(s): ${invalid.join(", ")}`);
@@ -194,6 +233,7 @@ function register(router) {
       const before = new Set(all("SELECT permission_key FROM role_permissions WHERE role_id=?", [role.id]).map((p) => p.permission_key));
       const added = requested.filter((k) => !before.has(k));
       if (!requireWithinActorScope(user, res, added, "grant")) return;
+      if (!requireCriticalConfirmation(body, res, added)) return;
     }
 
     const name = renaming ? String(body.name).trim() : role.name;
@@ -316,6 +356,7 @@ function register(router) {
     if (role && role.is_super_admin) {
       return badRequest(res, "Super Admin already has full, unrestricted access — custom permissions don't apply.");
     }
+    if (target.id === user.id) { auditDenied(user, "tried to change own permissions"); return sendJSON(res, 403, { error: "You cannot change your own permissions — ask another administrator." }); }
     let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
     const list = Array.isArray(body.overrides) ? body.overrides : [];
     for (const o of list) {
@@ -341,6 +382,7 @@ function register(router) {
     // turning it on.
     const newGrants = list.filter((o) => o.granted === true && beforeMap.get(o.permissionKey) !== true).map((o) => o.permissionKey);
     if (!requireWithinActorScope(user, res, newGrants, "grant")) return;
+    if (!requireCriticalConfirmation(body, res, newGrants)) return;
 
     const now = nowISO();
     tx(() => {

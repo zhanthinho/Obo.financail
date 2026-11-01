@@ -808,6 +808,36 @@ const THEME_CSS = `
   .gk-av-status.is-off { background: #fee2e2; color: #b91c1c; }
   .gk-av-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   /* COMPACT SUMMARY CARDS round: five ~60px cards in one row on desktop. */
+  /* ADVANCED RBAC round — role editor */
+  .gk-perm-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 10px; border: 1px solid; white-space: nowrap; line-height: 1.5; }
+  .gk-role-editor { display: flex; flex-direction: column; gap: 10px; }
+  .gk-role-top { display: flex; gap: 12px; flex-wrap: wrap; }
+  .gk-role-note { font-size: 12px; color: var(--c-slate); display: flex; gap: 6px; align-items: center; }
+  .gk-role-note--warn { background: #fdf6e7; border: 1px solid #ecd2a4; color: #7a5410; border-radius: 6px; padding: 7px 10px; }
+  .gk-perm-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .gk-perm-summary > div { border: 1px solid var(--c-line); border-radius: 8px; padding: 6px 10px; background: var(--c-card); display: flex; flex-direction: column; gap: 1px; }
+  .gk-perm-summary span { font-size: 11px; color: var(--c-slate); display: inline-flex; align-items: center; gap: 4px; }
+  .gk-perm-summary b { font-size: 17px; font-variant-numeric: tabular-nums; }
+  .gk-perm-summary .is-sensitive b { color: #8a5a0a; }
+  .gk-perm-summary .is-critical b { color: #b42318; }
+  .gk-perm-toolbar { display: flex; gap: 8px; align-items: center; }
+  .gk-perm-toolbar > :first-child { flex: 1; }
+  .gk-perm-hint { font-size: 11.5px; color: var(--c-slate); }
+  .gk-perm-groups { max-height: 400px; overflow-y: auto; border: 1px solid var(--c-line); border-radius: 6px; }
+  .gk-perm-group { border-bottom: 1px solid var(--c-line); }
+  .gk-perm-group-head { background: var(--c-paper); padding: 6px 12px; display: flex; align-items: center; gap: 8px; position: sticky; top: 0; z-index: 1; }
+  .gk-perm-group-toggle { display: inline-flex; align-items: center; gap: 6px; flex: 1; background: none; border: 0; padding: 2px 0; font: inherit; font-weight: 700; font-size: 12.5px; color: var(--c-ink); cursor: pointer; text-align: left; }
+  .gk-perm-group-toggle:focus-visible { outline: 2px solid var(--c-navy); outline-offset: 2px; border-radius: 4px; }
+  .gk-perm-group-count { margin-left: auto; font-weight: 600; font-size: 11.5px; color: var(--c-slate); font-variant-numeric: tabular-nums; }
+  .gk-perm-items { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gk-perm-item { display: flex; align-items: center; gap: 8px; padding: 6px 12px; font-size: 12.5px; min-width: 0; }
+  .gk-perm-item .gk-perm-label { min-width: 0; overflow-wrap: anywhere; }
+  .gk-perm-item[data-level="critical"] { background: color-mix(in srgb, #b42318 3%, transparent); }
+  .gk-role-confirm { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; border: 1px solid #ecd2a4; background: #fdf6e7; color: #7a5410; border-radius: 8px; padding: 10px 12px; font-size: 12.5px; }
+  .gk-role-confirm.is-critical { border-color: #f5c2bc; background: #fdecea; color: #8f1d13; }
+  .gk-role-actions { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 4px; }
+  .gk-role-dirty { margin-right: auto; font-size: 11.5px; font-weight: 600; color: var(--c-amber, #c98a2e); }
+  @media (max-width: 720px) { .gk-perm-items { grid-template-columns: 1fr; } .gk-perm-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } .gk-perm-toolbar { flex-wrap: wrap; } }
   /* DAILY REPORTS round */
   .gk-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
   .gk-dr-crumb { display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--c-slate); margin-bottom: 4px; }
@@ -14138,7 +14168,10 @@ function UserPermissionsModal({ user, currentUser, call, notify, onClose }) {
     setSaving(true);
     try {
       const overrides = Object.entries(overrideState).map(([permissionKey, s]) => ({ permissionKey, granted: s === "grant" }));
-      await call(`/api/users/${user.id}/permissions`, { method: "PATCH", body: { overrides } });
+      const before = new Set((data.overrides || []).filter((o) => o.granted).map((o) => o.permissionKey));
+      const crit = overrides.filter((o) => o.granted && !before.has(o.permissionKey) && (catalog.find((c) => c.key === o.permissionKey) || {}).level === "critical");
+      if (crit.length && !window.confirm(`You are granting ${crit.length} critical permission(s) to ${user.name}: ${crit.map((o) => (catalog.find((c) => c.key === o.permissionKey) || {}).label).join(", ")}. Continue?`)) { setSaving(false); return; }
+      await call(`/api/users/${user.id}/permissions`, { method: "PATCH", body: { overrides, confirmCritical: crit.length > 0 } });
       notify("Permissions updated.");
       onClose();
     } catch (e) { notify(e.message, true); } finally { setSaving(false); }
@@ -14170,7 +14203,7 @@ function UserPermissionsModal({ user, currentUser, call, notify, onClose }) {
                   const grantLocked = !roleHas && !canGrant(item.key);
                   return (
                     <div key={item.key} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 12px", borderTop: `1px solid ${C.line}` }}>
-                      <div style={{ flex: 1, fontSize: 12.5, color: C.ink }}>{item.label}{roleHas && <span style={{ color: C.slate, fontWeight: 400 }}> (role default)</span>}</div>
+                      <div style={{ flex: 1, fontSize: 12.5, color: C.ink, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}><span>{item.label}{roleHas && <span style={{ color: C.slate, fontWeight: 400 }}> (role default)</span>}</span><PermLevelBadge level={item.level} /></div>
                       <Pill tone={effective ? "green" : "slate"}>{effective ? "Effective: Allow" : "Effective: Deny"}</Pill>
                       <div style={{ display: "flex", gap: 4 }}>
                         {["inherit", "grant", "deny"].map((s) => {
@@ -14209,13 +14242,14 @@ function UserPermissionsModal({ user, currentUser, call, notify, onClose }) {
    ========================================================================= */
 function RolesModule({ call, notify, currentUser, hasRaw }) {
   const [rows, setRows] = useState([]); const [catalog, setCatalog] = useState([]); const [loading, setLoading] = useState(true);
+  const [templates, setTemplates] = useState([]);
   const [formRole, setFormRole] = useState(undefined); // undefined = closed, null = creating, object = editing
   const [duplicateSource, setDuplicateSource] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const reload = useCallback(() => {
     setLoading(true);
-    Promise.all([call("/api/roles"), call("/api/permissions")])
-      .then(([r, c]) => { setRows(r.roles); setCatalog(c.permissions); })
+    Promise.all([call("/api/roles"), call("/api/permissions"), call("/api/roles/templates").catch(() => ({ templates: [] }))])
+      .then(([r, c, t]) => { setRows(r.roles); setCatalog(c.permissions); setTemplates(t.templates || []); })
       .catch((e) => notify(e.message, true))
       .finally(() => setLoading(false));
   }, [call, notify]);
@@ -14232,6 +14266,11 @@ function RolesModule({ call, notify, currentUser, hasRaw }) {
     { key: "description", label: "Description", sortField: "description", render: (r) => <span style={{ color: C.slate }}>{r.description || "—"}</span> },
     { key: "userCount", label: "Users", sortField: "userCount", render: (r) => r.userCount },
     { key: "permissionCount", label: "Permissions", sortField: "permissionCount", render: (r) => r.isSuperAdmin ? "All" : r.permissionCount },
+    { key: "levels", label: "Sensitive / Critical", render: (r) => r.isSuperAdmin ? <PermLevelBadge level="critical" /> : r.levelCounts ? (
+      <span style={{ display: "inline-flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+        <span className="gk-perm-badge" data-level="sensitive" style={{ background: PERM_LEVEL_META.sensitive.bg, color: PERM_LEVEL_META.sensitive.fg, borderColor: PERM_LEVEL_META.sensitive.border }}><NavIcon name="lock" size={11} />{r.levelCounts.sensitive}</span>
+        <span className="gk-perm-badge" data-level="critical" style={{ background: PERM_LEVEL_META.critical.bg, color: PERM_LEVEL_META.critical.fg, borderColor: PERM_LEVEL_META.critical.border }}><NavIcon name="shield" size={11} />{r.levelCounts.critical}</span>
+      </span>) : "—" },
     { key: "status", label: "Status", sortField: "status", render: (r) => r.status === "inactive" ? <Pill tone="slate">Inactive</Pill> : <Pill tone="green">Active</Pill> },
     { key: "createdAt", label: "Created", sortField: "createdAt", render: (r) => <DateTimeCell value={r.createdAt} /> },
   ];
@@ -14274,7 +14313,7 @@ function RolesModule({ call, notify, currentUser, hasRaw }) {
       </div>
       {formRole !== undefined && (
         <RoleFormModal
-          role={formRole} catalog={catalog} allRoles={rows} currentUser={currentUser}
+          role={formRole} catalog={catalog} allRoles={rows} templates={templates} currentUser={currentUser}
           onClose={() => setFormRole(undefined)}
           onSubmit={async (body) => {
             try {
@@ -14289,7 +14328,9 @@ function RolesModule({ call, notify, currentUser, hasRaw }) {
       {duplicateSource && (
         <DuplicateRoleModal role={duplicateSource} onClose={() => setDuplicateSource(null)}
           onSubmit={async (name) => {
-            try { await call(`/api/roles/${duplicateSource.id}/duplicate`, { method: "POST", body: { name } }); notify("Role duplicated."); setDuplicateSource(null); reload(); }
+            const crit = duplicateSource.levelCounts ? duplicateSource.levelCounts.critical : 0;
+            if (crit && !window.confirm(`"${duplicateSource.name}" has ${crit} critical permission(s). The copy will have them too. Continue?`)) return;
+            try { await call(`/api/roles/${duplicateSource.id}/duplicate`, { method: "POST", body: { name, confirmCritical: crit > 0 } }); notify("Role duplicated."); setDuplicateSource(null); reload(); }
             catch (e) { notify(e.message, true); }
           }} />
       )}
@@ -14510,7 +14551,27 @@ function SystemOverviewModule({ call, notify }) {
   );
 }
 
-function RoleFormModal({ role, catalog, allRoles, currentUser, onClose, onSubmit }) {
+// ADVANCED RBAC round: sensitivity badges used by the role and user
+// permission editors (levels come from the server catalog).
+const PERM_LEVEL_META = {
+  sensitive: { label: "Sensitive", icon: "lock", bg: "#fdf6e7", fg: "#8a5a0a", border: "#ecd2a4" },
+  critical: { label: "Critical", icon: "shield", bg: "#fdecea", fg: "#b42318", border: "#f5c2bc" },
+};
+function PermLevelBadge({ level }) {
+  const m = PERM_LEVEL_META[level];
+  if (!m) return null;
+  return (
+    <span className="gk-perm-badge" data-level={level} style={{ background: m.bg, color: m.fg, borderColor: m.border }}>
+      <NavIcon name={m.icon} size={11} />{m.label}
+    </span>
+  );
+}
+function permMatches(item, q) {
+  if (!q) return true;
+  return [item.label, item.key, item.action, item.moduleLabel, item.level].some((v) => String(v || "").toLowerCase().includes(q));
+}
+
+function RoleFormModal({ role, catalog, allRoles, templates, currentUser, onClose, onSubmit }) {
   const isEdit = !!role;
   const [name, setName] = useState(role?.name || "");
   const [description, setDescription] = useState(role?.description || "");
@@ -14518,111 +14579,180 @@ function RoleFormModal({ role, catalog, allRoles, currentUser, onClose, onSubmit
   const [checked, setChecked] = useState(() => new Set(role?.permissions || []));
   const [search, setSearch] = useState("");
   const [startFrom, setStartFrom] = useState("");
-  const nameLocked = !!(role && role.isProtected); // Admin: permissions stay editable, identity doesn't (matches backend assertRoleMutable "rename").
-  // NO PRIVILEGE ESCALATION: a non-Super-Admin actor can only check a
-  // permission box that's within their own effective grants — a box already
-  // checked because the role already carried it (before this actor's own
-  // scope narrowed) stays checked and visible, just not re-toggleable off
-  // and back on beyond what they hold. Mirrors the server-side "only the
-  // NEWLY ADDED keys are checked against the actor's scope" rule in
-  // routes/roles.js's PATCH handler exactly.
+  const [collapsed, setCollapsed] = useState(() => new Set());
+  const [confirm, setConfirm] = useState(null); // { kind, message, onYes }
+  const [saving, setSaving] = useState(false);
+  const nameLocked = !!(role && role.isProtected);
+  // NO PRIVILEGE ESCALATION (mirrors routes/roles.js): a non-Super-Admin
+  // can only tick what they hold themselves; a box the role already had
+  // stays as it is. A protected built-in role, and the actor's own role,
+  // are read-only for anyone but a Super Admin.
   const actorRawKeys = currentUser?.rawKeys; // null = Super Admin (every key)
+  const isSA = actorRawKeys === null;
+  const ownRole = !!(role && currentUser && currentUser.roleId === role.id);
+  const permsReadOnly = !isSA && !!role && (role.isProtected || ownRole);
   const alreadyHadKey = useMemo(() => new Set(role?.permissions || []), [role]);
-  const lockedOut = (key) => actorRawKeys !== null && !(actorRawKeys || []).includes(key) && !alreadyHadKey.has(key);
+  const lockedOut = (key) => permsReadOnly || (actorRawKeys !== null && !(actorRawKeys || []).includes(key) && !alreadyHadKey.has(key));
+  const levelOf = useMemo(() => Object.fromEntries((catalog || []).map((c) => [c.key, c.level || "standard"])), [catalog]);
 
-  // ROLE TEMPLATES (light version): picking a template copies that role's
-  // CURRENT permission set into the checkbox state right here, client-side
-  // — still fully editable afterward, never a hidden server-side link back
-  // to the template.
-  const templates = useMemo(() => (allRoles || []).filter((r) => !r.isSuperAdmin && r.id !== role?.id), [allRoles, role]);
-  function applyTemplate(id) {
-    setStartFrom(id);
-    if (!id) return;
-    const t = templates.find((r) => r.id === id);
-    if (t) setChecked(new Set(t.permissions || []));
+  const roleTemplates = useMemo(() => (allRoles || []).filter((r) => !r.isSuperAdmin && r.id !== role?.id), [allRoles, role]);
+  function applyStart(v) {
+    setStartFrom(v);
+    if (!v) return;
+    const [kind, id] = v.split(":");
+    const src = kind === "tpl" ? (templates || []).find((t) => t.key === id) : roleTemplates.find((r) => r.id === id);
+    if (src) setChecked(new Set((src.permissions || []).filter((k) => !lockedOut(k))));
   }
 
-  const groups = useMemo(() => {
-    const g = groupCatalogByModule(catalog);
-    const q = search.trim().toLowerCase();
-    if (!q) return g;
-    return g.map((grp) => ({ ...grp, items: grp.items.filter((i) => i.label.toLowerCase().includes(q) || i.key.toLowerCase().includes(q)) })).filter((grp) => grp.items.length);
-  }, [catalog, search]);
+  const q = search.trim().toLowerCase();
+  const groups = useMemo(() => groupCatalogByModule(catalog).map((g) => ({ ...g, items: g.items.filter((i) => permMatches(i, q)) })).filter((g) => g.items.length), [catalog, q]);
+
+  const selected = Array.from(checked);
+  const counts = { sensitive: selected.filter((k) => levelOf[k] === "sensitive").length, critical: selected.filter((k) => levelOf[k] === "critical").length };
+  const newCritical = selected.filter((k) => levelOf[k] === "critical" && !alreadyHadKey.has(k));
+  const initial = useMemo(() => JSON.stringify({ n: role?.name || "", d: role?.description || "", s: role?.status || "active", p: [...(role?.permissions || [])].sort() }), [role]);
+  const dirty = JSON.stringify({ n: name, d: description, s: status, p: [...selected].sort() }) !== initial;
 
   function toggle(key) {
-    if (lockedOut(key)) return; // can't grant a permission the actor doesn't themselves have
+    if (lockedOut(key)) return;
     setChecked((prev) => { const next = new Set(prev); if (next.has(key)) next.delete(key); else next.add(key); return next; });
   }
+  // A module tick selects only its STANDARD permissions — sensitive and
+  // critical ones always need their own, deliberate tick. Clearing clears all.
   function toggleModule(grp, on) {
-    setChecked((prev) => { const next = new Set(prev); for (const item of grp.items) { if (lockedOut(item.key)) continue; if (on) next.add(item.key); else next.delete(item.key); } return next; });
+    setChecked((prev) => {
+      const next = new Set(prev);
+      for (const item of grp.items) {
+        if (lockedOut(item.key)) continue;
+        if (on) { if ((item.level || "standard") === "standard") next.add(item.key); } else next.delete(item.key);
+      }
+      return next;
+    });
   }
-  // Select All only ever selects what this actor is actually allowed to
-  // grant — a Super Admin's "every key" still means every key; anyone else
-  // gets their own grants plus whatever the role already had.
-  function selectAll() { setChecked(new Set(catalog.map((c) => c.key).filter((k) => !lockedOut(k)))); }
-  function clearAll() { setChecked(new Set()); }
+  function toggleCollapse(k) { setCollapsed((prev) => { const n = new Set(prev); if (n.has(k)) n.delete(k); else n.add(k); return n; }); }
+  function selectAll() {
+    const keys = catalog.map((c) => c.key).filter((k) => !lockedOut(k));
+    const crit = keys.filter((k) => levelOf[k] === "critical").length;
+    setConfirm({ kind: "warn", message: `Select all ${keys.length} permissions you are allowed to grant? This includes ${keys.filter((k) => levelOf[k] === "sensitive").length} sensitive and ${crit} critical permission(s).`, yes: "Select all", onYes: () => setChecked(new Set([...keys, ...[...checked].filter((k) => lockedOut(k))])) });
+  }
+  function clearAll() {
+    setConfirm({ kind: "warn", message: `Clear all ${checked.size} selected permissions?`, yes: "Clear all", onYes: () => setChecked(new Set([...checked].filter((k) => lockedOut(k)))) });
+  }
+  function requestClose() {
+    if (dirty && !saving) setConfirm({ kind: "warn", message: "You have unsaved changes to this role. Close without saving?", yes: "Discard changes", onYes: onClose });
+    else onClose();
+  }
+  async function doSubmit(confirmCritical) {
+    setSaving(true);
+    const body = { name, description, status };
+    const permsChanged = JSON.stringify([...selected].sort()) !== JSON.stringify([...(role?.permissions || [])].sort());
+    if (!isEdit || permsChanged) body.permissions = selected;
+    if (confirmCritical) body.confirmCritical = true;
+    try { await onSubmit(body); } finally { setSaving(false); }
+  }
+  function save() {
+    if (!name.trim()) return;
+    if (newCritical.length) {
+      setConfirm({ kind: "critical", message: `This role will be able to perform ${newCritical.length} critical action(s): ${newCritical.map((k) => (catalog.find((c) => c.key === k) || {}).label || k).join(", ")}. Anyone with this role can delete or reverse financial records, administer users or change configuration. Save anyway?`, yes: "Save with critical permissions", onYes: () => doSubmit(true) });
+      return;
+    }
+    doSubmit(false);
+  }
 
   return (
-    <Modal title={isEdit ? `Edit role — ${role.name}` : "New role"} onClose={onClose} wide>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+    <Modal title={isEdit ? `Edit role — ${role.name}` : "New role"} onClose={requestClose} wide>
+      <div className="gk-role-editor" data-dirty={dirty ? "1" : "0"}>
+        <div className="gk-role-top">
           <Field label="Role name" width={260} hint={nameLocked ? "This role is protected — its name can't be changed." : undefined}>
-            <Input value={name} onChange={(e) => setName(e.target.value)} disabled={nameLocked} placeholder="e.g. Finance Manager" />
+            <Input aria-label="Role name" value={name} onChange={(e) => setName(e.target.value)} disabled={nameLocked} placeholder="e.g. Finance Manager" />
           </Field>
-          <Field label="Status" width={160}>
-            <Select value={status} onChange={(e) => setStatus(e.target.value)}><option value="active">Active</option><option value="inactive">Inactive</option></Select>
+          <Field label="Status" width={150}>
+            <Select aria-label="Role status" value={status} onChange={(e) => setStatus(e.target.value)} disabled={nameLocked}><option value="active">Active</option><option value="inactive">Inactive</option></Select>
           </Field>
-          {!isEdit && templates.length > 0 && (
-            <Field label="Start from (optional)" width={220}>
-              <Select value={startFrom} onChange={(e) => applyTemplate(e.target.value)}>
+          {!isEdit && (
+            <Field label="Start from (optional)" width={240}>
+              <Select aria-label="Start from" value={startFrom} onChange={(e) => applyStart(e.target.value)}>
                 <option value="">— Blank —</option>
-                {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                {(templates || []).length > 0 && <optgroup label="Templates">{templates.map((t) => <option key={t.key} value={`tpl:${t.key}`}>{t.name}</option>)}</optgroup>}
+                {roleTemplates.length > 0 && <optgroup label="Copy an existing role">{roleTemplates.map((t) => <option key={t.id} value={`role:${t.id}`}>{t.name}</option>)}</optgroup>}
               </Select>
             </Field>
           )}
         </div>
-        <Field label="Description"><TextArea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What this role is for." /></Field>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
-          <div style={{ fontWeight: 700, fontSize: 13 }}>Permissions</div>
-          <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-            <Btn size="sm" tone="ghost" onClick={selectAll}>Select All</Btn>
-            <Btn size="sm" tone="ghost" onClick={clearAll}>Clear All</Btn>
+        <Field label="Description"><TextArea aria-label="Role description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What this role is for." disabled={nameLocked && !isSA} /></Field>
+        {startFrom.startsWith("tpl:") && <div className="gk-role-note">{((templates || []).find((t) => `tpl:${t.key}` === startFrom) || {}).description}</div>}
+        {permsReadOnly && (
+          <div className="gk-role-note gk-role-note--warn" role="note"><NavIcon name="lock" size={14} />
+            {ownRole ? "This is your own role — its permissions can only be changed by a Super Admin." : "This is a protected built-in role — only a Super Admin can change its permissions."}
           </div>
+        )}
+
+        <div className="gk-perm-summary" aria-label="Permission summary">
+          <div><span>Available</span><b>{catalog.length}</b></div>
+          <div><span>Selected</span><b data-count="selected">{checked.size}</b></div>
+          <div className="is-sensitive"><span><NavIcon name="lock" size={12} /> Sensitive selected</span><b data-count="sensitive">{counts.sensitive}</b></div>
+          <div className="is-critical"><span><NavIcon name="shield" size={12} /> Critical selected</span><b data-count="critical">{counts.critical}</b></div>
         </div>
-        <SearchInput placeholder={'Search permissions… (e.g. "delete", "export")'} value={search} onChange={(e) => setSearch(e.target.value)} />
-        <div style={{ maxHeight: 360, overflowY: "auto", border: `1px solid ${C.line}`, borderRadius: 6 }}>
+
+        <div className="gk-perm-toolbar">
+          <SearchInput aria-label="Search permissions" placeholder={'Search permissions… (e.g. "delete", "export", "critical")'} value={search} onChange={(e) => setSearch(e.target.value)} />
+          {!permsReadOnly && <Btn size="sm" tone="ghost" icon="checkCircle2" onClick={selectAll}>Select All</Btn>}
+          {!permsReadOnly && <Btn size="sm" tone="ghost" icon="x" onClick={clearAll}>Clear All</Btn>}
+        </div>
+        <div className="gk-perm-hint">Ticking a module selects its <b>standard</b> permissions only — sensitive and critical permissions must each be ticked on purpose.</div>
+
+        <div className="gk-perm-groups">
           {groups.length === 0 ? <Empty text="No permissions match your search." /> : groups.map((grp) => {
-            const allOn = grp.items.every((i) => checked.has(i.key));
-            const someOn = grp.items.some((i) => checked.has(i.key));
+            const all = grp.items;
+            const on = all.filter((i) => checked.has(i.key)).length;
+            const allStdOn = all.filter((i) => (i.level || "standard") === "standard").every((i) => checked.has(i.key));
+            const open = !collapsed.has(grp.moduleKey) || !!q;
             return (
-              <div key={grp.moduleKey} style={{ borderBottom: `1px solid ${C.line}` }}>
-                <div style={{ background: C.paper, padding: "7px 12px", display: "flex", alignItems: "center", gap: 8 }}>
-                  <input type="checkbox" checked={allOn} ref={(el) => { if (el) el.indeterminate = !allOn && someOn; }} onChange={() => toggleModule(grp, !allOn)} style={{ cursor: "pointer" }} />
-                  <span style={{ fontWeight: 700, fontSize: 12, color: C.ink }}>{grp.moduleLabel}</span>
+              <div key={grp.moduleKey} className="gk-perm-group" data-module={grp.moduleKey}>
+                <div className="gk-perm-group-head">
+                  <input type="checkbox" aria-label={`Select standard ${grp.moduleLabel} permissions`} checked={on > 0 && allStdOn} disabled={permsReadOnly}
+                    ref={(el) => { if (el) el.indeterminate = on > 0 && !(on === all.length); }} onChange={() => toggleModule(grp, !(on > 0 && allStdOn))} />
+                  <button type="button" className="gk-perm-group-toggle" aria-expanded={open} onClick={() => toggleCollapse(grp.moduleKey)}>
+                    <NavIcon name={open ? "chevronDown" : "chevron"} size={14} />
+                    <span>{grp.moduleLabel}</span>
+                    <span className="gk-perm-group-count">{on}/{all.length}</span>
+                  </button>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)" }}>
-                  {grp.items.map((item) => {
-                    const locked = lockedOut(item.key);
-                    return (
-                      <label key={item.key} title={locked ? "You don't have this permission yourself, so you can't grant it." : undefined}
-                        style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", fontSize: 12.5, color: locked ? C.slate : C.ink, cursor: locked ? "not-allowed" : "pointer" }}>
-                        <input type="checkbox" checked={checked.has(item.key)} disabled={locked} onChange={() => toggle(item.key)} style={{ cursor: locked ? "not-allowed" : "pointer" }} />
-                        {locked && <NavIcon name="lock" size={13} style={{ color: C.slate }} />}
-                        {item.label}
-                      </label>
-                    );
-                  })}
-                </div>
+                {open && (
+                  <div className="gk-perm-items">
+                    {all.map((item) => {
+                      const locked = lockedOut(item.key);
+                      return (
+                        <label key={item.key} className="gk-perm-item" data-key={item.key} data-level={item.level || "standard"}
+                          title={locked && !permsReadOnly ? "You don't have this permission yourself, so you can't grant it." : item.key}
+                          style={{ color: locked ? C.slate : C.ink, cursor: locked ? "not-allowed" : "pointer" }}>
+                          <input type="checkbox" checked={checked.has(item.key)} disabled={locked} onChange={() => toggle(item.key)} />
+                          {locked && !permsReadOnly && <NavIcon name="lock" size={13} style={{ color: C.slate }} />}
+                          <span className="gk-perm-label">{item.label}</span>
+                          <PermLevelBadge level={item.level} />
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
-        <div style={{ fontSize: 11.5, color: C.slate }}>{checked.size} of {catalog.length} permissions selected.</div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 6 }}>
-          <Btn tone="ghost" onClick={onClose}>Cancel</Btn>
-          <Btn tone="primary" onClick={() => onSubmit({ name, description, status, permissions: Array.from(checked) })}>{isEdit ? "Save role" : "Create role"}</Btn>
+        {confirm && (
+          <div className={`gk-role-confirm${confirm.kind === "critical" ? " is-critical" : ""}`} role="alertdialog" aria-label="Confirm">
+            <NavIcon name={confirm.kind === "critical" ? "shield" : "triangleAlert"} size={16} />
+            <div style={{ flex: 1 }}>{confirm.message}</div>
+            <Btn size="sm" tone={confirm.kind === "critical" ? "danger" : "primary"} onClick={() => { const f = confirm.onYes; setConfirm(null); f(); }}>{confirm.yes}</Btn>
+            <Btn size="sm" tone="ghost" onClick={() => setConfirm(null)}>Cancel</Btn>
+          </div>
+        )}
+
+        <div className="gk-role-actions">
+          {dirty && <span className="gk-role-dirty" data-save-status="dirty">Unsaved changes</span>}
+          <Btn tone="ghost" onClick={requestClose}>Cancel</Btn>
+          <Btn tone="primary" icon="save" disabled={saving || !name.trim() || (isEdit && !dirty)} onClick={save}>{saving ? "Saving…" : isEdit ? "Save Role" : "Create Role"}</Btn>
         </div>
       </div>
     </Modal>

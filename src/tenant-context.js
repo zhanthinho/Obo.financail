@@ -28,13 +28,13 @@ class TenantContextError extends Error {
 }
 
 // Runs `fn` inside a fresh, empty request store.
-function runRequest(fn, lang) {
+function runRequest(fn, lang, meta) {
   // COMPANY ID VISIBILITY round: every request starts with Company IDs
   // REDACTED; only a verified platform Super Admin session turns it off
   // (rbac.requirePlatformAdmin / requirePlatformWorkspace / platform login).
   // LANGUAGE round: `lang` ("en" | "so", from the X-Lang header) only picks
   // the language of messages and export labels — it carries no authority.
-  return als.run({ tenant: null, company: null, showCompanyIds: false, lang: lang === "so" ? "so" : "en" }, fn);
+  return als.run({ tenant: null, company: null, showCompanyIds: false, lang: lang === "so" ? "so" : "en", method: meta && meta.method, path: meta && meta.path }, fn);
 }
 // The raw request store (or null) — used by i18n/request.js only.
 function requestStore() { return als.getStore() || null; }
