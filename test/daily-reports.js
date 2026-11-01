@@ -505,6 +505,7 @@ async function browserPart() {
       const dlg = p.getByRole("dialog");
       await dlg.getByLabel("Snapshot time").waitFor({ timeout: 5000 });
       assert(await dlg.getByLabel("Company time zone").inputValue() === TZ, "time zone");
+      await dlg.locator('tr[data-run-status="succeeded"]').first().waitFor({ timeout: 6000 });
       assert(await dlg.locator('tr[data-run-status="missed"]').count() >= 1 && await dlg.locator('tr[data-run-status="succeeded"]').count() >= 1, "run history incomplete");
       await p.keyboard.press("Escape"); await p.waitForTimeout(300);
     });
