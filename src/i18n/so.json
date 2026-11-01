@@ -2391,5 +2391,10 @@
  "matching the filters": "ku habboon shaandhaynta",
  "sum of the matching balances": "wadarta haraagyada ku habboon",
  "balance below zero": "haraag ka hooseeya eber",
- "Loading accounts…": "Akoonnada waa la soo rarayaa…"
+ "Loading accounts…": "Akoonnada waa la soo rarayaa…",
+ "All credits posted to this account (ledger)": "Dhammaan kireditka la geliyay akoonkan (ledger)",
+ "All debits posted to this account (ledger)": "Dhammaan debitka laga jaray akoonkan (ledger)",
+ "Reload the latest account data": "Soo celi xogta akoonnada ee ugu dambeysay",
+ "Export the matching accounts to Excel": "U dhoofi akoonnada ku habboon Excel",
+ "Credits − Debits differ from the stored balance — check this account's ledger": "Kiredit − Debit kama siman haraagga la kaydiyay — eeg ledger-ka akoonkan"
 }
