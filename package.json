@@ -47,7 +47,8 @@
     "test:account-view": "node test/account-view.js",
     "test:templates": "node test/templates.js",
     "test:daily-reports": "node test/daily-reports.js",
-    "test:rbac-advanced": "node test/rbac-advanced.js"
+    "test:rbac-advanced": "node test/rbac-advanced.js",
+    "test:accounts-console": "node test/accounts-console.js"
   },
   "dependencies": {
     "exceljs": "^4.4.0",

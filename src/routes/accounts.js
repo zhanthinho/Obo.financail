@@ -76,8 +76,9 @@ function buildAccountsFilter(user, query) {
   }
   if (query.balanceSign === "positive") clauses.push("(CASE WHEN currency='USD' THEN balance_usd ELSE balance_slsh END) > 0");
   else if (query.balanceSign === "negative") clauses.push("(CASE WHEN currency='USD' THEN balance_usd ELSE balance_slsh END) < 0");
+  else if (query.balanceSign === "zero") clauses.push("(CASE WHEN currency='USD' THEN balance_usd ELSE balance_slsh END) = 0");
   const where = "WHERE " + clauses.join(" AND ");
-  const sortMap = { name: "name ASC", newest: "created_at DESC", oldest: "created_at ASC", balance: "(CASE WHEN currency='USD' THEN balance_usd ELSE balance_slsh END) DESC" };
+  const sortMap = { name: "name ASC", name_desc: "name DESC", newest: "created_at DESC", oldest: "created_at ASC", balance: "(CASE WHEN currency='USD' THEN balance_usd ELSE balance_slsh END) DESC", balance_asc: "(CASE WHEN currency='USD' THEN balance_usd ELSE balance_slsh END) ASC" };
   const orderBy = sortMap[query.sort] || sortMap.name;
   return { where, sqlParams, orderBy };
 }
@@ -115,6 +116,48 @@ function clearLink(clientId) {
   const c = get("SELECT linked_account_id FROM clients WHERE id = ?", [clientId]);
   if (c?.linked_account_id) run("UPDATE clients SET linked_account_id = NULL WHERE id = ?", [c.linked_account_id]);
   run("UPDATE clients SET linked_account_id = NULL WHERE id = ?", [clientId]);
+}
+
+// ACCOUNTS CONSOLE round — Credits / Debits per account and the page's
+// summary, for the Accounts — USD / SLSH screens (?withTotals=1).
+// Source: account_ledger, the same entries the balance itself is replayed
+// from (rebuildAccountBalance: balance = Σ credits − Σ debits for the
+// account's own currency), so Credits − Debits always equals the stored
+// balance; any account where it would not is reported, never hidden.
+// One GROUP BY query for all accounts — never one query per row.
+// All figures stay in the account's own currency; USD and SLSH are never
+// added together (the screens are per currency).
+function withLedgerTotals(rows, allowedCurrencyList, requestedCurrency) {
+  const cur = allowedCurrencyList.filter((c) => c === "USD" || c === "SLSH");
+  const totals = new Map();
+  if (rows.length && cur.length) {
+    const agg = all(`SELECT client_id, currency,
+        COALESCE(SUM(CASE WHEN type = 'deposit' THEN amount ELSE 0 END), 0) AS credits,
+        COALESCE(SUM(CASE WHEN type = 'withdrawal' THEN amount ELSE 0 END), 0) AS debits,
+        COUNT(*) AS entries
+      FROM account_ledger WHERE currency IN (${cur.map(() => "?").join(",")}) GROUP BY client_id, currency`, cur);
+    for (const a of agg) totals.set(`${a.client_id}|${a.currency}`, a);
+  }
+  const r2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+  const byCur = {};
+  const blank = (c) => ({ currency: c, accounts: 0, totalHeld: 0, positive: 0, zero: 0, inDebt: 0, credits: 0, debits: 0, mismatches: 0 });
+  // The requested currency always gets a summary (zeros when nothing matches).
+  if (cur.includes(requestedCurrency)) byCur[requestedCurrency] = blank(requestedCurrency);
+  const accounts = rows.map((c) => {
+    const out = serialize(c);
+    const t = totals.get(`${c.id}|${c.currency}`) || { credits: 0, debits: 0, entries: 0 };
+    out.credits = r2(t.credits);
+    out.debits = r2(t.debits);
+    out.ledgerEntries = t.entries;
+    out.ledgerMismatch = Math.abs(r2(t.credits - t.debits) - r2(out.balance)) >= 0.005;
+    const s = byCur[c.currency] || (byCur[c.currency] = blank(c.currency));
+    s.accounts += 1; s.totalHeld += out.balance; s.credits += out.credits; s.debits += out.debits;
+    if (out.balance > 0) s.positive += 1; else if (out.balance < 0) s.inDebt += 1; else s.zero += 1;
+    if (out.ledgerMismatch) s.mismatches += 1;
+    return out;
+  });
+  for (const s of Object.values(byCur)) { s.totalHeld = r2(s.totalHeld); s.credits = r2(s.credits); s.debits = r2(s.debits); }
+  return { accounts, summary: byCur };
 }
 
 const ACCOUNT_LIST_PERMS = ["accounts.view", "exchange.create", "transfers.create", "payments.create", "quotations.create", "quotations.update"];
@@ -160,8 +203,9 @@ function register(router) {
     }
     if (query.balanceSign === "positive") clauses.push("(CASE WHEN currency='USD' THEN balance_usd ELSE balance_slsh END) > 0");
     else if (query.balanceSign === "negative") clauses.push("(CASE WHEN currency='USD' THEN balance_usd ELSE balance_slsh END) < 0");
+    else if (query.balanceSign === "zero") clauses.push("(CASE WHEN currency='USD' THEN balance_usd ELSE balance_slsh END) = 0");
     const where = clauses.length ? "WHERE " + clauses.join(" AND ") : "";
-    const sortMap = { name: "name ASC", newest: "created_at DESC", oldest: "created_at ASC", balance: "(CASE WHEN currency='USD' THEN balance_usd ELSE balance_slsh END) DESC" };
+    const sortMap = { name: "name ASC", name_desc: "name DESC", newest: "created_at DESC", oldest: "created_at ASC", balance: "(CASE WHEN currency='USD' THEN balance_usd ELSE balance_slsh END) DESC", balance_asc: "(CASE WHEN currency='USD' THEN balance_usd ELSE balance_slsh END) ASC" };
     let orderBy = sortMap[query.sort] || sortMap.name;
     // ACCOUNT / CLIENT SEARCH — CURRENCY SEPARATION (spec item 16): when a
     // caller is searching (every account/client picker across the app) and
@@ -181,6 +225,7 @@ function register(router) {
       return sendJSON(res, 200, { accounts: rows.map(serialize) });
     }
     const rows = all(`SELECT * FROM clients ${where} ORDER BY ${orderBy}`, sqlParams);
+    if (query.withTotals === "1") return sendJSON(res, 200, withLedgerTotals(rows, allowed, query.currency));
     sendJSON(res, 200, { accounts: rows.map(serialize) });
   });
 

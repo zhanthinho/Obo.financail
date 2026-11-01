@@ -2379,5 +2379,17 @@
  "Discard changes": "Iska daa isbeddellada",
  "Save with critical permissions": "Kaydi iyadoo leh oggolaansho halis ah",
  "This is your own role — its permissions can only be changed by a Super Admin.": "Kani waa doorkaaga — oggolaanshihiisa waxaa beddeli kara Super Admin oo keliya.",
- "This is a protected built-in role — only a Super Admin can change its permissions.": "Kani waa door la ilaaliyo — Super Admin oo keliya ayaa beddeli kara oggolaanshihiisa."
+ "This is a protected built-in role — only a Super Admin can change its permissions.": "Kani waa door la ilaaliyo — Super Admin oo keliya ayaa beddeli kara oggolaanshihiisa.",
+ "Customer Accounts": "Akoonnada Macaamiisha",
+ "Company Accounts": "Akoonnada Shirkadaha",
+ "Zero balance": "Haraag eber ah",
+ "Name A–Z": "Magaca A–Z",
+ "Name Z–A": "Magaca Z–A",
+ "Lowest balance": "Haraagga ugu hooseeya",
+ "Newest": "Kuwa ugu cusub",
+ "Oldest": "Kuwa ugu da'da weyn",
+ "matching the filters": "ku habboon shaandhaynta",
+ "sum of the matching balances": "wadarta haraagyada ku habboon",
+ "balance below zero": "haraag ka hooseeya eber",
+ "Loading accounts…": "Akoonnada waa la soo rarayaa…"
 }

@@ -808,6 +808,42 @@ const THEME_CSS = `
   .gk-av-status.is-off { background: #fee2e2; color: #b91c1c; }
   .gk-av-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   /* COMPACT SUMMARY CARDS round: five ~60px cards in one row on desktop. */
+  /* ACCOUNTS CONSOLE round */
+  .gk-acc-tabs { display: flex; gap: 8px; margin: 2px 0 12px; flex-wrap: wrap; }
+  .gk-acc-tab { display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--c-line); background: var(--c-card); color: var(--c-navy-deep); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .gk-acc-tab:hover { border-color: var(--c-navy); }
+  .gk-acc-tab.is-active { background: var(--c-navy); border-color: var(--c-navy); color: var(--c-text-on-primary, #fff); }
+  .gk-acc-tab:focus-visible, .gk-acc-btn:focus-visible, .gk-acc-kpi:focus-visible { outline: 2px solid var(--c-cyan); outline-offset: 2px; }
+  .gk-acc-toolbar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; background: var(--c-card); border: 1px solid var(--c-line); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; }
+  .gk-acc-field { display: flex; flex-direction: column; gap: 4px; min-width: 140px; flex: 0 1 160px; }
+  .gk-acc-field--search { flex: 1 1 260px; min-width: 200px; }
+  .gk-acc-label { font-size: 11.5px; font-weight: 600; color: var(--c-ink); }
+  .gk-acc-input { display: flex; align-items: center; gap: 7px; height: 34px; box-sizing: border-box; border: 1px solid var(--c-line); border-radius: 6px; background: var(--c-card); padding: 0 9px; color: var(--c-slate); }
+  .gk-acc-input:focus-within { border-color: var(--c-navy); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-cyan) 18%, transparent); }
+  .gk-acc-input input, .gk-acc-input select { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font: inherit; font-size: 12.5px; color: var(--c-ink); height: 100%; }
+  .gk-acc-toolbar-actions { display: flex; gap: 6px; margin-left: auto; align-items: center; flex-wrap: wrap; }
+  .gk-acc-btn { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 11px; border-radius: 6px; border: 1px solid var(--c-line); background: var(--c-card); color: var(--c-navy); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .gk-acc-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--c-cyan) 8%, var(--c-card)); }
+  .gk-acc-btn:disabled { opacity: .6; cursor: progress; }
+  .gk-acc-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+  .gk-acc-kpi { display: flex; align-items: center; gap: 11px; text-align: left; font: inherit; color: inherit; background: var(--c-card); border: 1px solid var(--c-line); border-left: 3px solid var(--c-navy); border-radius: 8px; padding: 11px 13px; min-width: 0; box-shadow: 0 1px 2px rgba(15, 42, 54, 0.04); }
+  button.gk-acc-kpi { cursor: pointer; }
+  .gk-acc-kpi[aria-pressed="true"] { box-shadow: 0 0 0 2px color-mix(in srgb, var(--c-navy) 35%, transparent); }
+  .gk-acc-kpi-icon { width: 40px; height: 40px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; background: color-mix(in srgb, var(--c-navy) 10%, var(--c-card)); color: var(--c-navy); }
+  .gk-acc-kpi.is-pos { border-left-color: #16803d; } .gk-acc-kpi.is-pos .gk-acc-kpi-icon { background: #e8f7ed; color: #16803d; }
+  .gk-acc-kpi.is-neg { border-left-color: #dc2626; } .gk-acc-kpi.is-neg .gk-acc-kpi-icon { background: #fdecec; color: #dc2626; }
+  .gk-acc-kpi-body { display: flex; flex-direction: column; min-width: 0; }
+  .gk-acc-kpi-label { font-size: 12.5px; font-weight: 600; color: var(--c-slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gk-acc-kpi-value { font-size: 24px; font-weight: 700; line-height: 1.2; color: var(--c-ink); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gk-acc-kpi-sub { font-size: 11.5px; color: var(--c-slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gk-acc-num { font-family: inherit; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .gk-acc-credit { color: #16803d; font-weight: 600; }
+  .gk-acc-debit { color: #dc2626; font-weight: 600; }
+  .gk-acc-warn { display: flex; gap: 8px; align-items: flex-start; background: #fdf6e7; border: 1px solid #ecd2a4; color: #7a5410; border-radius: 6px; padding: 9px 12px; font-size: 12.5px; margin-bottom: 10px; }
+  .gk-acc-error { display: flex; align-items: center; gap: 8px; padding: 18px; color: #b91c1c; font-size: 13px; }
+  @media (max-width: 1100px) { .gk-acc-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .gk-acc-toolbar-actions { margin-left: 0; } }
+  @media (max-width: 560px) { .gk-acc-kpi-value { font-size: 20px; } .gk-acc-field, .gk-acc-field--search { flex: 1 1 100%; min-width: 0; } }
+  @media (prefers-reduced-motion: reduce) { .gk-spin { animation: none !important; } }
   /* ADVANCED RBAC round — role editor */
   .gk-perm-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 10px; border: 1px solid; white-space: nowrap; line-height: 1.5; }
   .gk-role-editor { display: flex; flex-direction: column; gap: 10px; }
@@ -9462,6 +9498,13 @@ function AccountsModule({ currency, call, dl, preview, print, notify, perm, hasR
   const [from, setFrom] = useState(""); const [to, setTo] = useState(""); const [sort, setSort] = useState("name");
   const [balanceSign, setBalanceSign] = useState("all");
   const [rows, setRows] = useState([]); const [loading, setLoading] = useState(true);
+  // ACCOUNTS CONSOLE round: server-side summary (all matching accounts, not
+  // just the visible page) and a debounced search box.
+  const [summary, setSummary] = useState(null);
+  const [loadError, setLoadError] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchQ, setSearchQ] = useState("");
+  useEffect(() => { const t = setTimeout(() => setSearchQ(search.trim()), 250); return () => clearTimeout(t); }, [search]);
   const [addOpen, setAddOpen] = useState(false); const [editAccount, setEditAccount] = useState(null);
   // ACCOUNT IMPORT & EXPORT round: bulk import/export is additive to this
   // existing module — its own permission keys (accounts.import/.export),
@@ -9503,7 +9546,13 @@ function AccountsModule({ currency, call, dl, preview, print, notify, perm, hasR
     { key: "createdAt", label: "Created At", sortField: "createdAt", render: (a) => a.createdAt ? (
       <span style={{ whiteSpace: "nowrap" }}>{fmtDate(a.createdAt)}<span style={{ display: "block", fontFamily: FONT_MONO, fontSize: 11, color: C.slate }}>{new Date(a.createdAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</span></span>
     ) : muted },
-    { key: "balance", label: "Balance", sortField: "balance", render: (a) => <span style={{ fontFamily: FONT_MONO, fontVariantNumeric: "tabular-nums", fontWeight: 700, color: a.balance < 0 ? C.red : C.ink }}>{fmtMoney(a.balance, currency)}</span> },
+    { key: "credits", label: "Credits", sortField: "credits", render: (a) => <span className="gk-acc-num gk-acc-credit" title="All credits posted to this account (ledger)">{fmtMoney(a.credits || 0, currency)}</span> },
+    { key: "debits", label: "Debits", sortField: "debits", render: (a) => <span className="gk-acc-num gk-acc-debit" title="All debits posted to this account (ledger)">{fmtMoney(a.debits || 0, currency)}</span> },
+    { key: "balance", label: "Balance", sortField: "balance", render: (a) => (
+      <span className="gk-acc-num" data-sign={a.balance > 0 ? "pos" : a.balance < 0 ? "neg" : "zero"} style={{ fontWeight: 700, color: a.balance < 0 ? C.balanceNegative : a.balance > 0 ? C.balancePositive : C.slate }}>
+        {fmtMoney(a.balance, currency)}{a.ledgerMismatch && <span title="Credits − Debits differ from the stored balance — check this account's ledger" style={{ marginLeft: 4, color: C.amber }}>⚠</span>}
+      </span>
+    ) },
     // LINKED ACCOUNTS REMOVAL round: the "Linked account" column was the
     // only user-facing surface for the USD<->SLSH account-pairing feature in
     // this table — removed along with the rest of the feature (see the
@@ -9515,96 +9564,144 @@ function AccountsModule({ currency, call, dl, preview, print, notify, perm, hasR
   // new columns, so it falls back to the new default column set once (its
   // density is kept). Any layout saved from now on carries a marker key and
   // is honoured exactly — including hiding any of the new columns.
-  const CUSTOMERS_LAYOUT_MARKER = "__customers_v2";
-  // Default view follows the Customers table spec; Account # stays available
-  // under Customize table (and is still searchable / shown on the account page).
-  const CUSTOMERS_DEFAULT_COLUMNS = ["name", "contact", "email", "address", "group", "status", "createdAt", "balance"];
+  // ACCOUNTS CONSOLE round: Credits and Debits join the default view; Email,
+  // Address, Group and Account # stay available under Columns.
+  const CUSTOMERS_LAYOUT_MARKER = "__customers_v3";
+  const CUSTOMERS_DEFAULT_COLUMNS = ["name", "contact", "status", "createdAt", "credits", "debits", "balance"];
   const savedCols = layoutState.effective && Array.isArray(layoutState.effective.columns) ? layoutState.effective.columns : [];
-  const effectiveLayout = (!savedCols.length || !savedCols.includes(CUSTOMERS_LAYOUT_MARKER))
-    ? { ...(layoutState.effective || {}), columns: CUSTOMERS_DEFAULT_COLUMNS }
-    : layoutState.effective;
+  // A layout saved before Credits/Debits existed (marker v2) keeps the
+  // user's choices, with the two new columns placed just before Balance.
+  const upgradedCols = savedCols.includes("__customers_v2") && !savedCols.includes(CUSTOMERS_LAYOUT_MARKER)
+    ? savedCols.filter((k) => k !== "__customers_v2").flatMap((k) => (k === "balance" ? ["credits", "debits", "balance"] : [k]))
+    : null;
+  const effectiveLayout = upgradedCols ? { ...(layoutState.effective || {}), columns: upgradedCols }
+    : (!savedCols.length || !savedCols.includes(CUSTOMERS_LAYOUT_MARKER))
+      ? { ...(layoutState.effective || {}), columns: CUSTOMERS_DEFAULT_COLUMNS }
+      : layoutState.effective;
   const columns = resolveColumns(ACCOUNTS_COLUMNS, effectiveLayout);
   const markedLayoutState = useMemo(() => ({ ...layoutState, effective: effectiveLayout, save: (scope, cols, dens) => layoutState.save(scope, [...(cols || []).filter((k) => k !== CUSTOMERS_LAYOUT_MARKER), CUSTOMERS_LAYOUT_MARKER], dens) }), [layoutState, effectiveLayout]);
   const [deactivateTarget, setDeactivateTarget] = useState(null);
 
-  const reload = useCallback(() => {
-    setLoading(true);
-    call("/api/accounts" + qs({ currency, type: tab, search, from, to, sort, balanceSign })).then((d) => setRows(d.accounts)).catch((e) => notify(e.message, true)).finally(() => setLoading(false));
-  }, [call, currency, tab, search, from, to, sort, balanceSign, notify]);
-  useEffect(reload, [reload]);
+  const reqSeq = useRef(0);
+  const reload = useCallback((isRefresh) => {
+    const seq = ++reqSeq.current;
+    if (isRefresh === true) setRefreshing(true); else setLoading(true);
+    call("/api/accounts" + qs({ currency, type: tab, search: searchQ || undefined, from, to, sort, balanceSign, withTotals: "1" }))
+      .then((d) => { if (seq !== reqSeq.current) return; setRows(d.accounts); setSummary((d.summary || {})[currency] || { accounts: 0, totalHeld: 0, positive: 0, zero: 0, inDebt: 0, credits: 0, debits: 0, mismatches: 0 }); setLoadError(""); })
+      .catch((e) => { if (seq !== reqSeq.current) return; setLoadError(e.message); notify(e.message, true); })
+      .finally(() => { if (seq !== reqSeq.current) return; setLoading(false); setRefreshing(false); });
+  }, [call, currency, tab, searchQ, from, to, sort, balanceSign, notify]);
+  useEffect(() => { reload(); }, [reload]);
 
-  const totalBalance = useMemo(() => rows.reduce((s, a) => s + a.balance, 0), [rows]);
-  // SUMMARY FOR EVERY TABLE: this used to be a single "Total held" card
-  // squeezed into the filter bar — expanded into the same full stat-strip
-  // pattern every other module's table uses, with a positive/negative-
-  // balance breakdown (accounts are allowed to carry debt, so both matter).
-  const positiveCount = useMemo(() => rows.filter((a) => a.balance >= 0).length, [rows]);
+  // Figures for ALL matching accounts, from the server (never a page subtotal).
+  const totalBalance = summary ? summary.totalHeld : 0;
+  const exportQuery = qs({ currency, type: tab, search: searchQ || undefined, from, to, sort, balanceSign });
+  const filtersActive = !!(search || from || to || balanceSign !== "all" || sort !== "name");
+  const resetFilters = () => { setSearch(""); setSearchQ(""); setBalanceSign("all"); setFrom(""); setTo(""); setSort("name"); };
 
   return (
     <div>
-      <SectionHeader title={`Accounts — ${currency}`} sub={`Customer and company accounts holding a ${currency} balance, with credits/debits and linked history`}
+      <SectionHeader icon="landmark" title={`Accounts — ${currency}`} sub={`Customer and company accounts holding a ${currency} balance, with credits/debits and linked history`}
         actions={<>
-          <Btn size="sm" tone="ghost" onClick={() => preview("/api/accounts/export.pdf" + qs({ currency, type: tab, search, from, to, sort, balanceSign }))}>Preview PDF</Btn>
-          <Btn size="sm" tone="subtle" onClick={() => dl("/api/accounts/export.pdf" + qs({ currency, type: tab, search, from, to, sort, balanceSign }), `obo-accounts-${currency.toLowerCase()}.pdf`)}>Export PDF</Btn>
-          <Btn size="sm" tone="subtle" onClick={() => dl("/api/accounts/export.xlsx" + qs({ currency, type: tab, search, from, to, sort, balanceSign }), `obo-accounts-${currency.toLowerCase()}.xlsx`)}>Export Excel</Btn>
-          <Btn size="sm" tone="ghost" onClick={() => print("/api/accounts/export.pdf" + qs({ currency, type: tab, search, from, to, sort, balanceSign }))}>Print</Btn>
-          {canExport && <Btn size="sm" tone="subtle" onClick={() => dl("/api/accounts/export.csv" + qs({ currency, type: tab, search, from, to, sort, balanceSign }), `obo-accounts-${currency.toLowerCase()}.csv`)}>Export CSV</Btn>}
+          <Btn size="sm" tone="ghost" onClick={() => preview("/api/accounts/export.pdf" + exportQuery)}>Preview PDF</Btn>
+          <Btn size="sm" tone="subtle" onClick={() => dl("/api/accounts/export.pdf" + exportQuery, `obo-accounts-${currency.toLowerCase()}.pdf`)}>Export PDF</Btn>
+          <Btn size="sm" tone="subtle" onClick={() => dl("/api/accounts/export.xlsx" + exportQuery, `obo-accounts-${currency.toLowerCase()}.xlsx`)}>Export Excel</Btn>
+          <Btn size="sm" tone="ghost" onClick={() => print("/api/accounts/export.pdf" + exportQuery)}>Print</Btn>
+          {canExport && <Btn size="sm" tone="subtle" onClick={() => dl("/api/accounts/export.csv" + exportQuery, `obo-accounts-${currency.toLowerCase()}.csv`)}>Export CSV</Btn>}
           {canExport && <Btn size="sm" tone="subtle" onClick={() => dl("/api/accounts/export-balances.xlsx", "obo-accounts-balances.xlsx")}>Export Accounts + Balances</Btn>}
           {canImport && <Btn size="sm" tone="subtle" onClick={() => setHistoryOpen(true)}>Import History</Btn>}
           {canImport && <Btn size="sm" tone="accent" onClick={() => setImportOpen(true)}>Import Accounts</Btn>}
           {perm("accountsManage") ? <Btn tone="primary" icon={isCustomerTab ? "userPlus" : "plus"} onClick={() => setAddOpen(true)}>{isCustomerTab ? `Add Customer (${currency})` : `Add Company (${currency})`}</Btn> : null}
         </>} />
-      <div className="gk-tabbar">
-        {[["customer", "Customer accounts"], ["company", "Company accounts"]].map(([k, l]) => (
-          <button key={k} onClick={() => setTab(k)} className={`gk-ph-tab${tab === k ? " is-active" : ""}`} aria-pressed={tab === k}><TabLabel k={k} l={l} /></button>
+      <div className="gk-acc-tabs" role="tablist" aria-label="Account category">
+        {[["customer", "Customer Accounts", "usersRound"], ["company", "Company Accounts", "companies"]].map(([k, l, ic]) => (
+          <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={`gk-acc-tab${tab === k ? " is-active" : ""}`}>
+            <NavIcon name={ic} size={16} /><span>{l}</span>
+          </button>
         ))}
       </div>
-      <div className="gk-filterbar">
-        <Field label="Search" width={240} hint="Name, account #, email, phone, ID"><SearchInput placeholder={isCustomerTab ? "Search customers..." : "Search companies..."} aria-label={isCustomerTab ? "Search customers" : "Search companies"} value={search} onChange={(e) => setSearch(e.target.value)} /></Field>
-        <Field label="Balance" width={150} hint="Debt vs funds"><Select value={balanceSign} onChange={(e) => setBalanceSign(e.target.value)}><option value="all">All</option><option value="positive">Positive (has funds)</option><option value="negative">Negative (in debt)</option></Select></Field>
-        <Field label="Registered from" width={150}><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></Field>
-        <Field label="Registered to" width={150}><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></Field>
-        <Field label="Sort by" width={170}>
-          <Select value={sort} onChange={(e) => setSort(e.target.value)}>
-            <option value="name">Name (A–Z)</option><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="balance">Highest balance</option>
-          </Select>
-        </Field>
+      <div className="gk-acc-toolbar" role="search">
+        <label className="gk-acc-field gk-acc-field--search">
+          <span className="gk-acc-label">Search</span>
+          <span className="gk-acc-input"><NavIcon name="search" size={15} />
+            <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} aria-label={isCustomerTab ? "Search customers" : "Search companies"}
+              placeholder={isCustomerTab ? "Search customers, account number, phone..." : "Search companies, account number, phone..."} />
+          </span>
+        </label>
+        <label className="gk-acc-field">
+          <span className="gk-acc-label">Balance</span>
+          <span className="gk-acc-input"><NavIcon name="wallet" size={15} />
+            <select aria-label="Balance" value={balanceSign} onChange={(e) => setBalanceSign(e.target.value)}>
+              <option value="all">All</option><option value="positive">Positive balance</option><option value="zero">Zero balance</option><option value="negative">In debt</option>
+            </select>
+          </span>
+        </label>
+        <label className="gk-acc-field">
+          <span className="gk-acc-label">Registered from</span>
+          <span className="gk-acc-input"><NavIcon name="calendar" size={15} /><input type="date" aria-label="Registered from" value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} /></span>
+        </label>
+        <label className="gk-acc-field">
+          <span className="gk-acc-label">Registered to</span>
+          <span className="gk-acc-input"><NavIcon name="calendar" size={15} /><input type="date" aria-label="Registered to" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} /></span>
+        </label>
+        <label className="gk-acc-field">
+          <span className="gk-acc-label">Sort by</span>
+          <span className="gk-acc-input"><NavIcon name="sortBoth" size={15} />
+            <select aria-label="Sort by" value={sort} onChange={(e) => setSort(e.target.value)}>
+              <option value="name">Name A–Z</option><option value="name_desc">Name Z–A</option><option value="balance">Highest balance</option><option value="balance_asc">Lowest balance</option><option value="newest">Newest</option><option value="oldest">Oldest</option>
+            </select>
+          </span>
+        </label>
+        <div className="gk-acc-toolbar-actions">
+          {filtersActive && <button type="button" className="gk-acc-btn" onClick={resetFilters}><NavIcon name="undo" size={15} /><span>Reset</span></button>}
+          <TableCustomizeButton tableKey={tableKey} columnDefs={ACCOUNTS_COLUMNS} layoutState={markedLayoutState} canSetSystemDefault={hasRaw && hasRaw("settings.manageTableDefaults")} notify={notify} />
+          <button type="button" className="gk-acc-btn" onClick={() => dl("/api/accounts/export.xlsx" + exportQuery, `obo-accounts-${currency.toLowerCase()}.xlsx`)} title="Export the matching accounts to Excel"><NavIcon name="download" size={15} /><span>Export</span></button>
+          <button type="button" className="gk-acc-btn" onClick={() => reload(true)} disabled={refreshing} aria-busy={refreshing} title="Reload the latest account data"><NavIcon name="refresh" size={15} className={refreshing ? "gk-spin" : undefined} /><span>{refreshing ? "Refreshing…" : "Refresh"}</span></button>
+        </div>
       </div>
-      <ActiveFilters
-        filters={[
-          { label: "Search", value: search, onClear: () => setSearch("") },
-          { label: "Balance", value: balanceSign, defaultValue: "all", display: balanceSign === "positive" ? "Has funds" : "In debt", onClear: () => setBalanceSign("all") },
-          { label: "From", value: from, onClear: () => setFrom("") },
-          { label: "To", value: to, onClear: () => setTo("") },
-        ]}
-        onClearAll={() => { setSearch(""); setBalanceSign("all"); setFrom(""); setTo(""); }}
-      />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 10, marginBottom: 10 }}>
-        <StatCard label="Accounts" value={rows.length} accent={C.navy} />
-        <StatCard label={`Total held (${currency})`} value={fmtMoney(totalBalance, currency)} accent={C.cyan} />
-        <StatCard label="Positive balance" value={positiveCount} accent={C.green} active={balanceSign === "positive"}
-          onClick={() => setBalanceSign((s) => (s === "positive" ? "all" : "positive"))} />
-        <StatCard label="In debt" value={rows.length - positiveCount} accent={C.red} active={balanceSign === "negative"}
-          onClick={() => setBalanceSign((s) => (s === "negative" ? "all" : "negative"))} />
+
+      <div className="gk-acc-kpis">
+        <button type="button" className="gk-acc-kpi" data-kpi="accounts" onClick={() => setBalanceSign("all")} aria-pressed={balanceSign === "all"}>
+          <span className="gk-acc-kpi-icon"><NavIcon name={isCustomerTab ? "usersRound" : "companies"} size={20} /></span>
+          <span className="gk-acc-kpi-body"><span className="gk-acc-kpi-label">{isCustomerTab ? "Customer accounts" : "Company accounts"}</span><span className="gk-acc-kpi-value">{summary ? summary.accounts : "—"}</span><span className="gk-acc-kpi-sub">matching the filters</span></span>
+        </button>
+        <div className="gk-acc-kpi" data-kpi="held">
+          <span className="gk-acc-kpi-icon"><NavIcon name="wallet" size={20} /></span>
+          <span className="gk-acc-kpi-body"><span className="gk-acc-kpi-label">Total held ({currency})</span><span className="gk-acc-kpi-value" style={{ color: totalBalance < 0 ? C.balanceNegative : undefined }}>{summary ? fmtMoney(totalBalance, currency) : "—"}</span><span className="gk-acc-kpi-sub">sum of the matching balances</span></span>
+        </div>
+        <button type="button" className="gk-acc-kpi is-pos" data-kpi="positive" onClick={() => setBalanceSign((v) => (v === "positive" ? "all" : "positive"))} aria-pressed={balanceSign === "positive"}>
+          <span className="gk-acc-kpi-icon"><NavIcon name="trendUp" size={20} /></span>
+          <span className="gk-acc-kpi-body"><span className="gk-acc-kpi-label">Positive balance</span><span className="gk-acc-kpi-value">{summary ? summary.positive : "—"}</span><span className="gk-acc-kpi-sub">{summary ? `${summary.zero} at zero` : ""}</span></span>
+        </button>
+        <button type="button" className="gk-acc-kpi is-neg" data-kpi="debt" onClick={() => setBalanceSign((v) => (v === "negative" ? "all" : "negative"))} aria-pressed={balanceSign === "negative"}>
+          <span className="gk-acc-kpi-icon"><NavIcon name="trendDown" size={20} /></span>
+          <span className="gk-acc-kpi-body"><span className="gk-acc-kpi-label">In debt</span><span className="gk-acc-kpi-value">{summary ? summary.inDebt : "—"}</span><span className="gk-acc-kpi-sub">balance below zero</span></span>
+        </button>
       </div>
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
-        <TableCustomizeButton tableKey={tableKey} columnDefs={ACCOUNTS_COLUMNS} layoutState={markedLayoutState} canSetSystemDefault={hasRaw && hasRaw("settings.manageTableDefaults")} notify={notify} />
-      </div>
-      <div className="gk-table-wrap" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, display: "flex", flexDirection: "column" }}>
-        {loading ? <Spinner /> : acctPg.total === 0 ? (<><Empty text={tab === "customer" ? `No customer ${currency} accounts match these filters.` : `No company ${currency} accounts match these filters.`} /><TableFooter firstIdx={acctPg.firstIdx} lastIdx={acctPg.lastIdx} total={acctPg.total} page={acctPg.page} totalPages={acctPg.totalPages} onPageChange={acctPg.setPage} pageSize={acctPg.pageSize} onPageSizeChange={acctPg.setPageSize} /></>) : (
+
+      {summary && summary.mismatches > 0 && (
+        <div className="gk-acc-warn" role="alert"><NavIcon name="triangleAlert" size={15} />
+          <span>{summary.mismatches} account(s) have Credits − Debits that differ from the stored balance (marked ⚠). Nothing was changed — check those accounts' ledgers.</span>
+        </div>
+      )}
+
+      <div className="gk-table-wrap gk-acc-table-wrap" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 8, display: "flex", flexDirection: "column" }}>
+        {loading ? <Spinner label="Loading accounts…" /> : loadError && !rows.length ? (
+          <div className="gk-acc-error" role="alert"><NavIcon name="circleAlert" size={16} /><span>{loadError}</span><button type="button" className="gk-acc-btn" onClick={() => reload()}><NavIcon name="refresh" size={14} /><span>Try again</span></button></div>
+        ) : acctPg.total === 0 ? (<><Empty text={tab === "customer" ? `No customer ${currency} accounts match these filters.` : `No company ${currency} accounts match these filters.`} /><TableFooter firstIdx={acctPg.firstIdx} lastIdx={acctPg.lastIdx} total={acctPg.total} page={acctPg.page} totalPages={acctPg.totalPages} onPageChange={acctPg.setPage} pageSize={acctPg.pageSize} onPageSizeChange={acctPg.setPageSize} /></>) : (
           <>
           <TableScrollShell height={460}>
-          <ResizableTable tableKey={tableKey} className="gk-table gk-customers-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+          <ResizableTable tableKey={tableKey} className="gk-table gk-customers-table gk-acc-table" style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead><tr>
-              <th style={{ ...th, width: 40 }}>#</th>
+              <th style={{ ...th, width: 40 }} scope="col">#</th>
               {columns.map((c) => <SortTh key={c.key} label={c.label} field={c.sortField} {...acctSort} onSort={acctSort.toggleSort} />)}
-              <SortTh label="Action" resizeKey="__actions4" />
+              <SortTh label="Actions" resizeKey="__actions4" />
             </tr></thead>
             <tbody>
               {acctPg.pageRows.map((a, i) => (
-                <tr key={a.id} onClick={() => onOpenAccountView(a.id)} style={{ cursor: "pointer" }}>
+                <tr key={a.id} onClick={() => onOpenAccountView(a.id)} style={{ cursor: "pointer" }} data-account-id={a.id}>
                   <td style={{ ...densityStyle(tdMono, density), color: C.slate, textAlign: "left" }}>{acctPg.firstIdx + i}</td>
-                  {columns.map((c) => <td key={c.key} style={tableCellStyle(c, density)}>{c.render(a)}</td>)}
+                  {columns.map((c) => <td key={c.key} style={["credits", "debits", "balance"].includes(c.key) ? { ...tableCellStyle(c, density), textAlign: "right" } : tableCellStyle(c, density)} data-col={c.key}>{c.render(a)}</td>)}
                   <td style={densityStyle(td, density)} onClick={(e) => e.stopPropagation()}>
                     <div style={{ display: "flex", gap: 5 }}>
                       <RowIconBtn icon="eye" label={`${translate("View")} ${toTitleCase(a.name)}`} onClick={() => onOpenAccountView(a.id)} />
@@ -9616,11 +9713,14 @@ function AccountsModule({ currency, call, dl, preview, print, notify, perm, hasR
               ))}
             </tbody>
             <tfoot>
-              <tr>
+              <tr className="gk-acc-totals">
                 <td style={tdFoot}></td>
                 {columns.map((c) => (
-                  <td key={c.key} style={c.key === "balance" ? { ...tdFootMono, fontWeight: 700 } : c.key === "name" ? { ...tdFoot, fontWeight: 700 } : tdFoot}>
-                    {c.key === "name" ? `Total (${rows.length} accounts)` : c.key === "balance" ? fmtMoney(totalBalance, currency) : ""}
+                  <td key={c.key} data-total={c.key} style={["balance", "credits", "debits"].includes(c.key) ? { ...tdFootMono, fontWeight: 700 } : c.key === "name" ? { ...tdFoot, fontWeight: 700 } : tdFoot}>
+                    {c.key === "name" ? `Total — all ${summary ? summary.accounts : rows.length} matching accounts`
+                      : c.key === "credits" ? fmtMoney(summary ? summary.credits : 0, currency)
+                      : c.key === "debits" ? fmtMoney(summary ? summary.debits : 0, currency)
+                      : c.key === "balance" ? fmtMoney(totalBalance, currency) : ""}
                   </td>
                 ))}
                 <td style={tdFoot}></td>
