@@ -179,7 +179,9 @@ function readScope(file, kind, scopeId) {
       const columns = t.columns.map((c) => c.name);
       if (!present.has(t.name)) {
         // Only optional tables may be absent (created by the app on demand).
-        if (t.name === "reset_log") { out.tables.push({ name: t.name, columns, rows: [], checksum: dump.rowsChecksum(columns, []) }); continue; }
+        // The daily snapshot tables (DAILY REPORTS round) exist only in the
+        // MySQL version — a SQLite installation never had any snapshots.
+        if (t.name === "reset_log" || t.name.startsWith("daily_snapshot")) { out.tables.push({ name: t.name, columns, rows: [], checksum: dump.rowsChecksum(columns, []) }); continue; }
         throw fail(`${scopeId}: table ${t.name} is missing from the SQLite database after the upgrade.`);
       }
       const live = h.prepare(`PRAGMA table_info("${t.name}")`).all().map((c) => c.name);

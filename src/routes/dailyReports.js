@@ -387,7 +387,7 @@ function register(router) {
   // The live position, clearly marked live — never presented as history.
   router.get("/api/daily-reports/live", (req, res) => {
     const v = viewer(req, res); if (!v) return;
-    sendJSON(res, 200, { live: true, at: new Date().toISOString(), ...computeBalanceSheet(v.cur) });
+    sendJSON(res, 200, { live: true, ...computeBalanceSheet(v.cur) });
   });
 
   router.get("/api/daily-reports/snapshots", (req, res, params, query) => {
