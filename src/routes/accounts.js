@@ -182,6 +182,20 @@ function withLedgerTotals(rows, allowedCurrencyList, requestedCurrency) {
 // "AHMED HASSAN " count as the same name. A permanently deleted account
 // still holds its name (its history keeps pointing at it). Each company has its own tables, so this never looks at another
 // company. The database enforces the same rule (uq_clients_name_currency).
+// FINMAN SECURITY & INTEGRITY round: account text fields must be plain text
+// of a sensible length (an array, object or a 30,000-character name used to
+// be stored or to fail with a server error).
+const TEXT_LIMITS = { name: 150, contact: 60, email: 150, idNumber: 60, address: 300, notes: 2000 };
+function badTextField(body) {
+  for (const [k, max] of Object.entries(TEXT_LIMITS)) {
+    const v = body[k];
+    if (v === undefined || v === null) continue;
+    if (typeof v !== "string" && typeof v !== "number") return `${k === "idNumber" ? "ID number" : k[0].toUpperCase() + k.slice(1)} must be text.`;
+    if (String(v).length > max) return `${k === "idNumber" ? "ID number" : k[0].toUpperCase() + k.slice(1)} is too long (maximum ${max} characters).`;
+  }
+  return null;
+}
+
 function duplicateNameIn(name, currency, exceptId) {
   const p = [String(name).trim().toLowerCase(), currency];
   let sql = "SELECT id, account_number, name, currency, deleted_at FROM clients WHERE LOWER(TRIM(name)) = ? AND currency = ?";
@@ -876,11 +890,12 @@ function register(router) {
     const user = requireAuth(req, res); if (!user) return;
     if (!requirePerm(user, res, "accountsManage")) return;
     let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
+    { const why = badTextField(body); if (why) return badRequest(res, why); }
     const { contact, address, email, idNumber } = body;
     const accountType = body.accountType === "company" ? "company" : "customer";
     // Uppercase formatting applies only to PERSON names (customer accounts).
     // Company names are left exactly as typed.
-    const name = accountType === "company" ? (body.name || "").trim() : formatPersonName(body.name);
+    const name = accountType === "company" ? String(body.name ?? "").trim() : formatPersonName(body.name == null ? body.name : String(body.name));
     const currency = body.currency === "SLSH" ? "SLSH" : "USD";
     if (!requireCurrencyAccess(user, res, currency)) return;
     if (!name || !name.trim()) return badRequest(res, "Account name is required.");
@@ -938,11 +953,12 @@ function register(router) {
     if (!existing) return notFound(res, "Account not found.");
     if (!requireCurrencyAccess(user, res, existing.currency)) return;
     let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
+    { const why = badTextField(body); if (why) return badRequest(res, why); }
     const accountType = body.accountType !== undefined ? (body.accountType === "company" ? "company" : "customer") : existing.account_type;
     // Uppercase formatting applies only to PERSON names (customer accounts).
     // Company names are left exactly as typed.
     const rawName = body.name !== undefined ? body.name : existing.name;
-    const name = accountType === "company" ? (rawName || "").trim() : formatPersonName(rawName);
+    const name = accountType === "company" ? String(rawName ?? "").trim() : formatPersonName(rawName == null ? rawName : String(rawName));
     if (!name || !name.trim()) return badRequest(res, "Account name is required.");
     // The account's currency never changes on edit, so the duplicate check
     // is against the same currency, excluding this account itself.

@@ -155,7 +155,13 @@ function insertItems(quotationId, items) {
 // withdrawn always matches that account's own currency (USD stays USD,
 // SLSH stays SLSH — never mixed), and — per standing business policy — this
 // never blocks for insufficient funds; an account may go into debt.
-function createAndChargeQuotation({ user, clientName, clientContact, clientAddress, issueDate, validUntil, discountPercent, taxPercent, rateUsed, notes, items, accountId, currency: expectedCurrency, currencyMode }) {
+// FINMAN SECURITY & INTEGRITY round: the whole create-and-charge — including
+// a typed walk-in name's new account — is one transaction, so a refused or
+// failed quotation never leaves an orphan account behind.
+function createAndChargeQuotation(args) {
+  return tx(() => createAndChargeQuotationInTx(args));
+}
+function createAndChargeQuotationInTx({ user, clientName, clientContact, clientAddress, issueDate, validUntil, discountPercent, taxPercent, rateUsed, notes, items, accountId, currency: expectedCurrency, currencyMode }) {
   // currencyMode is the quotation DOCUMENT's own USD/SLSH/BOTH display mode
   // (spec section 4) — a separate concept from expectedCurrency (which
   // account currency actually gets charged, unchanged below). Falls back to
@@ -193,7 +199,7 @@ function createAndChargeQuotation({ user, clientName, clientContact, clientAddre
   const id = uid("q");
   const ledgerId = uid("ldg");
   const now = nowISO();
-  const quotation = tx(() => {
+  const quotation = (() => {
     run(
       `INSERT INTO quotations (
          id, number, client_id, client_name, client_contact, client_address, issue_date, valid_until, status,
@@ -215,7 +221,7 @@ function createAndChargeQuotation({ user, clientName, clientContact, clientAddre
     );
     rebuildAccountBalance(account.id, currency);
     return get("SELECT * FROM quotations WHERE id = ?", [id]);
-  });
+  })();
   return { quotation, amount, currency, account };
 }
 
@@ -424,13 +430,14 @@ function register(router) {
 
     let clientId = existing.client_id;
     let resolvedClientName = existing.client_name;
-    if (body.clientName !== undefined && body.clientName !== null && String(body.clientName).trim() && String(body.clientName).trim() !== existing.client_name) {
-      clientId = findOrCreateClient(body.clientName, body.clientContact ?? existing.client_contact, body.clientAddress ?? existing.client_address, existing.charged_currency) || existing.client_id;
-      resolvedClientName = clientId ? (get("SELECT name FROM clients WHERE id = ?", [clientId]) || {}).name || body.clientName : body.clientName;
-    }
-
     let adjustment = null;
     tx(() => {
+      // Inside the transaction (FINMAN SECURITY & INTEGRITY round): a new
+      // walk-in account is undone if the edit fails.
+      if (body.clientName !== undefined && body.clientName !== null && String(body.clientName).trim() && String(body.clientName).trim() !== existing.client_name) {
+        clientId = findOrCreateClient(body.clientName, body.clientContact ?? existing.client_contact, body.clientAddress ?? existing.client_address, existing.charged_currency) || existing.client_id;
+        resolvedClientName = clientId ? (get("SELECT name FROM clients WHERE id = ?", [clientId]) || {}).name || body.clientName : body.clientName;
+      }
       if (wantsFinancialEdit) {
         const totals = quotationTotals(items, discountPercent, taxPercent, rateUsed);
         const currency = existing.charged_currency;

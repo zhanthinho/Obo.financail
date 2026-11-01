@@ -296,16 +296,20 @@ function register(router) {
     if (cashInResult.error) return badRequest(res, cashInResult.error);
     const cashOutAccount = cashOutResult.cashAccount, cashInAccount = cashInResult.cashAccount;
 
-    const clientId = fromAccount ? fromAccount.id : findOrCreateClient(body.clientName, body.clientContact, body.clientAddress, currencyGiven);
-    // Use the resolved client's actual stored name (correct casing for its
-    // account type) for the denormalized client_name column, rather than the
-    // raw typed value — this keeps it in sync with clients.name.
-    const resolvedClientName = fromAccount ? fromAccount.name : (get("SELECT name FROM clients WHERE id = ?", [clientId]) || {}).name || body.clientName;
+    // FINMAN SECURITY & INTEGRITY round: a typed walk-in name's account is
+    // now created INSIDE the exchange's transaction — if the exchange fails,
+    // no orphan account (or customer profile) is left behind.
+    let clientId = null, resolvedClientName = body.clientName;
     const id = uid("t");
     const referenceNumber = nextExchangeReference();
     let allocations = null;
     try {
       tx(() => {
+        clientId = fromAccount ? fromAccount.id : findOrCreateClient(body.clientName, body.clientContact, body.clientAddress, currencyGiven);
+        // Use the resolved client's actual stored name (correct casing for its
+        // account type) for the denormalized client_name column, rather than the
+        // raw typed value — this keeps it in sync with clients.name.
+        resolvedClientName = fromAccount ? fromAccount.name : (get("SELECT name FROM clients WHERE id = ?", [clientId]) || {}).name || body.clientName;
         if (fundSelections) allocations = fundAlloc.validateSelections(fundSelections, fromAccount, given);
         let paidLedgerId = null;
         if (paymentPlan) {

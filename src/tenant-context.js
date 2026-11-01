@@ -34,7 +34,7 @@ function runRequest(fn, lang, meta) {
   // (rbac.requirePlatformAdmin / requirePlatformWorkspace / platform login).
   // LANGUAGE round: `lang` ("en" | "so", from the X-Lang header) only picks
   // the language of messages and export labels — it carries no authority.
-  return als.run({ tenant: null, company: null, showCompanyIds: false, lang: lang === "so" ? "so" : "en", method: meta && meta.method, path: meta && meta.path }, fn);
+  return als.run({ tenant: null, company: null, showCompanyIds: false, lang: lang === "so" ? "so" : "en", method: meta && meta.method, path: meta && meta.path, testFault: !!(meta && meta.testFault) }, fn);
 }
 // The raw request store (or null) — used by i18n/request.js only.
 function requestStore() { return als.getStore() || null; }

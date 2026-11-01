@@ -70,9 +70,27 @@ function hasNonFiniteNumber(v, depth = 0) {
   for (const k of Object.keys(v)) if (hasNonFiniteNumber(v[k], depth + 1)) return true;
   return false;
 }
+// Parses a request body; refuses invalid JSON and non-finite numbers.
+function parseJSONText(text) {
+  if (!text) return {};
+  let parsed;
+  try { parsed = JSON.parse(text); } catch (e) { throw new Error("Invalid JSON body"); }
+  // SECURITY & INTEGRITY AUDIT round: JSON numbers too large for a double
+  // (e.g. 1e400) parse as Infinity — never a legitimate value anywhere in
+  // this API, so the whole request is refused.
+  if (hasNonFiniteNumber(parsed)) throw new Error("Invalid number in request.");
+  return parsed;
+}
+
 function readJSONBody(req) {
+  // A keyed (Idempotency-Key) request's body was already read once by
+  // src/idempotency.js — parse those same bytes.
+  if (req._bodyTooLarge) return Promise.reject(new Error("Request body too large"));
+  if (req._bodyBuffer) return Promise.resolve().then(() => parseJSONText(req._bodyBuffer.toString("utf8")));
   return new Promise((resolve, reject) => {
-    let data = "";
+    // Chunks are kept as bytes and decoded once at the end, so a character
+    // split across two network chunks (e.g. ’ or a Somali name) stays intact.
+    const chunks = [];
     let size = 0;
     req.on("data", (chunk) => {
       size += chunk.length;
@@ -81,21 +99,10 @@ function readJSONBody(req) {
         req.destroy();
         return;
       }
-      data += chunk;
+      chunks.push(chunk);
     });
     req.on("end", () => {
-      if (!data) return resolve({});
-      let parsed;
-      try {
-        parsed = JSON.parse(data);
-      } catch (e) {
-        return reject(new Error("Invalid JSON body"));
-      }
-      // SECURITY & INTEGRITY AUDIT round: JSON numbers too large for a double
-      // (e.g. 1e400) parse as Infinity — never a legitimate value anywhere in
-      // this API, so the whole request is refused.
-      if (hasNonFiniteNumber(parsed)) return reject(new Error("Invalid number in request."));
-      resolve(parsed);
+      try { resolve(parseJSONText(Buffer.concat(chunks).toString("utf8"))); } catch (e) { reject(e); }
     });
     req.on("error", reject);
   });

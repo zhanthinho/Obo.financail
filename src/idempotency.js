@@ -21,6 +21,19 @@
 // submission can be retried. Entries live in memory for 24 hours, at most
 // MAX_ENTRIES at a time — enough to cover any retry of one submission; a
 // server restart clears them.
+//
+// FINMAN SECURITY & INTEGRITY round — request fingerprint. The body of a
+// keyed request is read once here (same 5 MB limit as readJSONBody) and its
+// SHA-256 kept with the entry:
+//   * same key, same body  -> the stored answer, as before;
+//   * same key, DIFFERENT body after a refusal (4xx) -> run as a new
+//     attempt. A form keeps its key while open, so before this a corrected
+//     resubmission (e.g. a smaller amount after "insufficient balance") was
+//     answered with the old refusal and could never be saved;
+//   * same key, different body after a SUCCESS -> 422, never a second
+//     posting and never someone else's stored answer.
+// A replay also needs a currently valid session (checked in server.js), so a
+// signed-out token can't read back a stored answer.
 const crypto = require("crypto");
 
 const TTL_MS = 24 * 60 * 60 * 1000;
@@ -58,15 +71,36 @@ function replay(res, e) {
 
 // Returns true when the request has been answered (or will be, once the
 // first copy finishes) and the handler must NOT run.
-function begin(scope, res) {
+function begin(scope, res, fingerprint) {
   const now = Date.now();
   prune(now);
   const e = entries.get(scope);
-  if (e && e.state === "done") { replay(res, e); return true; }
-  if (e && e.state === "pending") { e.waiters.push(res); return true; }
-  entries.set(scope, { state: "pending", at: now, waiters: [] });
+  const same = !e || !e.fp || !fingerprint || e.fp === fingerprint;
+  if (e && e.state === "done" && same) { replay(res, e); return true; }
+  if (e && e.state === "done" && e.status < 300) {
+    if (!res.headersSent) { res.writeHead(422, { "Content-Type": "application/json" }); res.end(JSON.stringify({ error: "This submission was already saved. Close the form and open it again to make another one." })); }
+    return true;
+  }
+  if (e && e.state === "pending") {
+    if (same) { e.waiters.push(res); return true; }
+    if (!res.headersSent) { res.writeHead(409, { "Content-Type": "application/json" }); res.end(JSON.stringify({ error: "A different version of this submission is still being saved. Please wait a moment." })); }
+    return true;
+  }
+  entries.set(scope, { state: "pending", at: now, fp: fingerprint || null, waiters: [] });
   capture(scope, res);
   return false;
+}
+
+// Reads a keyed request's body once (the route then reads the same bytes
+// through readJSONBody) and returns its SHA-256, or null when too large
+// (the route refuses it as before).
+function readBody(req) {
+  return new Promise((resolve) => {
+    const chunks = []; let size = 0, over = false;
+    req.on("data", (c) => { if (over) return; size += c.length; if (size > 5 * 1024 * 1024) { over = true; return; } chunks.push(c); });
+    req.on("end", () => { req._bodyBuffer = over ? null : Buffer.concat(chunks); req._bodyTooLarge = over; resolve(over ? null : crypto.createHash("sha256").update(req._bodyBuffer).digest("hex")); });
+    req.on("error", () => { req._bodyTooLarge = true; resolve(null); });
+  });
 }
 
 // Records what the handler sends, then releases anyone waiting.
@@ -111,7 +145,7 @@ function finish(scope, answer) {
   if (!e || e.state !== "pending") return;
   const waiters = e.waiters;
   if (answer && answer.status < 500) {
-    entries.set(scope, { state: "done", at: Date.now(), status: answer.status, headers: answer.headers, body: answer.body, waiters: [] });
+    entries.set(scope, { state: "done", at: Date.now(), fp: e.fp, status: answer.status, headers: answer.headers, body: answer.body, waiters: [] });
     for (const w of waiters) replay(w, entries.get(scope));
   } else {
     entries.delete(scope);
@@ -124,4 +158,4 @@ function finish(scope, answer) {
 
 function _reset() { entries.clear(); }
 
-module.exports = { scopeFor, begin, _reset };
+module.exports = { scopeFor, begin, readBody, _reset };

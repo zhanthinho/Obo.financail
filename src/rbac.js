@@ -370,7 +370,10 @@ function auditDenied(user, what) {
   try {
     const store = tenantContext.requestStore();
     const where = store && store.method ? ` · ${store.method} ${store.path}` : "";
-    const k = `${user && user.id}|${what}${where}`;
+    // Keyed by company too: user ids are only unique inside one company, so
+    // a refusal in one company never hides the same one in another.
+    const company = tenantContext.currentCompany ? tenantContext.currentCompany() : null;
+    const k = `${company ? company.id : "-"}|${user && user.id}|${what}${where}`;
     const now = Date.now();
     if (deniedSeen.has(k) && now - deniedSeen.get(k) < 60000) return;
     deniedSeen.set(k, now);
@@ -571,6 +574,7 @@ function requireRoleWithinActorScope(actor, res, role) {
 
 module.exports = {
   auditDenied,
+  bearerPayload,
   PERMS,
   ROLE_LABELS,
   can,

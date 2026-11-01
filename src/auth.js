@@ -18,6 +18,13 @@ if (!process.env.JWT_SECRET || !process.env.JWT_SECRET.trim()) {
   process.exit(1);
 }
 
+// FINMAN SECURITY & INTEGRITY round: a short secret can be guessed offline
+// from any token. Not refused (that would stop a running installation), but
+// reported at start-up — without ever printing the secret itself.
+if (process.env.JWT_SECRET.trim().length < 32) {
+  // eslint-disable-next-line no-console
+  console.warn("[auth] WARNING: JWT_SECRET is shorter than 32 characters. Replace it with a long random value (signs everyone out once).");
+}
 const JWT_SECRET = process.env.JWT_SECRET;
 const TOKEN_TTL_SECONDS = 60 * 60 * 12; // 12 hours
 
@@ -67,7 +74,12 @@ function verify(token) {
   } catch {
     return null;
   }
-  if (payload.exp && Math.floor(Date.now() / 1000) > payload.exp) return null;
+  // FINMAN SECURITY & INTEGRITY round: every token this server signs has an
+  // expiry (sign() above), so one without a numeric `exp` is not ours and
+  // never lives forever; a header claiming another algorithm is refused too.
+  if (!payload || typeof payload !== "object" || typeof payload.exp !== "number") return null;
+  if (Math.floor(Date.now() / 1000) > payload.exp) return null;
+  try { if (JSON.parse(b64urlDecode(h).toString("utf8")).alg !== "HS256") return null; } catch { return null; }
   return payload;
 }
 

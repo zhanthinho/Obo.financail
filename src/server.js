@@ -112,7 +112,7 @@ router.get("/api/health", (req, res) => {
 
 const staticHandler = serveStatic(path.join(__dirname, "..", "public"));
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   // SECURITY HARDENING: the frontend is always served from this same server
   // (same origin, confirmed) — so CORS is locked down to that origin instead
   // of the previous wildcard "*". A request whose Origin header doesn't match
@@ -174,14 +174,27 @@ const server = http.createServer((req, res) => {
     // SECURITY & INTEGRITY AUDIT round: a repeated save carrying the same
     // Idempotency-Key gets the first answer instead of running twice
     // (src/idempotency.js). Requests without the header are untouched.
-    const idemScope = idempotency.scopeFor(req, url.pathname);
-    if (idemScope && idempotency.begin(idemScope, res)) return;
+    // FINMAN SECURITY & INTEGRITY round: the stored answer of a keyed
+    // request is only used for a session that is still valid (a signed-out
+    // or forged token gets the normal 401 from the route), and is matched on
+    // the request body too (see src/idempotency.js).
+    try {
+      let idemScope = idempotency.scopeFor(req, url.pathname);
+      if (idemScope && !require("./rbac").bearerPayload(req)) idemScope = null;
+      if (idemScope) {
+        const fp = await idempotency.readBody(req);
+        if (idempotency.begin(idemScope, res, fp)) return;
+      }
+    } catch (e) {
+      console.error("[server] idempotency check failed:", e.message);
+      return sendJSON(res, 400, { error: "The request could not be read." });
+    }
     // Every API request gets its own, initially EMPTY company context.
     // LANGUAGE round: the interface language only affects the wording of
     // messages and export labels (never data, permissions or company scope).
     const reqLang = String(req.headers["x-lang"] || query.lang || "").toLowerCase() === "so" ? "so" : "en";
     res.oboLang = reqLang;
-    tenantContext.runRequest(async () => match.handler(req, res, match.params, query), reqLang, { method: req.method, path: String(req.url || "").split("?")[0].slice(0, 200) }).catch((err) => {
+    tenantContext.runRequest(async () => match.handler(req, res, match.params, query), reqLang, { method: req.method, path: String(req.url || "").split("?")[0].slice(0, 200), testFault: process.env.FINMAN_TEST_MODE === "1" && req.headers["x-finman-test-fault"] === "1" }).catch((err) => {
       if (err && err.code === "NO_COMPANY_CONTEXT") {
         // A code path tried to touch company data without an authorized
         // company — refused (fail closed), never answered from any database.
@@ -197,6 +210,14 @@ const server = http.createServer((req, res) => {
         return;
       }
       // eslint-disable-next-line no-console
+      // FINMAN SECURITY & INTEGRITY round: a value the database refuses as
+      // too long / out of range is the caller's input, not a server fault —
+      // answered 400 without any database detail.
+      if (err && /^(ER_DATA_TOO_LONG|ER_TRUNCATED_WRONG_VALUE|ER_WARN_DATA_OUT_OF_RANGE|ER_TRUNCATED_WRONG_VALUE_FOR_FIELD|ER_INVALID_JSON_TEXT)$/.test(err.code || "")) {
+        console.error(`[server] Refused input (${err.code}): ${req.method} ${url.pathname}`);
+        if (!res.headersSent) sendJSON(res, 400, { error: "A value in this request is too long or not valid." });
+        return;
+      }
       console.error("[server] Unhandled error:", err);
       if (!res.headersSent) sendJSON(res, 500, { error: "Internal server error." });
     });

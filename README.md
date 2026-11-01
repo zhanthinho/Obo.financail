@@ -284,6 +284,20 @@ restorable with `node scripts/backup.js restore --company CMP-000N --name … --
 - **API:** `GET /api/customers`, `GET /api/customers/:id`, `GET /api/customers/reviews`, `POST /api/customers/reviews/:id` (`{action:"link"|"dismiss"}`), `POST /api/customers/:id/accounts`, `DELETE /api/customers/:id/accounts/:accountId`, and `GET /api/history?customerId=…` for the combined history. `GET /api/accounts/:id` now includes `customer`.
 - **Tests:** `npm run test:customer-linking`.
 
+## Security & integrity checks (FINMAN Security & Integrity round)
+
+`npm run test:integrity-security` runs, on a throw-away database with two companies:
+
+- **Company isolation:** Company B, signed in with *every* permission (Super Admin inside B) and as its own Company Admin, tries Company A's real record ids in every URL of every API route (read and write), in request bodies, searches, reports and exports. It must never see or change Company A's data, and Company A's tables are compared byte for byte before and after. Dashboards, reports and the daily-snapshot job stay per company. Company switching and client-supplied company ids are covered as well.
+- **Financial integrity:** every money operation is made to fail just before COMMIT (test-only header `X-Finman-Test-Fault: 1`, honoured only when the server runs with `FINMAN_TEST_MODE=1`). The check proves no partial record is left. It also covers simultaneous postings, repeated submissions (Idempotency-Key), the exchange profit formula with the exchange's own rates, USD/SLSH separation, and every stored balance against its ledger.
+- **Backend security:** forged, expired, never-expiring and `alg: none` tokens; hostile and malformed input; SQL-looking parameters; oversized bodies; file downloads and their headers; CORS; error responses; refused-access audit entries.
+
+Idempotency-Key behaviour:
+- **Same key, same body:** the stored answer is returned.
+- **Same key, different body after a refusal:** the request runs again, so a corrected form saves.
+- **Same key, different body after a success:** refused with 422.
+- **Session that is no longer valid:** gets no stored answer.
+
 ## API reference
 
 All endpoints except `/api/health` and `/api/auth/login` require

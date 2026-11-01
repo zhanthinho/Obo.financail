@@ -164,6 +164,7 @@ function tx(fn) {
     d.exec("BEGIN");
     try {
       const result = fn();
+      testFault();
       d.exec("COMMIT");
       return result;
     } catch (e) {
@@ -172,6 +173,21 @@ function tx(fn) {
     }
   } finally {
     try { d.prepare("SELECT RELEASE_LOCK(?) AS ok").get(lockName); } catch (_) { /* lock ends with the connection */ }
+  }
+}
+
+// Test-only failure injection: with FINMAN_TEST_MODE=1, a request carrying
+// the header X-Finman-Test-Fault: 1 has its transaction fail after all its
+// writes and just before COMMIT — so tests can prove a failed save leaves no
+// partial financial records. Inert in normal operation (the header is
+// ignored unless the server was started in test mode).
+function testFault() {
+  if (process.env.FINMAN_TEST_MODE !== "1") return;
+  const store = require("./tenant-context").requestStore();
+  if (store && store.testFault) {
+    const e = new Error("Injected test failure before COMMIT");
+    e.code = "TEST_TX_FAULT";
+    throw e;
   }
 }
 
