@@ -808,6 +808,7 @@ const THEME_CSS = `
   .gk-av-status.is-off { background: #fee2e2; color: #b91c1c; }
   .gk-av-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   /* COMPACT SUMMARY CARDS round: five ~60px cards in one row on desktop. */
+  @media (max-width: 960px) { .gk-tpl-editor { grid-template-columns: 1fr !important; } }
   .gk-av-cards { display: grid; grid-template-columns: 1.15fr repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
   .gk-av-card { display: flex; align-items: center; gap: 9px; min-height: 58px; box-sizing: border-box; background: var(--c-card); border: 1px solid var(--c-line); border-radius: 9px; padding: 7px 11px; box-shadow: 0 1px 2px rgba(15, 42, 54, 0.05); min-width: 0; }
   .gk-av-card-icon { width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
@@ -12931,6 +12932,7 @@ const PDF_KIND_LABELS = {
   deposit: "Credit Receipt",
   withdrawal: "Debit Receipt",
   transfer: "Transfer Receipt",
+  cash_account: "Cash Account Statement",
 };
 const PDF_KIND_ORDER = Object.keys(PDF_KIND_LABELS);
 
@@ -13071,74 +13073,204 @@ function PdfField({ def, value, onChange }) {
   return null;
 }
 
-function PdfTemplateEditor({ id, kind, call, notify, token, onClose }) {
+// TEMPLATES FIX: one save pipeline for both template editors.
+//  * edits autosave after a short pause, but only ONE request is in flight
+//    at a time and the newest draft always wins — a slow response can no
+//    longer overwrite what was typed after it was sent (the old editor
+//    replaced the draft with every response, silently undoing edits);
+//  * the status shown is the real one: "Unsaved changes", "Saving…",
+//    "Saved", or the server's error (the old footer said "All changes saved"
+//    even after a rejected save);
+//  * leaving the editor first saves what is pending, and asks before
+//    discarding changes the server rejected; closing the tab warns too.
+function useTemplateAutosave({ id, base, catalog, call, notify, onSaved }) {
   const [tpl, setTpl] = useState(null);
-  const [draft, setDraft] = useState(null);
-  const [tab, setTab] = useState(PDF_FIELD_GROUPS[0]);
-  const [saving, setSaving] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const [useReal, setUseReal] = useState(false);
-  const saveTimer = useRef(null);
-  const prevUrlRef = useRef(null);
+  const [draft, setDraftState] = useState(null);
+  const [status, setStatus] = useState("loading"); // loading | saved | dirty | saving | error
+  const [error, setError] = useState("");
+  const draftRef = useRef(null);
+  const timer = useRef(null);
+  const inFlight = useRef(null);
+  const again = useRef(false);
+  const alive = useRef(true);
+  useEffect(() => () => { alive.current = false; if (timer.current) clearTimeout(timer.current); }, []);
+
+  const adopt = useCallback((t) => { draftRef.current = t; setTpl(t); setDraftState(t); setStatus("saved"); setError(""); }, []);
 
   useEffect(() => {
     let cancelled = false;
-    call(`/api/pdf-templates/${id}`).then((d) => { if (!cancelled) { setTpl(d.template); setDraft(d.template); } }).catch((e) => notify(e.message, true));
+    setStatus("loading");
+    call(`${base}/${id}`).then((d) => { if (!cancelled) adopt(d.template); }).catch((e) => { if (!cancelled) { setStatus("error"); setError(e.message); notify(e.message, true); } });
     return () => { cancelled = true; };
-  }, [id]);
+  }, [id, base]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const flush = useCallback(() => {
+    if (timer.current) { clearTimeout(timer.current); timer.current = null; }
+    if (inFlight.current) { again.current = true; return inFlight.current; }
+    const snapshot = draftRef.current;
+    if (!snapshot) return Promise.resolve(true);
+    const body = {};
+    for (const f of catalog) body[f.key] = snapshot[f.key];
+    if (alive.current) setStatus("saving");
+    const p = call(`${base}/${id}`, { method: "PATCH", body })
+      .then((res) => {
+        if (!alive.current) return true;
+        setTpl(res.template);
+        if (draftRef.current === snapshot) { draftRef.current = res.template; setDraftState(res.template); setStatus("saved"); setError(""); }
+        else again.current = true; // newer edits arrived meanwhile — keep them and save them next
+        if (onSaved) onSaved(res.template);
+        return true;
+      })
+      .catch((e) => {
+        again.current = false;
+        if (alive.current) { setStatus("error"); setError(e.message); notify(`Not saved: ${e.message}`, true); }
+        return false;
+      })
+      .finally(() => { inFlight.current = null; });
+    inFlight.current = p.then((ok) => {
+      if (ok && again.current) { again.current = false; return flush(); }
+      return ok;
+    });
+    return inFlight.current;
+  }, [id, base, catalog, call, notify, onSaved]);
+
+  const setField = useCallback((key, value) => {
+    const next = { ...(draftRef.current || {}), [key]: value };
+    draftRef.current = next;
+    setDraftState(next);
+    setStatus("dirty");
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => { timer.current = null; flush(); }, 700);
+  }, [flush]);
+
+  const pending = status === "dirty" || status === "saving" || (status === "error" && !!draftRef.current);
+  useEffect(() => {
+    if (!pending) return undefined;
+    const h = (e) => { e.preventDefault(); e.returnValue = ""; return ""; };
+    window.addEventListener("beforeunload", h);
+    return () => window.removeEventListener("beforeunload", h);
+  }, [pending]);
+
+  // Saves what is pending; resolves false (and leaves the editor open) when
+  // the server rejects it and the user chooses to keep editing.
+  const settle = useCallback(async () => {
+    if (status === "loading") return true;
+    const ok = (status === "saved") ? true : await flush();
+    if (ok) return true;
+    return window.confirm("Some changes could not be saved (see the message in the editor). Leave and discard them?");
+  }, [status, flush]);
+
+  return { tpl, setTpl, draft, status, error, setField, flush, settle, adopt };
+}
+
+function TemplateSaveStatus({ status, error, version, onRetry }) {
+  const map = {
+    loading: { text: "Loading…", color: C.slate },
+    saved: { text: "All changes saved", color: C.green },
+    dirty: { text: "Unsaved changes…", color: C.amber },
+    saving: { text: "Saving…", color: C.slate },
+    error: { text: "Not saved", color: C.red },
+  };
+  const m = map[status] || map.saved;
+  return (
+    <span role="status" aria-live="polite" data-save-status={status} style={{ fontSize: 11.5, color: m.color, fontWeight: status === "error" ? 700 : 600, display: "inline-flex", alignItems: "center", gap: 8 }}>
+      <span>{m.text}</span>
+      {status === "error" && error ? <span style={{ fontWeight: 500 }}>{error}</span> : null}
+      {status === "saved" && version ? <span style={{ color: C.slate, fontWeight: 500 }}>v{version}</span> : null}
+      {status === "error" && onRetry && <Btn size="sm" tone="ghost" onClick={onRetry}>Retry</Btn>}
+    </span>
+  );
+}
+
+// Whether the template being edited is the one documents actually use.
+// Only the DEFAULT template of a document type is applied to real exports
+// (the Global default covers types without their own) — editing any other
+// template changes nothing until it is set as the default, which the old
+// editor never said.
+function TemplateUsageBanner({ tpl, kindLabel, isGlobal, busy, onSetDefault }) {
+  if (!tpl) return null;
+  const box = (bg, border, color) => ({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", padding: "10px 14px", borderRadius: 6, marginBottom: 14, fontSize: 12.5, background: bg, border: `1px solid ${border}`, color });
+  if (tpl.isArchived) {
+    return <div data-usage="archived" style={box(C.amberBg, "#ecd2a4", "#7a5410")}><span><b>Archived — not in use.</b> Restore it and set it as the default to apply it to documents.</span></div>;
+  }
+  if (tpl.isDefault) {
+    return (
+      <div data-usage="default" style={box(C.greenBg, "#bfe0d1", "#1d6b4d")}>
+        <span><b>In use.</b> {isGlobal
+          ? "Every document type that has no default template of its own is generated with these settings."
+          : "Every document of this type generated from now on uses these settings."}</span>
+      </div>
+    );
+  }
+  return (
+    <div data-usage="not-default" style={box(C.amberBg, "#ecd2a4", "#7a5410")}>
+      <span><b>Not in use yet.</b> Changes are saved, but documents keep using the current default template until you make this one the default.</span>
+      <Btn size="sm" tone="primary" disabled={busy} onClick={onSetDefault}>Set as default</Btn>
+    </div>
+  );
+}
+
+function PdfTemplateEditor({ id, kind, call, notify, token, onClose }) {
+  const [tab, setTab] = useState(PDF_FIELD_GROUPS[0]);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [useReal, setUseReal] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const prevUrlRef = useRef(null);
+  const previewSeq = useRef(0);
 
   const refreshPreview = useCallback(() => {
+    const seq = ++previewSeq.current;
     setPreviewLoading(true);
     fetchBlobUrl(`/api/pdf-templates/${id}/preview.pdf?${useReal ? "real=1&" : ""}_=${Date.now()}`, token)
       .then((url) => {
+        if (seq !== previewSeq.current) { URL.revokeObjectURL(url); return; } // an older preview finishing late
         if (prevUrlRef.current) URL.revokeObjectURL(prevUrlRef.current);
         prevUrlRef.current = url;
         setPreviewUrl(url);
       })
       .catch((e) => notify(e.message, true))
-      .finally(() => setPreviewLoading(false));
+      .finally(() => { if (seq === previewSeq.current) setPreviewLoading(false); });
   }, [id, token, useReal, notify]);
+
+  // The preview is rendered by the server from the SAVED template, so it is
+  // refreshed after every successful save.
+  const { tpl, setTpl, draft, status, error, setField, flush, settle, adopt } = useTemplateAutosave({
+    id, base: "/api/pdf-templates", catalog: PDF_FIELD_CATALOG, call, notify, onSaved: refreshPreview,
+  });
 
   useEffect(() => { if (tpl) refreshPreview(); }, [tpl?.id, useReal]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => { if (prevUrlRef.current) URL.revokeObjectURL(prevUrlRef.current); }, []);
-
-  async function doSave(nextDraft) {
-    setSaving(true);
-    try {
-      const body = {};
-      for (const f of PDF_FIELD_CATALOG) body[f.key] = nextDraft[f.key];
-      const res = await call(`/api/pdf-templates/${id}`, { method: "PATCH", body });
-      setTpl(res.template); setDraft(res.template);
-      refreshPreview();
-    } catch (e) { notify(e.message, true); } finally { setSaving(false); }
-  }
-
-  function setField(key, value) {
-    setDraft((prev) => {
-      const next = { ...prev, [key]: value };
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(() => doSave(next), 700);
-      return next;
-    });
-  }
+  const saving = status === "saving" || busy;
 
   async function doReset() {
     if (!window.confirm(`Reset "${tpl.name}" to the original default look? This can't be undone.`)) return;
-    setSaving(true);
+    if (!(await flush())) return;
+    setBusy(true);
     try {
       const res = await call(`/api/pdf-templates/${id}/reset`, { method: "POST" });
-      setTpl(res.template); setDraft(res.template);
+      adopt(res.template);
       notify("Template reset to defaults.");
       refreshPreview();
-    } catch (e) { notify(e.message, true); } finally { setSaving(false); }
+    } catch (e) { notify(e.message, true); } finally { setBusy(false); }
   }
+  async function doSetDefault() {
+    if (!(await flush())) return;
+    setBusy(true);
+    try {
+      const res = await call(`/api/pdf-templates/${id}/set-default`, { method: "POST" });
+      setTpl(res.template);
+      notify(`"${res.template.name}" is now the default — documents use it from now on.`);
+    } catch (e) { notify(e.message, true); } finally { setBusy(false); }
+  }
+  async function close() { if (await settle()) onClose(); }
 
   return (
     <div>
       <SectionHeader title={`Customize: ${tpl?.name || "…"}`} sub={PDF_KIND_LABELS[kind] || kind}
-        actions={<Btn tone="ghost" onClick={onClose}>← Back to templates</Btn>} />
-      <div style={{ display: "grid", gridTemplateColumns: "380px 1fr", gap: 16, alignItems: "start" }}>
+        actions={<Btn tone="ghost" onClick={close}>← Back to templates</Btn>} />
+      <TemplateUsageBanner tpl={tpl} kindLabel={PDF_KIND_LABELS[kind] || kind} isGlobal={kind === "global"} busy={saving} onSetDefault={doSetDefault} />
+      <div className="gk-tpl-editor" style={{ display: "grid", gridTemplateColumns: "380px 1fr", gap: 16, alignItems: "start" }}>
         <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, padding: 16 }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
             {PDF_FIELD_GROUPS.map((g) => (
@@ -13153,7 +13285,7 @@ function PdfTemplateEditor({ id, kind, call, notify, token, onClose }) {
             </div>
           )}
           <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${C.line}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 11.5, color: C.slate }}>{saving ? "Saving…" : "All changes saved"}</span>
+            <TemplateSaveStatus status={status} error={error} version={tpl?.version} onRetry={flush} />
             <Btn size="sm" tone="ghost" disabled={!tpl || saving} onClick={doReset}>Reset to defaults</Btn>
           </div>
         </div>
@@ -13285,8 +13417,9 @@ function PdfTemplatesModule({ call, dl, preview, notify, token }) {
       </div>
       {kindMeta[kind] && (
         <div style={{ fontSize: 12, color: C.slate, marginBottom: 10 }}>
-          Current default: <b style={{ color: C.ink }}>{kindMeta[kind].defaultTemplateName || "System default (no custom template)"}</b>
+          In use for these documents: <b style={{ color: C.ink }}>{kindMeta[kind].defaultTemplateName || "System default (no custom template)"}</b>
           {kind !== "global" && !kindMeta[kind].defaultTemplateName && <> — falls back to the Global default, then the built-in look.</>}
+          <div style={{ marginTop: 3 }}>Only the Default template of a document type is applied when documents are generated — set a template as default to put its changes into use.</div>
         </div>
       )}
 
@@ -13376,6 +13509,7 @@ const EXCEL_KIND_LABELS = {
   deposit: "Credit Receipt",
   withdrawal: "Debit Receipt",
   transfer: "Transfer Receipt",
+  cash_account: "Cash Account Statement",
 };
 const EXCEL_KIND_ORDER = Object.keys(EXCEL_KIND_LABELS);
 
@@ -13434,52 +13568,43 @@ const EXCEL_FIELD_GROUPS = Array.from(new Set(EXCEL_FIELD_CATALOG.map((f) => f.g
 // PdfField already handles bool/enum/color/float/text — reused as-is (same
 // shape of `def`) rather than duplicating that renderer for Excel fields.
 function ExcelTemplateEditor({ id, kind, call, dl, notify, onClose }) {
-  const [tpl, setTpl] = useState(null);
-  const [draft, setDraft] = useState(null);
   const [tab, setTab] = useState(EXCEL_FIELD_GROUPS[0]);
-  const [saving, setSaving] = useState(false);
-  const saveTimer = useRef(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    call(`/api/excel-templates/${id}`).then((d) => { if (!cancelled) { setTpl(d.template); setDraft(d.template); } }).catch((e) => notify(e.message, true));
-    return () => { cancelled = true; };
-  }, [id]);
-
-  async function doSave(nextDraft) {
-    setSaving(true);
-    try {
-      const body = {};
-      for (const f of EXCEL_FIELD_CATALOG) body[f.key] = nextDraft[f.key];
-      const res = await call(`/api/excel-templates/${id}`, { method: "PATCH", body });
-      setTpl(res.template); setDraft(res.template);
-    } catch (e) { notify(e.message, true); } finally { setSaving(false); }
-  }
-
-  function setField(key, value) {
-    setDraft((prev) => {
-      const next = { ...prev, [key]: value };
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(() => doSave(next), 700);
-      return next;
-    });
-  }
+  const [busy, setBusy] = useState(false);
+  const { tpl, setTpl, draft, status, error, setField, flush, settle, adopt } = useTemplateAutosave({
+    id, base: "/api/excel-templates", catalog: EXCEL_FIELD_CATALOG, call, notify,
+  });
+  const saving = status === "saving" || busy;
 
   async function doReset() {
     if (!window.confirm(`Reset "${tpl.name}" to the original default look? This can't be undone.`)) return;
-    setSaving(true);
+    if (!(await flush())) return;
+    setBusy(true);
     try {
       const res = await call(`/api/excel-templates/${id}/reset`, { method: "POST" });
-      setTpl(res.template); setDraft(res.template);
+      adopt(res.template);
       notify("Template reset to defaults.");
-    } catch (e) { notify(e.message, true); } finally { setSaving(false); }
+    } catch (e) { notify(e.message, true); } finally { setBusy(false); }
   }
+  async function doSetDefault() {
+    if (!(await flush())) return;
+    setBusy(true);
+    try {
+      const res = await call(`/api/excel-templates/${id}/set-default`, { method: "POST" });
+      setTpl(res.template);
+      notify(`"${res.template.name}" is now the default — exports use it from now on.`);
+    } catch (e) { notify(e.message, true); } finally { setBusy(false); }
+  }
+  // The sample workbook is built by the server from the SAVED template, so
+  // anything still pending is saved first.
+  async function download(path, name) { if (await flush()) dl(path, name); }
+  async function close() { if (await settle()) onClose(); }
 
   return (
     <div>
       <SectionHeader title={`Customize: ${tpl?.name || "…"}`} sub={EXCEL_KIND_LABELS[kind] || kind}
-        actions={<Btn tone="ghost" onClick={onClose}>← Back to templates</Btn>} />
-      <div style={{ display: "grid", gridTemplateColumns: "380px 1fr", gap: 16, alignItems: "start" }}>
+        actions={<Btn tone="ghost" onClick={close}>← Back to templates</Btn>} />
+      <TemplateUsageBanner tpl={tpl} kindLabel={EXCEL_KIND_LABELS[kind] || kind} isGlobal={kind === "global"} busy={saving} onSetDefault={doSetDefault} />
+      <div className="gk-tpl-editor" style={{ display: "grid", gridTemplateColumns: "380px 1fr", gap: 16, alignItems: "start" }}>
         <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, padding: 16 }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
             {EXCEL_FIELD_GROUPS.map((g) => (
@@ -13494,7 +13619,7 @@ function ExcelTemplateEditor({ id, kind, call, dl, notify, onClose }) {
             </div>
           )}
           <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${C.line}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 11.5, color: C.slate }}>{saving ? "Saving…" : "All changes saved"}</span>
+            <TemplateSaveStatus status={status} error={error} version={tpl?.version} onRetry={flush} />
             <Btn size="sm" tone="ghost" disabled={!tpl || saving} onClick={doReset}>Reset to defaults</Btn>
           </div>
         </div>
@@ -13504,8 +13629,8 @@ function ExcelTemplateEditor({ id, kind, call, dl, notify, onClose }) {
             Excel files can't be shown inline — download a sample workbook built with the settings on the left to see exactly what every export of this document type will look like.
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 280 }}>
-            <Btn tone="primary" disabled={!tpl} onClick={() => dl(`/api/excel-templates/${id}/preview.xlsx`, `${tpl.name}-preview.xlsx`)}>Download preview (.xlsx)</Btn>
-            <Btn tone="subtle" disabled={!tpl} onClick={() => dl(`/api/excel-templates/${id}/preview.xlsx?real=1`, `${tpl.name}-test.xlsx`)}>Download test Excel (real data)</Btn>
+            <Btn tone="primary" disabled={!tpl} onClick={() => download(`/api/excel-templates/${id}/preview.xlsx`, `${tpl.name}-preview.xlsx`)}>Download preview (.xlsx)</Btn>
+            <Btn tone="subtle" disabled={!tpl} onClick={() => download(`/api/excel-templates/${id}/preview.xlsx?real=1`, `${tpl.name}-test.xlsx`)}>Download test Excel (real data)</Btn>
           </div>
         </div>
       </div>
@@ -13624,8 +13749,9 @@ function ExcelTemplatesModule({ call, dl, notify, token }) {
       </div>
       {kindMeta[kind] && (
         <div style={{ fontSize: 12, color: C.slate, marginBottom: 10 }}>
-          Current default: <b style={{ color: C.ink }}>{kindMeta[kind].defaultTemplateName || "System default (no custom template)"}</b>
-          {kind !== "global" && !kindMeta[kind].defaultTemplateName && <> — falls back to the built-in look.</>}
+          In use for these documents: <b style={{ color: C.ink }}>{kindMeta[kind].defaultTemplateName || "System default (no custom template)"}</b>
+          {kind !== "global" && !kindMeta[kind].defaultTemplateName && <> — falls back to the Global default, then the built-in look.</>}
+          <div style={{ marginTop: 3 }}>Only the Default template of a document type is applied when documents are generated — set a template as default to put its changes into use.</div>
         </div>
       )}
 

@@ -167,6 +167,41 @@ function existingTables(raw, prefix) {
   return new Set(raw("SELECT TABLE_NAME AS n FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE()").map((r) => r.n).filter((n) => n.startsWith(prefix)));
 }
 
+// "col IN ('a','b',...)" -> { col, values } (null for any other expression).
+function parseInCheck(expr) {
+  const m = /^\(*[`"]?(\w+)[`"]?\s+in\s*\((.*)\)\)*$/i.exec(String(expr).trim());
+  if (!m) return null;
+  return { col: m[1].toLowerCase(), values: [...m[2].matchAll(/'((?:[^']|'')*)'/g)].map((x) => x[1]) };
+}
+
+// Additive upgrade of a list-of-values CHECK (e.g. a new template kind):
+// when the live table's "col IN (...)" check is missing values that
+// schema.json now allows, it is replaced by the wider one. Only ever
+// WIDENS a check (every value the old one allowed is still allowed), so no
+// existing row can start violating it; a check that differs in any other
+// way is left alone.
+function widenEnumChecks(raw, full, checks) {
+  const wanted = (checks || []).map((c) => ({ expr: c, p: parseInCheck(c) })).filter((x) => x.p);
+  if (!wanted.length) return [];
+  const live = raw(
+    "SELECT cc.CONSTRAINT_NAME AS n, cc.CHECK_CLAUSE AS c FROM information_schema.CHECK_CONSTRAINTS cc " +
+    "JOIN information_schema.TABLE_CONSTRAINTS tc ON tc.CONSTRAINT_SCHEMA = cc.CONSTRAINT_SCHEMA AND tc.CONSTRAINT_NAME = cc.CONSTRAINT_NAME " +
+    "WHERE tc.TABLE_SCHEMA = DATABASE() AND tc.TABLE_NAME = ? AND tc.CONSTRAINT_TYPE = 'CHECK'", [full]);
+  const changed = [];
+  for (const w of wanted) {
+    for (const l of live) {
+      const lp = parseInCheck(String(l.c).replace(/\\'/g, "'").replace(/_utf8mb4|_latin1|_binary/gi, ""));
+      if (!lp || lp.col !== w.p.col.toLowerCase()) continue;
+      const missing = w.p.values.filter((v) => !lp.values.includes(v));
+      const dropped = lp.values.filter((v) => !w.p.values.includes(v));
+      if (!missing.length || dropped.length) continue;
+      raw(`ALTER TABLE ${q(full)} DROP CHECK ${q(l.n)}, ADD CHECK (${portableExpr(w.expr)})`);
+      changed.push(l.n);
+    }
+  }
+  return changed;
+}
+
 // Creates/updates every table of one scope. Returns { created: [...], altered: [...] }.
 function ensureScope(raw, { kind, companyId }) {
   const prefix = kind === "tenant" ? companyPrefix(companyId) : CONTROL_PREFIX;
@@ -193,6 +228,10 @@ function ensureScope(raw, { kind, companyId }) {
       raw(`ALTER TABLE ${q(full)} ADD ${indexDdl(t, ix)}`);
       altered.push(`${full}#${name}`);
     }
+  }
+  for (const t of tablesFor(kind)) {
+    if (!have.has(prefix + t.name)) continue;
+    for (const name of widenEnumChecks(raw, prefix + t.name, t.checks)) altered.push(`${prefix + t.name}~${name}`);
   }
   if (kind === "control") {
     for (const t of EXTRA_CONTROL_TABLES) {

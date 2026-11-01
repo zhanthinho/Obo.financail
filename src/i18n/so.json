@@ -2265,5 +2265,18 @@
  "No credits or debits in this period.": "Muddadan wax kiredit ama debit ah ma jiraan.",
  "No balance movements in this period.": "Muddadan haraaga wax isbeddel ah kuma dhicin.",
  "Loading account": "Akoonka waa la soo rarayaa",
- "Credits − Debits": "Kiredit − Debit"
+ "Credits − Debits": "Kiredit − Debit",
+ "In use for these documents:": "Waxa dukumentiyadan loo isticmaalo:",
+ "Unsaved changes…": "Isbeddello aan la kaydin…",
+ "Not saved": "Lama kaydin",
+ "Archived — not in use.": "La kaydiyay (archived) — lama isticmaalo.",
+ "Restore it and set it as the default to apply it to documents.": "Soo celi oo ka dhig caadi si loogu isticmaalo dukumentiyada.",
+ "In use.": "Waa la isticmaalayaa.",
+ "Every document type that has no default template of its own is generated with these settings.": "Nooc kasta oo dukumenti ah oo aan lahayn template caadi ah oo u gaar ah waxaa lagu sameeyaa habayntan.",
+ "Not in use yet.": "Weli lama isticmaalo.",
+ "Set as default": "Ka dhig caadi",
+ "Cash Account Statement": "Bayaanka Koontada Lacagta Caddaanka ah",
+ "Only the Default template of a document type is applied when documents are generated — set a template as default to put its changes into use.": "Kaliya template-ka Caadiga ah ee nooc dukumenti ayaa la isticmaalaa marka dukumentiyo la sameeyo — template ka dhig caadi si isbeddelladiisu u shaqeeyaan.",
+ "Every document of this type generated from now on uses these settings.": "Dukumenti kasta oo noocan ah oo hadda ka dib la sameeyo wuxuu isticmaalayaa habayntan.",
+ "Changes are saved, but documents keep using the current default template until you make this one the default.": "Isbeddellada waa la kaydiyay, laakiin dukumentiyadu waxay sii isticmaalayaan template-ka caadiga ah ee hadda ilaa aad kan ka dhigto caadiga."
 }

@@ -2747,7 +2747,7 @@
    ],
    "foreignKeys": [],
    "checks": [
-    "kind IN ('global','account','quotation','exchange','transaction','reports','deposit','withdrawal','transfer')",
+    "kind IN ('global','account','quotation','exchange','transaction','reports','deposit','withdrawal','transfer','cash_account')",
     "font_family IN ('Calibri','Arial','Times New Roman','Georgia')",
     "table_theme IN ('medium_blue','medium_green','medium_gray','medium_gold','dark_navy','light','none')",
     "footer_align IN ('left','center','right')",
@@ -4681,7 +4681,7 @@
    ],
    "foreignKeys": [],
    "checks": [
-    "kind IN ('global','account','quotation','exchange','transaction','reports','deposit','withdrawal','transfer')",
+    "kind IN ('global','account','quotation','exchange','transaction','reports','deposit','withdrawal','transfer','cash_account')",
     "paper_size IN ('A4','A5','Letter','Legal','Custom')",
     "orientation IN ('portrait','landscape')",
     "font_family IN ('helvetica','times','courier')",

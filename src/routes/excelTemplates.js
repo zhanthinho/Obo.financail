@@ -17,6 +17,7 @@ const { uid, nowISO } = require("../util");
 const { buildProfessionalWorkbook, TABLE_THEMES } = require("../xlsx-engine");
 const { buildQuotationWorkbook, buildExchangeReceiptWorkbook, buildTransactionStatementWorkbook } = require("../xlsx-documents");
 const { buildAccountStatementWorkbook } = require("../xlsx-account-report");
+const { buildCashAccountStatementWorkbook } = require("../xlsx-cash-account-report");
 
 // Reuses the exact same kind taxonomy as the PDF Template system (spec:
 // "work alongside the existing PDF Template system") — an Accounts Excel
@@ -32,6 +33,7 @@ const KIND_LABELS = {
   deposit: "Credit Receipt",
   withdrawal: "Debit Receipt",
   transfer: "Transfer Receipt",
+  cash_account: "Cash Account Statement",
 };
 const VALID_KINDS = new Set(Object.keys(KIND_LABELS));
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
@@ -120,6 +122,17 @@ const PRESETS = {
   },
 };
 
+// TEMPLATES FIX: a field the server doesn't know used to be dropped
+// silently while the save still answered 200 — the editor then showed
+// "saved" for a setting that was never stored. Unknown keys are now
+// rejected; the read-only fields serialize() itself returns are accepted
+// (and ignored) so a client can send a whole template back.
+const READ_ONLY_KEYS = new Set(["id", "kind", "isDefault", "isArchived", "isBuiltin", "presetKey", "version", "createdAt", "createdBy", "updatedAt", "updatedBy"]);
+function unknownKeys(body, extra) {
+  const known = new Set(FIELD_DEFS.map((d) => d.key));
+  return Object.keys(body || {}).filter((k) => !known.has(k) && !READ_ONLY_KEYS.has(k) && !(extra || []).includes(k));
+}
+
 function serialize(row) {
   if (!row) return null;
   const out = {
@@ -161,6 +174,17 @@ function validateAndConvert(def, raw) {
 // through the Excel builders instead of the PDF ones, so a Super Admin
 // previewing an Excel Template sees the same sample document a PDF preview
 // would show — just as a real .xlsx file. ----
+function sampleCashAccount(generatedBy) {
+  const account = { name: "Main Cash Box", type: "cash", currency: "USD", status: "active", currentBalance: 1750 };
+  const rows = [
+    { date: "2026-01-01", type: "deposit", sourceType: "opening_balance", description: "Opening balance", deposit: 1000, withdrawal: null, balanceAfter: 1000, reference: "CSH-0001", staff: generatedBy },
+    { date: "2026-01-04", type: "deposit", sourceType: "customer_payment", description: "Sample customer payment", deposit: 1000, withdrawal: null, balanceAfter: 2000, reference: "CSH-0002", staff: generatedBy },
+    { date: "2026-01-06", type: "withdrawal", sourceType: "expense", description: "Sample office expense", deposit: null, withdrawal: 250, balanceAfter: 1750, reference: "CSH-0003", staff: generatedBy },
+  ];
+  const summary = { openingBalance: 0, totalDeposits: 2000, totalWithdrawals: 250, totalExchanges: 0, totalTransfers: 0, closingBalance: 1750, totalTransactions: 3 };
+  return { account, rows, summary };
+}
+
 async function buildPreviewXLSX(kind, template, company, user, useReal) {
   const generatedBy = user.name;
   if (kind === "quotation") {
@@ -217,6 +241,10 @@ async function buildPreviewXLSX(kind, template, company, user, useReal) {
       rateUsed: 11500, profitUsd: 12.5, staffName: generatedBy, status: "completed", notes: "Sample preview transaction — no real transaction data is used.",
     };
     return buildExchangeReceiptWorkbook({ company, tx, dailyRate: 11500, saleRate: 11550, canViewProfit: true, generatedBy, template });
+  }
+  if (kind === "cash_account") {
+    const { account, rows, summary } = sampleCashAccount(generatedBy);
+    return buildCashAccountStatementWorkbook({ company, account, rows, summary, from: null, to: null, generatedBy, template });
   }
   if (kind === "transaction") {
     const rows = [
@@ -297,6 +325,8 @@ function register(router) {
     const user = requireAuth(req, res); if (!user) return;
     if (!requirePerm(user, res, "excelTemplates.manage")) return;
     let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
+    if (!body || typeof body !== "object" || Array.isArray(body)) return badRequest(res, "Template settings must be a JSON object.");
+    { const bad = unknownKeys(body, ["name"]); if (bad.length) return badRequest(res, `Unknown template setting(s): ${bad.slice(0, 5).join(", ")}.`); }
     const kind = body.kind;
     if (!kind || !VALID_KINDS.has(kind)) return badRequest(res, "Unknown or missing template kind.");
     if (!body.name || !String(body.name).trim()) return badRequest(res, "A template name is required.");
@@ -331,6 +361,8 @@ function register(router) {
     const current = get("SELECT * FROM excel_templates WHERE id = ?", [params.id]);
     if (!current) return notFound(res, "Template not found.");
     let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
+    if (!body || typeof body !== "object" || Array.isArray(body)) return badRequest(res, "Template settings must be a JSON object.");
+    { const bad = unknownKeys(body, ["name"]); if (bad.length) return badRequest(res, `Unknown template setting(s): ${bad.slice(0, 5).join(", ")}.`); }
     if (body.name !== undefined) {
       if (!String(body.name).trim()) return badRequest(res, "A template name is required.");
       if (String(body.name).length > 80) return badRequest(res, "Template name is too long (max 80 characters).");

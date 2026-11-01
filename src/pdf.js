@@ -413,7 +413,9 @@ function resolveStyle(template, company) {
       muted: t.color_muted ? hexToRgb(t.color_muted) : SLATE,
       tableHeader: t.color_table_header ? hexToRgb(t.color_table_header) : MINT,
       tableHeaderText: t.table_header_text_color ? hexToRgb(t.table_header_text_color) : INK,
-      tableBorder: t.table_border_color ? hexToRgb(t.table_border_color) : SLATE,
+      // TEMPLATES FIX: the editor saves this as color_table_border (field
+      // colorTableBorder); older preset rows used table_border_color.
+      tableBorder: (t.color_table_border || t.table_border_color) ? hexToRgb(t.color_table_border || t.table_border_color) : SLATE,
       background: t.color_background ? hexToRgb(t.color_background) : null,
       success: t.color_success ? hexToRgb(t.color_success) : rgb(0.18, 0.56, 0.42),
       warning: t.color_warning ? hexToRgb(t.color_warning) : rgb(0.79, 0.54, 0.18),
@@ -523,9 +525,10 @@ function tint(color, amount) {
 
 async function renderProfessionalDocument(cfg) {
   const {
-    company, template, docTypeLabel, docNumber, statusLabel, statusTone, subtitleLines = [],
+    company, template, docTypeLabel, docNumber, statusLabel, statusTone,
     summaryCards = [], infoRows = [], table, totalsBox, notes, signatures, extraPages = [], generatedBy,
   } = cfg;
+  let subtitleLines = cfg.subtitleLines || [];
   const S = resolveStyle(template, company);
   const HS = HEADER_STYLE_CONFIG[S.header.style] || HEADER_STYLE_CONFIG.professional;
   const STATUS_TONE_COLOR = { green: S.colors.success, amber: S.colors.warning, red: S.colors.danger, slate: S.colors.muted };
@@ -535,6 +538,11 @@ async function renderProfessionalDocument(cfg) {
     S.signatureStyle === "full" ? "full" :
     signatures; // "auto" — whatever the caller asked for
   const effectiveNotes = notes || S.defaultNotes || null;
+  // TEMPLATES FIX: the template's Header note used to reach only the
+  // quotation (which passes it itself). Every other document now shows it
+  // too, under the title, without duplicating it on the quotation.
+  const tplHeaderNote = applyPlaceholders(template?.header_note, company);
+  if (tplHeaderNote && !subtitleLines.includes(tplHeaderNote)) subtitleLines = [truncate(tplHeaderNote.replace(/\s*\n\s*/g, " · "), 140), ...subtitleLines];
 
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(S.fonts.regular);
@@ -1302,4 +1310,5 @@ module.exports = {
   renderTablePDF, renderQuotationPDF, renderAccountStatementPDF,
   renderProfessionalDocument, renderQuotationDocumentPDF, renderExchangeReceiptPDF, renderTransactionStatementPDF,
   renderLedgerReceiptPDF, renderTransferReceiptPDF, renderReportPDF, renderCashAccountStatementPDF,
+  resolveStyle,
 };
