@@ -295,5 +295,8 @@
  "The customer's {0} is recorded as a Credit on the From Account and goes into the Cash Account below; the exchange then pays the {1} into the Receiving Account — nothing is counted twice.": "{0}-ga macmiilka waxaa lagu diiwaangeliyaa Credit ahaan From Account-ka, wuxuuna galaa Cash Account-ka hoose; kadib sarrifku {1}-ga wuxuu gelinayaa Receiving Account-ka — waxba laba jeer laguma xisaabiyo.",
  "Exchange recorded and marked as paid — Credit {0}.": "Sarrifka waa la diiwaangeliyay oo waxaa lagu calaamadeeyay la bixiyay — Credit {0}.",
  "Payment: {0}": "Lacag-bixin: {0}",
- "Payment for exchange {0}": "Lacag-bixinta sarrifka {0}"
+ "Payment for exchange {0}": "Lacag-bixinta sarrifka {0}",
+ "{0} credit · {1} debit": "{0} kiredit · {1} debit",
+ "Totals cover all {0} matching entries in {1}.": "Wadarradu waxay daboolaan dhammaan {0} gelinta ku habboon ee {1}.",
+ "Other currency in these results: {0} (kept separate).": "Lacag kale oo natiijooyinkan ku jirta: {0} (gaar ayaa loo hayaa)."
 }

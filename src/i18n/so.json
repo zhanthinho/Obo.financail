@@ -2411,5 +2411,7 @@
  "Reload the latest transactions": "Soo celi dhaqdhaqaaqii ugu dambeeyay",
  "Export the matching transactions to Excel": "U dhoofi dhaqdhaqaaqa ku habboon Excel",
  "Name or account #": "Magac ama lambarka akoonka",
- "Search reference, account, description...": "Raadi tixraac, akoon, sharraxaad..."
+ "Search reference, account, description...": "Raadi tixraac, akoon, sharraxaad...",
+ "Credit / Debit and Net count credit, debit and quotation entries only — exchanges and transfers are shown by their amounts and never added twice.": "Kiredit / Debit iyo Net waxay tiriyaan kaliya kiredit, debit iyo qaybaha qiimaynta — sarrifka iyo wareejinta waxaa lagu muujiyaa qadarkooda, marna laba jeer lama tiriyo.",
+ "Net movement = Credits − Debits of the credit/debit and quotation entries in this currency. Exchanges and transfers are shown by their amounts only and are not added in.": "Dhaqdhaqaaqa saafiga = Kiredit − Debit ee kiredit/debit iyo qaybaha qiimaynta ee lacagtan. Sarrifka iyo wareejinta qadarkooda oo keliya ayaa la muujiyaa, laguma daro."
 }

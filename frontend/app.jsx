@@ -12526,7 +12526,8 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
         )}
       </div>
       <div className="gk-th-scope">
-        Totals cover all {counts ? counts.entries : rows.length} matching entries in {currency}. Credit / Debit and Net count credit, debit and quotation entries only — exchanges and transfers are shown by their amounts and never added twice.
+        <span>{`Totals cover all ${counts ? counts.entries : rows.length} matching entries in ${currency}.`}</span>{" "}
+        <span>Credit / Debit and Net count credit, debit and quotation entries only — exchanges and transfers are shown by their amounts and never added twice.</span>
         {otherMoney.length > 0 && <> Other currency in these results: {otherMoney.map(([c, m]) => `${c} net ${fmtMoney(m.net, c)}`).join(", ")} (kept separate).</>}
       </div>
       </>}
