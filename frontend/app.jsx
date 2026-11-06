@@ -10456,7 +10456,15 @@ function AccountDetailModal({ call, dl, preview, print, notify, perm, accountId,
 
   const filteredActivity = useMemo(() => {
     const q = activitySearch.trim().toLowerCase();
-    return (data?.activity || [])
+    // ACCOUNT VIEW OLDEST-FIRST round: the server lists the activity newest
+    // first in exact chronological order (real date & time, then its own
+    // tie-break). Each row keeps that position as its Date & Time sort key,
+    // so sorting by date — either way — follows that order exactly, even for
+    // several entries at the same time, and every row keeps its own Balance
+    // (the server keeps each entry's balance in date order already).
+    const all = data?.activity || [];
+    return all
+      .map((r, i) => ({ ...r, sortKey: String(all.length - i).padStart(9, "0") }))
       .filter((r) => {
         if (activityType !== "all" && r.kind !== activityType) return false;
         if (activityFrom && r.date.slice(0, 10) < activityFrom) return false;
@@ -10500,7 +10508,10 @@ function AccountDetailModal({ call, dl, preview, print, notify, perm, accountId,
   // no sort (null) means the table trusts the backend's order until the
   // user explicitly clicks a column header to sort — same pattern already
   // used by acctSort above (line ~6069).
-  const activitySort = useSortableRows(filteredActivity, null, "desc");
+  // ACCOUNT VIEW OLDEST-FIRST round: like Cash Account — Date & Time
+  // ascending by default (oldest #1 at the top, newest at the bottom next to
+  // the footer). Any column header still sorts.
+  const activitySort = useSortableRows(filteredActivity, "date", "asc");
   const txLayout = useTableLayout(ACCOUNT_TX_TABLE_KEY, call);
   const txResize = useResizableColumns(ACCOUNT_TX_WIDTH_KEY);
   const txColumns = resolveColumns(ACCOUNT_TX_COLUMNS, txLayout.effective);
@@ -10839,7 +10850,7 @@ function AccountDetailModal({ call, dl, preview, print, notify, perm, accountId,
                     {txColumns.map((c) => {
                       const tdD = densityStyle(td, txDensity), tdMonoD = densityStyle(tdMono, txDensity);
                       switch (c.key) {
-                        case "idx": return <td key={c.key} style={tdMonoD}>{activityPg.rowNo(i)}</td>;
+                        case "idx": return <td key={c.key} style={tdMonoD}>{activityPg.firstIdx + i}</td>;
                         case "date": return (
                           <td key={c.key} style={tdD}>
                             <div>{fmtDate(r.date)}</div>
