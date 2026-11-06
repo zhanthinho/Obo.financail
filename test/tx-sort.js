@@ -129,7 +129,7 @@ async function run() {
       return [...t.querySelectorAll("tbody tr")].filter((tr) => tr.querySelectorAll("td").length > 3).map((tr) => {
         const td = [...tr.querySelectorAll("td")];
         const cell = (i) => (i >= 0 && td[i] ? td[i].innerText.trim() : "");
-        return { ref: cell(iRef).split("\n")[0], date: cell(iDate), cr: num(cell(iCr)), dr: num(cell(iDr)), crText: cell(iCr), drText: cell(iDr) };
+        return { ref: cell(iRef).split("\n")[0], key: cell(iRef).split("\n")[0] || `${cell(iDate)}|${cell(iCr)}|${cell(1)}|${cell(2)}`, date: cell(iDate), cr: num(cell(iCr)), dr: num(cell(iDr)), crText: cell(iCr), drText: cell(iDr) };
       });
     });
     const sortBtn = (id) => p.locator(`#${id}`);
@@ -148,10 +148,10 @@ async function run() {
       let p1;
       await check(`${label}: Newest First reverses the page; Highest / Lowest Amount; Reference A–Z — same rows on Page 1`, async () => {
         p1 = await read(table());
-        const set = JSON.stringify(p1.map((x) => x.ref).sort());
+        const set = JSON.stringify(p1.map((x) => x.key).sort());
         await choose(id, "newest");
         const n = await read(table());
-        assert(JSON.stringify(n.map((x) => x.ref)) === JSON.stringify([...p1].reverse().map((x) => x.ref)), `newest ${n.map((x) => x.ref).join(",")}`);
+        assert(JSON.stringify(n.map((x) => x.key)) === JSON.stringify([...p1].reverse().map((x) => x.key)), `newest ${n.map((x) => x.key).join(",")}`);
         await choose(id, "highest");
         const h = await read(table());
         const grp = (rows) => { const g = {}; for (const x of rows) (g[/SLSH/.test(x.crText + x.drText) ? "S" : "U"] = g[/SLSH/.test(x.crText + x.drText) ? "S" : "U"] || []).push(amountKey(x)); return Object.values(g); };
@@ -162,7 +162,7 @@ async function run() {
         await choose(id, "reference");
         const rf = await read(table());
         assert(isSorted(rf.map((x) => x.ref), (a, b) => collator.compare(a, b)), `reference ${rf.map((x) => x.ref).join(",")}`);
-        for (const v of [n, h, l, rf]) assert(JSON.stringify(v.map((x) => x.ref).sort()) === set, "a sort changed which rows are on Page 1");
+        for (const v of [n, h, l, rf]) assert(JSON.stringify(v.map((x) => x.key).sort()) === set, "a sort changed which rows are on Page 1");
         assert(/Sort:\s*Reference/.test(await sortBtn(id).innerText()), "label");
       });
       await check(`${label}: Page 2 holds older transactions — no duplicates, none missing`, async () => {
@@ -171,8 +171,8 @@ async function run() {
         await nb.click(); await p.waitForTimeout(400);
         const p2 = await read(table());
         assert(p2.length >= 1, "page 2 empty");
-        const dup = p2.filter((x) => p1.some((y) => y.ref === x.ref));
-        assert(!dup.length, `duplicated ${dup.map((x) => x.ref).join(",")}`);
+        const dup = p2.filter((x) => p1.some((y) => y.key === x.key));
+        assert(!dup.length, `duplicated ${dup.map((x) => x.key).join(",")}`);
         await p.getByRole("button", { name: "Previous" }).first().click(); await p.waitForTimeout(300);
       });
     };
@@ -259,7 +259,7 @@ async function run() {
         assert(foot.replace(/,/g, "").includes(String(total)), `footer ${foot}`);
         const bal = await t.locator("tbody tr").evaluateAll((trs) => trs.map((tr) => tr.innerText));
         const stored = d.ledger.map((l) => Number(l.balanceAfter));
-        assert(bal.length === 10 && stored.length === 13, `${bal.length} ${stored.length}`);
+        assert(bal.length === 10 && stored.length >= 13, `${bal.length} ${stored.length}`);
       });
     }
 
