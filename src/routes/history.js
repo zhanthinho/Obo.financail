@@ -208,7 +208,7 @@ function queryHistory(query, opts = {}) {
       // guess, since both are Deposit legs).
       sourceType: l.source_type,
       reference: l.reference_number || l.id.slice(0, 10), date: normalizeHistoryDate(l.date),
-      accountName: l.client_name || "—", accountType: l.client_account_type || "customer", accountCurrency: l.client_currency || l.currency, phone: l.client_phone || "", accountNumber: l.client_account_number || "",
+      accountName: l.client_name || "—", accountType: l.client_account_type || "customer", accountCurrency: l.client_currency || l.currency, phone: l.client_phone || "", accountNumber: l.client_account_number || "", balanceAfter: l.balance_after == null ? null : Number(l.balance_after),
       amountSummary: fmtMoney(l.amount, l.currency),
       // Fall back to the old source_type-based guess only if the quotation
       // document itself has since been deleted (q.status comes back NULL
@@ -281,7 +281,7 @@ function queryHistory(query, opts = {}) {
         id: l.id, sortKey: chronoSortKey(l.date, l.created_at), recordType: "ledger", ledgerType: l.type, origin, sourceType: l.source_type || null, sourceId: l.source_id || null,
         relatedReference: origin === "exchange" ? l.exchange_ref : origin === "transfer" ? l.transfer_ref : origin === "quotation" ? l.reference_number : null,
         reference: l.reference_number || (origin === "exchange" && l.exchange_ref) || (origin === "transfer" && l.transfer_ref) || l.id.slice(0, 10), date: normalizeHistoryDate(l.date),
-        accountName: l.client_name || "—", accountType: l.client_account_type || "customer", accountCurrency: l.client_currency || l.currency, phone: l.client_phone || "", accountNumber: l.client_account_number || "",
+        accountName: l.client_name || "—", accountType: l.client_account_type || "customer", accountCurrency: l.client_currency || l.currency, phone: l.client_phone || "", accountNumber: l.client_account_number || "", balanceAfter: l.balance_after == null ? null : Number(l.balance_after),
         amountSummary: fmtMoney(l.amount, l.currency),
         status: null, staffOrCreator: l.staff_name, staffId: l.staff_id, accountId: l.client_id, notes: l.notes,
         cashAccountId: l.cash_account_id || null, cashAccountName: l.cash_name || null,
@@ -317,7 +317,7 @@ function queryHistory(query, opts = {}) {
         cashLabel: CASH_LABEL[src] || (cl.type === "deposit" ? "Cash In" : "Cash Out"),
         relatedReference: src === "exchange" ? cl.exchange_ref : src === "customer_payment" ? cl.payment_ref : null,
         reference: cl.reference_number || cl.id.slice(0, 10), date: normalizeHistoryDate(cl.date),
-        accountName: cl.cash_name, accountType: "cash", accountCurrency: cl.currency, phone: cl.cp_phone || "", accountNumber: cl.cp_number || "",
+        accountName: cl.cash_name, accountType: "cash", accountCurrency: cl.currency, phone: cl.cp_phone || "", accountNumber: cl.cp_number || "", balanceAfter: cl.balance_after == null ? null : Number(cl.balance_after),
         amountSummary: `${cl.type === "deposit" ? "+" : "-"}${fmtMoney(cl.amount, cl.currency)}`,
         status: null, staffOrCreator: cl.staff_name, staffId: cl.staff_id, accountId: cl.counterparty_client_id || null, cashAccountId: cl.cash_account_id, cashAccountName: cl.cash_name,
         counterpartyName: cl.cp_name || cl.counterparty_label || null, notes: cl.description,

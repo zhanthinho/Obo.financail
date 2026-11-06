@@ -363,7 +363,8 @@ async function run() {
       await go("USD Payment"); await p.waitForTimeout(600);
       const origins = async () => p.locator("table tbody [data-origin]").evaluateAll((els) => els.map((e) => e.dataset.origin));
       const o1 = await origins();
-      assert(o1.length > 0 && o1.every((o) => o === "payment"), o1.join(","));
+      // (the Origin column is under Customize table by default; it shows by itself once linked postings are listed)
+      assert(await p.locator("table tbody tr").count() > 0 && o1.every((o) => o === "payment"), o1.join(","));
       await p.getByLabel("Show records").selectOption("any"); await p.waitForTimeout(1200);
       const o2 = await origins();
       assert(o2.some((o) => o === "exchange"), o2.join(","));

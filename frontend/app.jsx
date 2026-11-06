@@ -80,6 +80,10 @@ const THEME_CSS = `
     /* NUMERIC TYPOGRAPHY round: the font for numbers, amounts, rates,
        dates, account numbers and references (Inter; see public/index.html). */
     --c-font-num: "FINMAN Digits", "Inter", "Segoe UI", Arial, sans-serif;
+    /* GLOBAL FINANCIAL TABLE DESIGN round: every table is set in Inter
+       (self-hosted, public/fonts) — a font chosen in Settings → Appearance
+       still applies to tables too (see the fontFamily effect in App). */
+    --c-table-font: "FINMAN Digits", "Inter", "Segoe UI", Arial, sans-serif;
     --c-zoom: 1;
   }
   html { zoom: var(--c-zoom); }
@@ -97,7 +101,13 @@ const THEME_CSS = `
   :root, [data-theme="light"] {
     --c-card: #ffffff; --c-ink: #173042; --c-slate: #607d8b;
     --c-navy: #00695c; --c-navy-deep: #00574b; --c-navy-light: #00897b; --c-navy-light-rgb: 0, 137, 123;
-    --c-thead-bg: #00695c; --c-thead-fg: #ffffff; --c-row-bg: #ffffff; --c-tfoot-bg: #00695c; --c-tfoot-fg: #ffffff;
+    --c-thead-bg: #103F3B; --c-thead-fg: #ffffff; --c-row-bg: #ffffff; --c-tfoot-bg: #103F3B; --c-tfoot-fg: #ffffff;
+    /* GLOBAL FINANCIAL TABLE DESIGN round: Deep Emerald header / account
+       footer (a custom Brand Color still overrides both), a light-mint
+       Balance column and the light-mint footer of transaction tables. */
+    --c-bal-bg: #F0FAF7; --c-bal-foot-bg: #DDF1E9;
+    --c-tfoot-mint-bg: #EAF6F1; --c-tfoot-mint-fg: #103F3B; --c-tfoot-mint-line: #CFE7DE;
+    --c-credit: #16A34A; --c-debit: #DC2626; --c-bal-pos: #15803D; --c-bal-neg: #DC2626; --c-bal-zero: #64748B;
     /* BRAND COLOR CONSISTENCY round: these tinted surfaces used to be fixed
        green-greys (#f5f9f8 / #d7e3e0 / #edf4f3 / #e5f0ee), so with any other
        Brand Theme the page background, borders, row hover and card tint
@@ -112,6 +122,9 @@ const THEME_CSS = `
     --c-ink: #e8eef1; --c-slate: #95a5ad;
     --c-navy: #1db8a3; --c-navy-deep: #00574b; --c-navy-light: #00897b;
     --c-thead-bg: #0c4a40; --c-thead-fg: #eaf7f4; --c-row-bg: var(--c-card); --c-tfoot-bg: #0f5c4e; --c-tfoot-fg: #eaf7f4;
+    --c-bal-bg: rgba(52, 211, 153, 0.07); --c-bal-foot-bg: rgba(52, 211, 153, 0.16);
+    --c-tfoot-mint-bg: rgba(52, 211, 153, 0.10); --c-tfoot-mint-fg: #d1f5e7; --c-tfoot-mint-line: rgba(52, 211, 153, 0.22);
+    --c-credit: #4ADE80; --c-debit: #F87171; --c-bal-pos: #4ADE80; --c-bal-neg: #F87171; --c-bal-zero: #94A3B8;
     --c-paper: color-mix(in srgb, var(--c-navy-deep) 14%, #0d1214);
     --c-card: color-mix(in srgb, var(--c-navy-deep) 16%, #131a1c);
     --c-line: color-mix(in srgb, var(--c-navy) 16%, #222b2e);
@@ -125,6 +138,25 @@ const THEME_CSS = `
   /* --- Modern table system: shared by every table via the .gk-table class --- */
   .gk-table tbody tr { transition: background-color 0.12s ease; background: var(--c-row-bg); }
   .gk-table tbody tr:hover { background: var(--c-row-hover); }
+  /* GLOBAL FINANCIAL TABLE DESIGN round — one look for every financial
+     table: Inter, compact rows, thin light-grey lines, emerald header, a
+     light-mint Balance column (cells tagged by ResizableTable), and either
+     the emerald account footer or the light-mint transaction footer
+     (.gk-table--txn). Colors only; no value or calculation changes. */
+  .gk-table, .gk-table th, .gk-table td, .gk-table td *, .gk-table th * { font-family: var(--c-table-font) !important; }
+  .gk-table th { height: 38px; box-sizing: border-box; vertical-align: middle !important; font-weight: 700 !important; }
+  .gk-table tbody td { vertical-align: middle; }
+  .gk-table tbody td.gk-col-balance { background: var(--c-bal-bg) !important; }
+  .gk-table tbody tr:hover td.gk-col-balance { background: color-mix(in srgb, var(--c-bal-bg) 70%, var(--c-row-hover)) !important; }
+  .gk-table tfoot td.gk-col-balance { box-shadow: inset 0 0 0 9999px rgba(255,255,255,0.06); }
+  .gk-table--txn tfoot td { background: var(--c-tfoot-mint-bg) !important; color: var(--c-tfoot-mint-fg) !important; border-top: 1px solid var(--c-tfoot-mint-line) !important; border-right-color: var(--c-tfoot-mint-line) !important; }
+  .gk-table--txn tfoot td.gk-col-balance { background: var(--c-bal-foot-bg) !important; box-shadow: none; }
+  .gk-table tfoot td { font-weight: 700; white-space: nowrap; }
+  .gk-amt-credit { color: var(--c-credit); font-weight: 600; white-space: nowrap; }
+  .gk-amt-debit { color: var(--c-debit); font-weight: 600; white-space: nowrap; }
+  .gk-bal { font-weight: 700; white-space: nowrap; }
+  .gk-bal[data-sign="pos"] { color: var(--c-bal-pos); } .gk-bal[data-sign="neg"] { color: var(--c-bal-neg); } .gk-bal[data-sign="zero"] { color: var(--c-bal-zero); }
+  .gk-row-actions { display: inline-flex; gap: 6px; align-items: center; flex-wrap: nowrap; }
   /* CUSTOMERS TABLE REDESIGN round: compact horizontal padding + vertically
      centred rows so all ten columns fit a laptop screen without scrolling. */
   .gk-customers-table th, .gk-customers-table td { padding-left: 8px !important; padding-right: 8px !important; vertical-align: middle !important; }
@@ -1221,8 +1253,8 @@ function DateTimeCell({ value }) {
   const t = fmtTimeSeconds(value);
   return (
     <>
-      <div>{fmtDate(value)}</div>
-      {t && <div style={{ fontSize: 10.5, color: C.slate, fontFamily: FONT_MONO, marginTop: 1 }}>{t}</div>}
+      <div style={{ whiteSpace: "nowrap" }}>{fmtDate(value)}</div>
+      {t && <div style={{ whiteSpace: "nowrap", fontSize: 10.5, color: C.slate, fontFamily: FONT_MONO, marginTop: 1 }}>{t}</div>}
     </>
   );
 }
@@ -2990,10 +3022,15 @@ function startColumnResize(e, ctx, key, minWidth, maxWidth) {
 // a toolbar outside the table (Account Transactions' Customize Columns) can
 // read/set the same widths; `hideResetRow` then lets that toolbar show its
 // own Reset column widths button instead of the row above the table.
-function ResizableTable({ tableKey, className, style, children, innerRef, resize, hideResetRow }) {
+function ResizableTable({ tableKey, className, style, children, innerRef, resize, hideResetRow, variant }) {
   const own = useResizableColumns(resize ? null : tableKey);
   const rc = resize || own;
   const localRef = useRef(null);
+  // GLOBAL FINANCIAL TABLE DESIGN round: the Balance column (any header
+  // whose column key or label says "balance") gets the light-mint
+  // background on every row and in the footer. Runs after each render, so
+  // column customization, sorting and paging always stay in step.
+  React.useLayoutEffect(() => { tagBalanceColumns(localRef.current); });
   return (
     <ColResizeCtx.Provider value={{ ...rc, tableEl: localRef }}>
       {/* RESIZE-WIDTH RESET round: only ever shows up once a column on
@@ -3008,7 +3045,7 @@ function ResizableTable({ tableKey, className, style, children, innerRef, resize
       )}
       <table
         ref={(el) => { localRef.current = el; if (innerRef) innerRef.current = el; }}
-        className={className}
+        className={variant === "txn" ? `${className || ""} gk-table--txn` : className}
         style={rc.hasCustom
           // Once any column has a real pixel width, let the table size to
           // the SUM of its columns rather than staying pinned to 100% of
@@ -3024,6 +3061,43 @@ function ResizableTable({ tableKey, className, style, children, innerRef, resize
       </table>
     </ColResizeCtx.Provider>
   );
+}
+
+function tagBalanceColumns(table) {
+  if (!table || !table.tHead || !table.tHead.rows.length) return;
+  const head = table.tHead.rows[table.tHead.rows.length - 1];
+  const cols = new Set();
+  let c = 0;
+  for (const th of head.cells) {
+    const key = `${th.dataset.colkey || ""} ${th.dataset.col || ""}`;
+    if (/balance/i.test(key) || th.dataset.balance === "1") for (let k = 0; k < th.colSpan; k++) cols.add(c + k);
+    c += th.colSpan;
+  }
+  for (const sec of [table.tHead, ...table.tBodies, table.tFoot]) {
+    if (!sec) continue;
+    for (const row of sec.rows) {
+      let ci = 0;
+      for (const cell of row.cells) {
+        const on = cols.has(ci);
+        if (on !== cell.classList.contains("gk-col-balance")) cell.classList.toggle("gk-col-balance", on);
+        ci += cell.colSpan;
+      }
+    }
+  }
+}
+// Signed, colored amounts and balances for financial tables (display only).
+function CreditAmount({ value, currency }) {
+  if (value == null || value === "") return <span style={{ color: C.slate }}>—</span>;
+  return <span className="gk-amt-credit gk-acc-num">+{fmtMoney(Math.abs(Number(value)), currency)}</span>;
+}
+function DebitAmount({ value, currency }) {
+  if (value == null || value === "") return <span style={{ color: C.slate }}>—</span>;
+  return <span className="gk-amt-debit gk-acc-num">-{fmtMoney(Math.abs(Number(value)), currency)}</span>;
+}
+function BalanceAmount({ value, currency }) {
+  if (value == null || value === "" || Number.isNaN(Number(value))) return <span style={{ color: C.slate }}>—</span>;
+  const n = Number(value);
+  return <span className="gk-bal gk-acc-num" data-sign={n > 0.004 ? "pos" : n < -0.004 ? "neg" : "zero"}>{fmtMoney(n, currency)}</span>;
 }
 
 // "⟲ Reset column widths" — renders nothing until a column in the nearest
@@ -4533,6 +4607,10 @@ function App() {
     // "FINMAN Digits" stays first so numbers remain Inter in any UI font.
     if (opt && opt.key !== "poppins") root.setProperty("--c-font-family", `"FINMAN Digits", ${opt.stack}`);
     else root.removeProperty("--c-font-family");
+    // Tables are Inter by default; a font explicitly chosen in Settings
+    // (other than the Poppins default) applies to tables as well.
+    if (opt && opt.key !== "poppins" && opt.key !== "inter") root.setProperty("--c-table-font", `"FINMAN Digits", ${opt.stack}`);
+    else root.removeProperty("--c-table-font");
   }, [company?.fontFamily]);
   // APPEARANCE & BRANDING round 2: Font Size — applied as a CSS `zoom` on
   // <html> (see THEME_CSS's `html { zoom: var(--c-zoom); }`) rather than
@@ -6752,7 +6830,7 @@ function ExchangeModule({ call, dl, preview, print, notify, perm, user, rate, sa
             {loading ? <Spinner /> : exchangePg.total === 0 ? (<><Empty text="No transactions match these filters." /><TableFooter firstIdx={exchangePg.firstIdx} lastIdx={exchangePg.lastIdx} total={exchangePg.total} page={exchangePg.page} totalPages={exchangePg.totalPages} onPageChange={exchangePg.setPage} pageSize={exchangePg.pageSize} onPageSizeChange={exchangePg.setPageSize} /></>) : (
               <>
               <TableScrollShell height={460}>
-              <ResizableTable tableKey={tableKey} className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+              <ResizableTable variant="txn" tableKey={tableKey} className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead><tr>
                   <th style={{ ...th, width: 44 }}>#</th>
                   {columns.map((c) => <SortTh key={c.key} label={c.label} field={c.sortField} {...exchangeSort} onSort={exchangeSort.toggleSort} />)}
@@ -6774,11 +6852,11 @@ function ExchangeModule({ call, dl, preview, print, notify, perm, user, rate, sa
                       <td style={densityStyle(tdMono, density)}>{exchangePg.firstIdx + i}</td>
                       {columns.map((c) => <td key={c.key} style={tableCellStyle(c, density)}>{c.render(t)}</td>)}
                       <td style={densityStyle(td, density)} onClick={(e) => e.stopPropagation()}>
-                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                          <Btn size="sm" tone="ghost" onClick={() => setViewingTx(t)}>View</Btn>
-                          <Btn size="sm" tone="ghost" onClick={() => setReceiptTx(t)}>Receipt</Btn>
-                          {t.status === "active" && perm("exchangeUpdate") && <Btn size="sm" tone="subtle" onClick={() => setEditTx(t)}>Update</Btn>}
-                          {t.status === "active" && perm("exchangeDelete") && <Btn size="sm" tone="danger" onClick={() => setDeleteTx(t)}>Delete</Btn>}
+                        <div className="gk-row-actions">
+                          <RowIconBtn icon="eye" label="View" onClick={() => setViewingTx(t)} />
+                          <RowIconBtn icon="receipt" label="Receipt" onClick={() => setReceiptTx(t)} />
+                          {t.status === "active" && perm("exchangeUpdate") && <RowIconBtn icon="edit" label="Update" onClick={() => setEditTx(t)} />}
+                          {t.status === "active" && perm("exchangeDelete") && <RowIconBtn icon="trash" label="Delete" danger onClick={() => setDeleteTx(t)} />}
                         </div>
                       </td>
                     </tr>
@@ -6789,7 +6867,7 @@ function ExchangeModule({ call, dl, preview, print, notify, perm, user, rate, sa
                     <td style={tdFoot}></td>
                     {columns.map((c) => (
                       <td key={c.key} style={c.key === "given" || c.key === "received" ? { ...tdFootMono, fontWeight: 700 } : c.key === "client" ? { ...tdFoot, fontWeight: 700 } : tdFoot}>
-                        {c.key === "client" ? "Total"
+                        {c.key === "client" ? <span style={{ whiteSpace: "nowrap" }}>{`Total — ${exchangePg.total} exchanges`}</span>
                           : c.key === "given" ? <FootAmounts usd={exchangeFooterTotals.givenUSD || undefined} slsh={exchangeFooterTotals.givenSLSH || undefined} />
                           : c.key === "received" ? <FootAmounts usd={exchangeFooterTotals.receivedUSD || undefined} slsh={exchangeFooterTotals.receivedSLSH || undefined} />
                           : ""}
@@ -6820,7 +6898,7 @@ function ExchangeModule({ call, dl, preview, print, notify, perm, user, rate, sa
                 {tillPg.total === 0 ? (<><Empty text="No transactions recorded for this date." /><TableFooter firstIdx={tillPg.firstIdx} lastIdx={tillPg.lastIdx} total={tillPg.total} page={tillPg.page} totalPages={tillPg.totalPages} onPageChange={tillPg.setPage} pageSize={tillPg.pageSize} onPageSizeChange={tillPg.setPageSize} /></>) : (
                   <>
                   <TableScrollShell height={360}>
-                  <ResizableTable tableKey="exchange.till" className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <ResizableTable variant="txn" tableKey="exchange.till" className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead><tr>{["Time", "Client", "Given", "Received", "Staff", "Status"].map((h) => <SortTh key={h} label={h} />)}</tr></thead>
                     <tbody>{tillPg.pageRows.map((t) => (
                       <tr key={t.id} style={t.status === "voided" ? { opacity: 0.55 } : undefined}>
@@ -8078,7 +8156,7 @@ function QuotationsModule({ call, dl, preview, print, notify, perm, user, rate, 
         {loading ? <Spinner /> : quotePg.total === 0 ? (<><Empty text={`No ${status} Quotations`} /><TableFooter firstIdx={quotePg.firstIdx} lastIdx={quotePg.lastIdx} total={quotePg.total} page={quotePg.page} totalPages={quotePg.totalPages} onPageChange={quotePg.setPage} pageSize={quotePg.pageSize} onPageSizeChange={quotePg.setPageSize} /></>) : (
           <>
           <TableScrollShell height={460}>
-          <ResizableTable tableKey={tableKey} className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+          <ResizableTable variant="txn" tableKey={tableKey} className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead><tr>
               <SortTh label="#" />
               {columns.map((c) => <SortTh key={c.key} label={c.label} field={c.sortField} {...quoteSort} onSort={quoteSort.toggleSort} />)}
@@ -8270,7 +8348,7 @@ function QuotationDetailModal({ quotation: q, perm, hasRaw, dl, preview, print, 
         <div style={{ marginBottom: 18 }}>
           <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 8 }}>Payment History</div>
           <div className="gk-table-wrap" style={{ border: `1px solid ${C.line}`, borderRadius: 6, overflowX: "auto" }}>
-            <ResizableTable tableKey="quotations.detail.payments" className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+            <ResizableTable variant="txn" tableKey="quotations.detail.payments" className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead><tr><SortTh label="#" /><SortTh label="Date" /><SortTh label="Amount" /><SortTh label="Method" /><SortTh label="Staff" /><SortTh label="Reference" />{(onViewTransaction || (onDeletePayment && hasRaw && hasRaw("quotations.deletePayment"))) && <SortTh label="" resizeKey="__actions2" />}</tr></thead>
               <tbody>
                 {paymentsPg.pageRows.map((p, i) => (
@@ -9641,7 +9719,7 @@ function AccountsModule({ currency, call, dl, preview, print, notify, perm, hasR
         <span style={{ whiteSpace: "nowrap" }}>{toTitleCase(a.name)}</span>
       </button>
     ) },
-    { key: "accountNumber", label: "Account #", sortField: "accountNumber", render: (a) => <span style={{ fontFamily: FONT_MONO }}>{a.accountNumber}</span> },
+    { key: "accountNumber", label: "Account #", sortField: "accountNumber", render: (a) => a.accountNumber ? <span style={{ fontFamily: FONT_MONO }}>{a.accountNumber}</span> : <span style={{ color: C.slate }}>—</span> },
     { key: "contact", label: "Phone", sortField: "contact", render: (a) => a.contact ? <span style={{ whiteSpace: "nowrap" }}>{a.contact}</span> : muted },
     { key: "email", label: "Email", sortField: "email", render: (a) => a.email ? <span title={a.email} style={{ display: "block", maxWidth: 135, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.email}</span> : muted },
     { key: "address", label: "Address", sortField: "address", render: (a) => a.address ? <span title={a.address} style={{ display: "block", maxWidth: 115, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.address}</span> : muted },
@@ -9670,13 +9748,20 @@ function AccountsModule({ currency, call, dl, preview, print, notify, perm, hasR
   // is honoured exactly — including hiding any of the new columns.
   // ACCOUNTS CONSOLE round: Credits and Debits join the default view; Email,
   // Address, Group and Account # stay available under Columns.
-  const CUSTOMERS_LAYOUT_MARKER = "__customers_v3";
-  const CUSTOMERS_DEFAULT_COLUMNS = ["name", "contact", "status", "createdAt", "credits", "debits", "balance"];
+  // GLOBAL FINANCIAL TABLE DESIGN round: Account # leads the default view
+  // (# | Account # | Customer Name | Phone | Status | Created At | ... |
+  // Balance | Actions); Credits / Debits stay as before.
+  const CUSTOMERS_LAYOUT_MARKER = "__customers_v4";
+  const CUSTOMERS_DEFAULT_COLUMNS = ["accountNumber", "name", "contact", "status", "createdAt", "credits", "debits", "balance"];
   const savedCols = layoutState.effective && Array.isArray(layoutState.effective.columns) ? layoutState.effective.columns : [];
-  // A layout saved before Credits/Debits existed (marker v2) keeps the
-  // user's choices, with the two new columns placed just before Balance.
-  const upgradedCols = savedCols.includes("__customers_v2") && !savedCols.includes(CUSTOMERS_LAYOUT_MARKER)
-    ? savedCols.filter((k) => k !== "__customers_v2").flatMap((k) => (k === "balance" ? ["credits", "debits", "balance"] : [k]))
+  // Older saved layouts keep the user's choices: v2 gains Credits/Debits
+  // before Balance, and v2/v3 gain Account # in front (once).
+  const upgradedCols = !savedCols.includes(CUSTOMERS_LAYOUT_MARKER) && (savedCols.includes("__customers_v2") || savedCols.includes("__customers_v3"))
+    ? (() => {
+      let cols = savedCols.filter((k) => k !== "__customers_v2" && k !== "__customers_v3");
+      if (savedCols.includes("__customers_v2")) cols = cols.flatMap((k) => (k === "balance" ? ["credits", "debits", "balance"] : [k]));
+      return cols.includes("accountNumber") ? cols : ["accountNumber", ...cols];
+    })()
     : null;
   const effectiveLayout = upgradedCols ? { ...(layoutState.effective || {}), columns: upgradedCols }
     : (!savedCols.length || !savedCols.includes(CUSTOMERS_LAYOUT_MARKER))
@@ -9885,7 +9970,7 @@ function DeactivatedAccountsModule({ call, dl, preview, notify, perm, hasRaw, on
   const layoutState = useTableLayout(tableKey, call);
   const density = resolveDensity(layoutState.effective);
   const DEACTIVATED_ACCOUNTS_COLUMNS = [
-    { key: "accountNumber", label: "Account #", sortField: "accountNumber", render: (a) => <span style={{ fontFamily: FONT_MONO }}>{a.accountNumber}</span> },
+    { key: "accountNumber", label: "Account #", sortField: "accountNumber", render: (a) => a.accountNumber ? <span style={{ fontFamily: FONT_MONO }}>{a.accountNumber}</span> : <span style={{ color: C.slate }}>—</span> },
     { key: "name", label: "Name", required: true, sortField: "name", render: (a) => (
       <>
         <button className="gk-account-name-link" onClick={(e) => { e.stopPropagation(); onOpenAccountView(a.id); }}
@@ -10691,7 +10776,7 @@ function AccountDetailModal({ call, dl, preview, print, notify, perm, accountId,
           {activityPg.total === 0 ? (<><Empty text="No data available" /><TableFooter firstIdx={activityPg.firstIdx} lastIdx={activityPg.lastIdx} total={activityPg.total} page={activityPg.page} totalPages={activityPg.totalPages} onPageChange={activityPg.setPage} /></>) : (
             <>
             <TableScrollShell>
-            <ResizableTable tableKey={ACCOUNT_TX_WIDTH_KEY} resize={txResize} hideResetRow className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+            <ResizableTable variant="txn" tableKey={ACCOUNT_TX_WIDTH_KEY} resize={txResize} hideResetRow className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead><tr>
                 {txColumns.map((c) => {
                   if (c.key === "idx") return <th key={c.key} style={{ ...th, width: 40 }}>#</th>;
@@ -11089,8 +11174,8 @@ function DepositsWithdrawalsModule({ currency, call, dl, preview, notify, perm, 
   const tableKey = `payments.${currency.toLowerCase()}`;
   const layoutState = useTableLayout(tableKey, call);
   const density = resolveDensity(layoutState.effective);
-  const PAYMENTS_COLUMNS = [
-    { key: "accountNumber", label: "Account #", sortField: "accountNumber", render: (e) => <span style={{ fontFamily: FONT_MONO }}>{e.accountNumber}</span> },
+  const PAYMENTS_COLUMN_DEFS = [
+    { key: "accountNumber", label: "Account #", optional: true, sortField: "accountNumber", render: (e) => e.accountNumber ? <span style={{ fontFamily: FONT_MONO }}>{e.accountNumber}</span> : <span style={{ color: C.slate }}>—</span> },
     { key: "account", label: "Account", required: true, sortField: "accountName", render: (e) => (
       <>
         <button className="gk-account-name-link" onClick={(ev) => { ev.stopPropagation(); onOpenAccountView(e.accountId); }}
@@ -11102,25 +11187,37 @@ function DepositsWithdrawalsModule({ currency, call, dl, preview, notify, perm, 
       </>
     ) },
     { key: "date", label: "Date", sortField: "date", render: (e) => <DateTimeCell value={e.date} /> },
-    { key: "notes", label: "Notes", sortField: "notes", render: (e) => e.notes || "—" },
+    { key: "notes", label: "Description", sortField: "notes", render: (e) => e.notes || <span style={{ color: C.slate }}>—</span> },
     // CASH IN HAND INTEGRATION round: which company Cash Account this
     // Payment's money came from/went to, and the human-entered Reference —
     // both additive columns, hidden automatically for any account with no
     // Cash in Hand source recorded (older entries, or installations with no
     // Cash in Hand accounts configured).
     { key: "cashInHand", label: "Cash Account", render: (e) => e.cashAccount ? toTitleCase(e.cashAccount.name) : "—" },
-    { key: "reference", label: "Reference", sortField: "reference", render: (e) => <span style={{ fontFamily: FONT_MONO, fontSize: 11.5 }}>{e.reference || "—"}</span> },
-    { key: "origin", label: "Origin", sortField: "origin", render: (e) => {
+    // GLOBAL FINANCIAL TABLE DESIGN round: the payment's own reference
+    // (DEP-/WD-…) first, the typed external reference under it.
+    { key: "reference", label: "Reference", sortField: "referenceNumber", render: (e) => (e.referenceNumber || e.reference) ? <span style={{ fontFamily: FONT_MONO, fontSize: 12, whiteSpace: "nowrap" }}>{e.referenceNumber || e.reference}{e.referenceNumber && e.reference ? <span style={{ display: "block", fontSize: 11, color: C.slate }}>{e.reference}</span> : null}</span> : <span style={{ color: C.slate }}>—</span> },
+    { key: "origin", label: "Origin", optional: true, sortField: "origin", render: (e) => {
       const o = e.origin || "payment";
       const tone = { payment: "navy", exchange: "cyan", transfer: "amber", quotation: "navy" }[o] || "slate";
       return <span data-origin={o}><Pill tone={tone}><span className="gk-th-origin"><NavIcon name={HISTORY_ORIGIN_ICON[o] || "wallet"} size={12} />{{ payment: "Payment", exchange: "Exchange", transfer: "Transfer", quotation: "Quotation" }[o] || o}</span></Pill>{e.relatedReference && o !== "payment" ? <div style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.slate, marginTop: 2 }}>{e.relatedReference}</div> : null}</span>;
     } },
-    { key: "deposit", label: "Credit", sortField: "depositAmt", render: (e) => e.type === "deposit" ? <span style={{ fontFamily: FONT_MONO, color: C.depositGreen, fontWeight: 700 }}>+{fmtMoney(e.amount, e.currency)}</span> : "" },
-    { key: "withdrawal", label: "Debit", sortField: "withdrawalAmt", render: (e) => e.type === "withdrawal" ? <span style={{ fontFamily: FONT_MONO, color: C.withdrawRed, fontWeight: 700 }}>-{fmtMoney(e.amount, e.currency)}</span> : "" },
-    { key: "balanceAfter", label: "Balance after", sortField: "balanceAfter", render: (e) => <span style={{ fontFamily: FONT_MONO, fontWeight: 700 }}>{fmtMoney(e.balanceAfter, e.currency)}</span> },
-    { key: "staff", label: "Staff", sortField: "staffName", render: (e) => e.staffName },
+    { key: "deposit", label: "Credit", sortField: "depositAmt", render: (e) => e.type === "deposit" ? <CreditAmount value={e.amount} currency={e.currency} /> : <span style={{ color: C.slate }}>—</span> },
+    { key: "withdrawal", label: "Debit", sortField: "withdrawalAmt", render: (e) => e.type === "withdrawal" ? <DebitAmount value={e.amount} currency={e.currency} /> : <span style={{ color: C.slate }}>—</span> },
+    { key: "balanceAfter", label: "Balance", sortField: "balanceAfter", render: (e) => <BalanceAmount value={e.balanceAfter} currency={e.currency} /> },
+    { key: "staff", label: "Staff", optional: true, sortField: "staffName", render: (e) => e.staffName },
   ];
-  const columns = resolveColumns(PAYMENTS_COLUMNS, layoutState.effective);
+  // GLOBAL FINANCIAL TABLE DESIGN round: default view is
+  // # | Date | Customer / Account | Description | Reference | Cash Account |
+  // Credit | Debit | Balance | Actions — Account #, Origin and Staff stay
+  // under Customize table (Origin also shows by itself whenever linked
+  // postings are listed).
+  const PAYMENTS_ORDER = ["date", "accountNumber", "account", "notes", "reference", "cashInHand", "origin", "deposit", "withdrawal", "balanceAfter", "staff"];
+  const PAYMENTS_COLUMNS = [...PAYMENTS_COLUMN_DEFS].sort((a, b) => PAYMENTS_ORDER.indexOf(a.key) - PAYMENTS_ORDER.indexOf(b.key));
+  const baseColumns = resolveColumns(PAYMENTS_COLUMNS, layoutState.effective);
+  const columns = origin !== "payment" && !baseColumns.some((c) => c.key === "origin")
+    ? (() => { const at = baseColumns.findIndex((c) => c.key === "deposit"); const o = PAYMENTS_COLUMNS.find((c) => c.key === "origin"); return at < 0 ? [...baseColumns, o] : [...baseColumns.slice(0, at), o, ...baseColumns.slice(at)]; })()
+    : baseColumns;
 
   const reload = useCallback(() => {
     setLoading(true);
@@ -11229,7 +11326,7 @@ function DepositsWithdrawalsModule({ currency, call, dl, preview, notify, perm, 
             {loading ? <Spinner /> : dwPg.total === 0 ? (<><Empty text="No credits or debits match these filters." /><TableFooter firstIdx={dwPg.firstIdx} lastIdx={dwPg.lastIdx} total={dwPg.total} page={dwPg.page} totalPages={dwPg.totalPages} onPageChange={dwPg.setPage} pageSize={dwPg.pageSize} onPageSizeChange={dwPg.setPageSize} /></>) : (
               <>
               <TableScrollShell height={460}>
-              <ResizableTable tableKey={tableKey} className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+              <ResizableTable variant="txn" tableKey={tableKey} className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead><tr>
                   <th style={{ ...th, width: 44 }}>#</th>
                   {columns.map((c) => <SortTh key={c.key} label={c.label} field={c.sortField} {...dwSort} onSort={dwSort.toggleSort} />)}
@@ -11246,10 +11343,10 @@ function DepositsWithdrawalsModule({ currency, call, dl, preview, notify, perm, 
                       <td style={densityStyle(tdMono, density)}>{dwPg.firstIdx + i}</td>
                       {columns.map((c) => <td key={c.key} style={tableCellStyle(c, density)}>{c.render(e)}</td>)}
                       <td style={densityStyle(td, density)} onClick={(ev) => ev.stopPropagation()}>
-                        <div style={{ display: "flex", gap: 6 }}>
-                          <Btn size="sm" tone="ghost" onClick={() => setViewingEntry(e)}>View</Btn>
-                          {perm("accountsManage") && !isLinkedRow(e) && <Btn size="sm" tone="ghost" onClick={() => setEditEntry(e)}>Edit</Btn>}
-                          {perm("accountsManage") && !isLinkedRow(e) && <Btn size="sm" tone="danger" onClick={() => setDeleteEntry(e)}>Delete</Btn>}
+                        <div className="gk-row-actions">
+                          <RowIconBtn icon="eye" label="View" onClick={() => setViewingEntry(e)} />
+                          {perm("accountsManage") && !isLinkedRow(e) && <RowIconBtn icon="edit" label="Edit" onClick={() => setEditEntry(e)} />}
+                          {perm("accountsManage") && !isLinkedRow(e) && <RowIconBtn icon="trash" label="Delete" danger onClick={() => setDeleteEntry(e)} />}
                         </div>
                       </td>
                     </tr>
@@ -11259,10 +11356,13 @@ function DepositsWithdrawalsModule({ currency, call, dl, preview, notify, perm, 
                   <tr>
                     <td style={tdFoot}></td>
                     {columns.map((c) => (
-                      <td key={c.key} style={c.key === "deposit" || c.key === "withdrawal" ? { ...tdFootMono, fontWeight: 700 } : c.key === "account" ? { ...tdFoot, fontWeight: 700 } : tdFoot}>
-                        {c.key === "account" ? "Amount"
-                          : c.key === "deposit" ? fmtMoney(listTotals.deposited, currency)
-                          : c.key === "withdrawal" ? fmtMoney(listTotals.withdrawn, currency)
+                      <td key={c.key} data-total={c.key} style={["deposit", "withdrawal", "balanceAfter"].includes(c.key) ? { ...tdFootMono, fontWeight: 700 } : c.key === "account" ? { ...tdFoot, fontWeight: 700, whiteSpace: "nowrap" } : tdFoot}>
+                        {/* GLOBAL FINANCIAL TABLE DESIGN round: totals of ALL
+                            matching payments (every page), in this currency. */}
+                        {c.key === "account" ? `Total — ${rows.length} transactions`
+                          : c.key === "deposit" ? `+${fmtMoney(listTotals.deposited, currency)}`
+                          : c.key === "withdrawal" ? `-${fmtMoney(listTotals.withdrawn, currency)}`
+                          : c.key === "balanceAfter" ? <span title="Net movement of the listed payments (Credit − Debit)">Net {listTotals.net > 0 ? "+" : ""}{fmtMoney(listTotals.net, currency)}</span>
                           : ""}
                       </td>
                     ))}
@@ -11303,7 +11403,7 @@ function DepositsWithdrawalsModule({ currency, call, dl, preview, notify, perm, 
                 {dailyPg.total === 0 ? (<><Empty text="No credits or debits on this date." /><TableFooter firstIdx={dailyPg.firstIdx} lastIdx={dailyPg.lastIdx} total={dailyPg.total} page={dailyPg.page} totalPages={dailyPg.totalPages} onPageChange={dailyPg.setPage} pageSize={dailyPg.pageSize} onPageSizeChange={dailyPg.setPageSize} /></>) : (
                   <>
                   <TableScrollShell height={420}>
-                  <ResizableTable tableKey={`payments.${currency.toLowerCase()}.daily`} className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <ResizableTable variant="txn" tableKey={`payments.${currency.toLowerCase()}.daily`} className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead><tr>
                       <th style={{ ...th, width: 44 }}>#</th>
                       <SortTh label="Date" field="date" {...dailySort} onSort={dailySort.toggleSort} />
@@ -12472,17 +12572,26 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
   const tableKey = `history.${currency.toLowerCase()}`;
   const layoutState = useTableLayout(tableKey, call);
   const density = resolveDensity(layoutState.effective);
-  const HISTORY_COLUMNS = [
+  const HISTORY_COLUMNS_DEFS = [
     { key: "type", label: "Type", sortField: "recordType", render: (e) => <span data-type-tone={historyTypeToneFor(e)}><Pill tone={historyTypeToneFor(e)}><span className="gk-th-origin"><NavIcon name={HISTORY_ORIGIN_ICON[historyOriginOf(e)] || "history"} size={12} />{historyTypeLabelFor(e)}</span></Pill></span> },
-    { key: "reference", label: "Reference", sortField: "reference", render: (e) => <span style={{ fontFamily: FONT_MONO }}>{e.reference}</span> },
+    // GLOBAL FINANCIAL TABLE DESIGN round: the original record a posting
+    // belongs to is shown under its reference (the separate Origin /
+    // Related column stays available under Customize table).
+    { key: "reference", label: "Reference", sortField: "reference", render: (e) => {
+      const rel = e.relatedReference || ((e.recordType === "ledger" && e.origin === "quotation") ? e.quotationNumber : null);
+      const linked = (e.recordType === "ledger" && historyOriginOf(e) !== "payment") || (e.recordType === "cash" && !e.cashOriginal);
+      return <span style={{ fontFamily: FONT_MONO, whiteSpace: "nowrap" }} data-related={linked && rel ? rel : ""}>{e.reference}
+        {linked && rel ? <span title="Created by this record" style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11, color: C.slate, marginTop: 1 }}><NavIcon name="link" size={10} />{rel}</span> : null}
+      </span>;
+    } },
     // PROFESSIONAL TRANSACTION MANAGEMENT round: the record a posting or a
     // Cash Account entry belongs to (an Exchange's / Transfer's reference,
     // a quotation number) — the details view links to all of them.
-    { key: "related", label: "Origin / Related", render: (e) => {
+    { key: "related", label: "Origin / Related", optional: true, render: (e) => {
       const rel = e.relatedReference || (e.recordType === "quotation" || (e.recordType === "ledger" && e.origin === "quotation") ? e.quotationNumber : null);
       const origin = historyOriginOf(e);
       const isLinked = (e.recordType === "ledger" && origin !== "payment") || (e.recordType === "cash" && !e.cashOriginal);
-      return <span className="gk-th-origin" data-related={rel || ""} title={isLinked ? "Created by another transaction" : "Original record"}>
+      return <span className="gk-th-origin" title={isLinked ? "Created by another transaction" : "Original record"}>
         <NavIcon name={isLinked ? "link" : HISTORY_ORIGIN_ICON[origin] || "history"} size={12} />
         {rel ? <span style={{ fontFamily: FONT_MONO }}>{rel}</span> : <span style={{ color: C.slate }}>{isLinked ? "Linked" : "Original"}</span>}
       </span>;
@@ -12505,18 +12614,34 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
     // new data, just surfacing what was already there, matching the
     // Description column every other transaction table (Account View) shows.
     { key: "description", label: "Description", render: (e) => e.notes ? <span className="gk-th-desc" title={e.notes}>{e.notes}</span> : <span style={{ color: C.slate }}>—</span> },
-    { key: "credit", label: "Credit", sortField: "credit", render: (e) => e.credit != null ? <span className="gk-acc-num gk-th-credit"><NavIcon name="arrowDownLeft" size={12} />{fmtMoney(e.credit, e.entryCurrency || currency)}</span> : <span style={{ color: C.slate }}>—</span> },
-    { key: "debit", label: "Debit", sortField: "debit", render: (e) => e.debit != null ? <span className="gk-acc-num gk-th-debit"><NavIcon name="arrowUpRight" size={12} />{fmtMoney(e.debit, e.entryCurrency || currency)}</span> : <span style={{ color: C.slate }}>—</span> },
-    { key: "amount", label: "Amount", render: (e) => <span style={{ fontFamily: FONT_MONO, whiteSpace: "nowrap", fontWeight: 700, color: historyAmountTone(e) }}>{historyAmountPrefix(e)}{String(e.amountSummary || "").replace(/ -> /g, " → ")}</span> },
+    { key: "credit", label: "Credit", sortField: "credit", render: (e) => e.credit != null ? <CreditAmount value={e.credit} currency={e.entryCurrency || currency} /> : <span style={{ color: C.slate }}>—</span> },
+    { key: "debit", label: "Debit", sortField: "debit", render: (e) => e.debit != null ? <DebitAmount value={e.debit} currency={e.entryCurrency || currency} /> : <span style={{ color: C.slate }}>—</span> },
+    // GLOBAL FINANCIAL TABLE DESIGN round: the account's (or Cash
+    // Account's) balance right after this posting, as stored on the ledger
+    // row. An Exchange or Transfer has two sides, so its balances are on
+    // its postings (Credits / Debits tabs, Related records).
+    { key: "balance", label: "Balance", render: (e) => e.balanceAfter != null ? <BalanceAmount value={e.balanceAfter} currency={e.entryCurrency || currency} /> : <span style={{ color: C.slate }}>—</span> },
+    // An exchange's "given → received" is shown on two short lines so the
+    // table stays compact (same text, same values).
+    { key: "amount", label: "Amount", render: (e) => {
+      const [a, b] = String(e.amountSummary || "").split(" -> ");
+      return <span style={{ fontFamily: FONT_MONO, whiteSpace: "nowrap", fontWeight: 600, color: historyAmountTone(e), display: "inline-block", textAlign: "right" }}>
+        {e.recordType === "cash" ? "" : historyAmountPrefix(e)}{a}{b != null ? <span style={{ display: "block", fontSize: 11.5, color: C.slate, fontWeight: 500 }}>→ {b}</span> : null}
+      </span>;
+    } },
     // GLOBAL RATE & PROFIT round: an exchange's own rate, Cost Rate and
     // margin (as recorded — never re-valued at today's rate). Blank for
     // other record types.
     { key: "rate", label: "Rate", optional: true, render: (e) => e.recordType === "exchange" ? <span style={{ fontFamily: FONT_MONO }}>{fmtNum(e.rate)}</span> : "—" },
     { key: "costRate", label: "Cost Rate", optional: true, render: (e) => e.recordType === "exchange" && e.costRate != null ? <span style={{ fontFamily: FONT_MONO }}>{fmtNum(e.costRate)}</span> : "—" },
-    { key: "margin", label: "Profit / Difference", render: (e) => e.recordType === "exchange" && e.profitUsd !== undefined ? <MarginCell side={e.marginSide} slsh={marginSlshOf(e.profitUsd, e.costRate)} usd={e.profitUsd} legacy={e.costRateSource === "history"} /> : "—" },
-    { key: "status", label: "Status", sortField: "status", render: (e) => e.status && <Pill tone={historyRowStatusTone(e)}>{e.status}</Pill> },
-    { key: "staff", label: "Staff / Creator", sortField: "staffOrCreator", render: (e) => e.staffOrCreator },
+    { key: "margin", label: "Profit / Difference", optional: true, render: (e) => e.recordType === "exchange" && e.profitUsd !== undefined ? <MarginCell side={e.marginSide} slsh={marginSlshOf(e.profitUsd, e.costRate)} usd={e.profitUsd} legacy={e.costRateSource === "history"} /> : "—" },
+    { key: "status", label: "Status", optional: true, sortField: "status", render: (e) => e.status && <Pill tone={historyRowStatusTone(e)}>{e.status}</Pill> },
+    { key: "staff", label: "Staff / Creator", optional: true, sortField: "staffOrCreator", render: (e) => e.staffOrCreator },
   ];
+  // Default order: # | Date | Type | Description | Reference | Account |
+  // Credit | Debit | Balance | ... (a saved layout keeps its own order).
+  const HISTORY_ORDER = ["date", "type", "description", "reference", "related", "account", "credit", "debit", "balance", "amount", "rate", "costRate", "margin", "status", "staff"];
+  const HISTORY_COLUMNS = [...HISTORY_COLUMNS_DEFS].sort((a, b) => HISTORY_ORDER.indexOf(a.key) - HISTORY_ORDER.indexOf(b.key));
   const columns = resolveColumns(HISTORY_COLUMNS, layoutState.effective);
 
   const reload = useCallback((isRefresh) => {
@@ -12535,6 +12660,15 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
   }, [currency, type, accountType, status, staffId, accountFilter, from, to, search, page, pageSize, sortKey, sortDir, call, notify]);
   const staffSeen = useRef(new Map());
   const [pendingFocus, setPendingFocus] = useState(null);
+  // Current balance of the selected account (footer), from the server.
+  const [accountBalance, setAccountBalance] = useState(null);
+  useEffect(() => {
+    setAccountBalance(null);
+    if (!accountFilter) return;
+    let live = true;
+    call(`/api/accounts/${accountFilter.id}`).then((d) => { if (live) setAccountBalance((d.account || d).balance ?? null); }).catch(() => {});
+    return () => { live = false; };
+  }, [accountFilter, call, summary]);
   useEffect(() => {
     if (!pendingFocus || loading) return;
     const m = rows.find((r) => r.id === pendingFocus.id && r.recordType === pendingFocus.recordType);
@@ -12713,8 +12847,8 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
         {[
           ["entries", "Total Transactions", "history", counts ? counts.entries : null, "matching the filters", ""],
           ["payments", "Payments", "wallet", tabCounts ? tabCounts.payment : null, "credits & debits made directly", ""],
-          ["credits", "Credits", "arrowDownLeft", tabCounts ? tabCounts.deposit : null, summary && summary.money ? fmtMoney((summary.money[currency] || {}).credits || 0, currency) + " (shown tab)" : "", "is-pos"],
-          ["debits", "Debits", "arrowUpRight", tabCounts ? tabCounts.withdrawal : null, summary && summary.money ? fmtMoney((summary.money[currency] || {}).debits || 0, currency) + " (shown tab)" : "", "is-neg"],
+          ["credits", "Credits", "arrowDownLeft", tabCounts ? tabCounts.deposit : null, "credit postings", "is-pos"],
+          ["debits", "Debits", "arrowUpRight", tabCounts ? tabCounts.withdrawal : null, "debit postings", "is-neg"],
           ["exchanges", "Exchanges", "arrowLeftRight", tabCounts ? tabCounts.exchange : null, "money exchange records", ""],
           ["transfers", "Transfers", "transfer", tabCounts ? tabCounts.transfer : null, "between accounts", ""],
           ["qcharges", "Quotation Charges", "fileText", tabCounts ? tabCounts.quotation_charge : null, "charged to accounts", ""],
@@ -12742,16 +12876,20 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
         ) : (
           <>
           <TableScrollShell height={480}>
-          <ResizableTable tableKey={tableKey} className="gk-table gk-th-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+          <ResizableTable variant="txn" tableKey={tableKey} className="gk-table gk-th-table" style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead><tr>
               <th style={{ ...th, width: 44 }} scope="col">#</th>
-              {columns.map((c) => <SortTh key={c.key} label={c.label} field={c.sortField} {...historySort} onSort={historySort.toggleSort} />)}
+              {columns.map((c) => <SortTh key={c.key} label={c.label} field={c.sortField} resizeKey={c.sortField ? undefined : c.key} {...historySort} onSort={historySort.toggleSort} />)}
+              <SortTh label="Actions" resizeKey="__actions_history" />
             </tr></thead>
             <tbody>
               {historyPg.pageRows.map((e, i) => (
                 <tr key={`${e.recordType}-${e.id}`} onClick={() => setDetailEntry(e)} style={{ cursor: "pointer" }} data-entry-id={e.id} data-record={e.recordType}>
                   <td style={densityStyle(tdMono, density)}>{historyPg.firstIdx + i}</td>
-                  {columns.map((c) => <td key={c.key} data-col={c.key} style={["credit", "debit"].includes(c.key) ? { ...tableCellStyle(c, density), textAlign: "right" } : tableCellStyle(c, density)}>{c.render(e)}</td>)}
+                  {columns.map((c) => <td key={c.key} data-col={c.key} style={["credit", "debit", "balance"].includes(c.key) ? { ...tableCellStyle(c, density), textAlign: "right" } : tableCellStyle(c, density)}>{c.render(e)}</td>)}
+                  <td style={densityStyle(td, density)} onClick={(ev) => ev.stopPropagation()}>
+                    <div className="gk-row-actions"><RowIconBtn icon="eye" label="View" onClick={() => setDetailEntry(e)} /></div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -12759,15 +12897,22 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
               <tr className="gk-th-totals">
                 <td style={tdFoot}></td>
                 {columns.map((c) => (
-                  <td key={c.key} data-total={c.key} style={["credit", "debit", "amount", "margin"].includes(c.key) ? { ...tdFootMono, whiteSpace: "nowrap" } : c.key === "account" ? { ...tdFoot, fontWeight: 700 } : tdFoot}>
+                  <td key={c.key} data-total={c.key} style={["credit", "debit", "amount", "margin", "balance"].includes(c.key) ? { ...tdFootMono, whiteSpace: "nowrap" } : c.key === "account" ? { ...tdFoot, fontWeight: 700 } : tdFoot}>
                     {c.key === "account" ? `Total — ${counts ? counts.entries : rows.length} matching entries`
-                      : c.key === "credit" ? fmtMoney(money.credits, currency)
-                      : c.key === "debit" ? fmtMoney(money.debits, currency)
-                      : c.key === "amount" ? <span title="Net movement = Credits − Debits of the credit/debit and quotation entries in this currency. Exchanges and transfers are shown by their amounts only and are not added in.">Net: {money.net > 0 ? "+" : money.net < 0 ? "−" : ""}{fmtMoney(Math.abs(money.net), currency)}</span>
+                      : c.key === "credit" ? `+${fmtMoney(money.credits, currency)}`
+                      : c.key === "debit" ? `-${fmtMoney(money.debits, currency)}`
+                      // GLOBAL FINANCIAL TABLE DESIGN round: with one account
+                      // selected, its current balance (from the server);
+                      // otherwise the net movement of all matching entries.
+                      : c.key === "balance" ? (accountFilter && accountBalance != null
+                        ? <span title="Current balance of the selected account">Balance {fmtMoney(accountBalance, currency)}</span>
+                        : <span title="Net movement = Credits − Debits of all matching entries in this currency">Net {money.net > 0 ? "+" : ""}{fmtMoney(money.net, currency)}</span>)
+                      : c.key === "amount" && !columns.some((x) => x.key === "balance") ? <span title="Net movement = Credits − Debits of the credit/debit and quotation entries in this currency. Exchanges and transfers are shown by their amounts only and are not added in.">Net: {money.net > 0 ? "+" : money.net < 0 ? "−" : ""}{fmtMoney(Math.abs(money.net), currency)}</span>
                       : c.key === "margin" && summary && summary.profit ? <span title={`Exchange profit as recorded on each exchange (${summary.profit.basis}).`}>{fmtMoney(summary.profit.usd, "USD")}</span>
                       : ""}
                   </td>
                 ))}
+                <td style={tdFoot}></td>
               </tr>
             </tfoot>
           </ResizableTable>
@@ -16324,7 +16469,7 @@ function ExchangeSummaryReport({ call, dl, notify }) {
             {dayPg.total === 0 ? (<><Empty text="No data in this range." /><TableFooter firstIdx={dayPg.firstIdx} lastIdx={dayPg.lastIdx} total={dayPg.total} page={dayPg.page} totalPages={dayPg.totalPages} onPageChange={dayPg.setPage} pageSize={dayPg.pageSize} onPageSizeChange={dayPg.setPageSize} /></>) : (
               <>
               <TableScrollShell height={420}>
-              <ResizableTable tableKey="reports.exchangeSummary.byDay" className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+              <ResizableTable variant="txn" tableKey="reports.exchangeSummary.byDay" className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead><tr>
                   <SortTh label="Date" field="day" {...daySort} onSort={daySort.toggleSort} />
                   <SortTh label="Transactions" field="count" {...daySort} onSort={daySort.toggleSort} />
@@ -17067,7 +17212,7 @@ function ExpensesModule({ call, dl, notify, hasRaw, token }) {
             ) : (
               <>
                 <TableScrollShell height={480}>
-                  <ResizableTable tableKey="expenses.list" className="gk-table" style={{ width: "100%", borderCollapse: "collapse", opacity: listLoading ? 0.6 : 1 }}>
+                  <ResizableTable variant="txn" tableKey="expenses.list" className="gk-table" style={{ width: "100%", borderCollapse: "collapse", opacity: listLoading ? 0.6 : 1 }}>
                     <thead><tr>
                       <SortTh label="#" />
                       <SortTh label="Date" field="date" sortKey={sort.key} sortDir={sort.dir} onSort={toggleSort} />
@@ -17804,6 +17949,8 @@ function CashInHandModule({ call, dl, notify, perm, hasRaw, onOpenCashAccountVie
   useEffect(reloadAllActive, [reloadAllActive]);
 
   const acctSort = useSortableRows(accounts, "name", "asc");
+  // Balance total per currency of every matching Cash Account (never added across currencies).
+  const cashTotals = useMemo(() => { const m = new Map(); for (const a of accounts) m.set(a.currency, Math.round(((m.get(a.currency) || 0) + Number(a.balance || 0)) * 100) / 100); return [...m.entries()].sort(); }, [accounts]);
   const acctPg = usePagination(acctSort.sorted, { initialPageSize: 10 });
 
   const reloadMovements = useCallback(() => {
@@ -17813,6 +17960,17 @@ function CashInHandModule({ call, dl, notify, perm, hasRaw, onOpenCashAccountVie
   }, [call, moveCurrency, moveType, moveSearch, notify]);
   useEffect(() => { if (tab === "movements") reloadMovements(); }, [tab, reloadMovements]);
   const movePg = usePagination(movements, { initialPageSize: 10 });
+  const showMoveActions = hasRaw("cash.update") || hasRaw("cash.delete") || perm("accountsManage");
+  // Totals of every matching movement (all pages), one row per currency;
+  // Current Balance = the active Cash Accounts of that currency now.
+  const moveTotals = useMemo(() => {
+    const m = new Map();
+    for (const e of movements) { const t = m.get(e.currency) || { credit: 0, debit: 0 }; if (e.type === "deposit") t.credit += Number(e.amount) || 0; else t.debit += Number(e.amount) || 0; m.set(e.currency, t); }
+    return [...m.entries()].sort().map(([c, t]) => {
+      const accs = allActiveAccounts.filter((a) => a.currency === c);
+      return [c, { credit: Math.round(t.credit * 100) / 100, debit: Math.round(t.debit * 100) / 100, balance: accs.length ? Math.round(accs.reduce((n, a) => n + Number(a.balance || 0), 0) * 100) / 100 : null }];
+    });
+  }, [movements, allActiveAccounts]);
 
   const reloadTransfers = useCallback(() => {
     call("/api/cash/transfers").then((d) => setTransfers(d.transfers || [])).catch((e) => notify(e.message, true));
@@ -17879,16 +18037,17 @@ function CashInHandModule({ call, dl, notify, perm, hasRaw, onOpenCashAccountVie
               <TableScrollShell height={460}>
               <ResizableTable tableKey="cashInHand.accounts" className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead><tr>
+                  <th style={{ ...th, width: 44 }} scope="col">#</th>
                   <SortTh label="Account Name" field="name" {...acctSort} onSort={acctSort.toggleSort} />
                   <SortTh label="Account Type" field="type" {...acctSort} onSort={acctSort.toggleSort} />
                   <SortTh label="Currency" field="currency" {...acctSort} onSort={acctSort.toggleSort} />
-                  <SortTh label="Current Balance" field="balance" {...acctSort} onSort={acctSort.toggleSort} />
+                  <SortTh label="Current Balance" field="balance" resizeKey="balance" {...acctSort} onSort={acctSort.toggleSort} />
                   <SortTh label="Status" field="status" {...acctSort} onSort={acctSort.toggleSort} />
                   <SortTh label="Last Activity" field="lastActivityAt" {...acctSort} onSort={acctSort.toggleSort} />
                   <SortTh label="Actions" />
                 </tr></thead>
                 <tbody>
-                  {acctPg.pageRows.map((a) => (
+                  {acctPg.pageRows.map((a, i) => (
                     // CASH ACCOUNT VIEW round: clicking the row (or the
                     // account name specifically) opens this account's own
                     // dedicated Cash Account View — the exact same
@@ -17896,6 +18055,7 @@ function CashInHandModule({ call, dl, notify, perm, hasRaw, onOpenCashAccountVie
                     // pattern AccountsModule's own account rows already use
                     // for onOpenAccountView (see AccountsModule ~line 6789).
                     <tr key={a.id} onClick={() => onOpenCashAccountView && onOpenCashAccountView(a.id)} style={{ cursor: onOpenCashAccountView ? "pointer" : undefined }}>
+                      <td style={tdMono}>{acctPg.firstIdx + i}</td>
                       <td style={td}>
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontWeight: 700, color: onOpenCashAccountView ? C.navy : C.ink }}>
                           <NavIcon name={CASH_TYPE_ICON[a.type]} size={14} style={{ color: C.slate }} />
@@ -17905,21 +18065,33 @@ function CashInHandModule({ call, dl, notify, perm, hasRaw, onOpenCashAccountVie
                       </td>
                       <td style={td}>{CASH_TYPE_LABEL[a.type] || a.type}</td>
                       <td style={td}><Pill tone="cyan">{a.currency}</Pill></td>
-                      <td style={{ ...td, fontFamily: FONT_MONO, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{fmtMoney(a.balance, a.currency)}</td>
+                      <td style={{ ...td, textAlign: "right" }} data-col="balance"><BalanceAmount value={a.balance} currency={a.currency} /></td>
                       <td style={td}>{a.status === "active" ? <Pill tone="green">Active</Pill> : <Pill tone="slate">Deactivated</Pill>}</td>
                       <td style={td}>{a.lastActivityAt ? <DateTimeCell value={a.lastActivityAt} /> : "—"}</td>
                       <td style={td} onClick={(e) => e.stopPropagation()}>
-                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                          {hasRaw("cash.deposit") && a.status === "active" && <Btn size="sm" tone="deposit" onClick={() => setMoveAccount({ account: a, mode: "deposit" })}>Credit</Btn>}
-                          {hasRaw("cash.withdraw") && a.status === "active" && <Btn size="sm" tone="withdraw" onClick={() => setMoveAccount({ account: a, mode: "withdraw" })}>Debit</Btn>}
-                          {hasRaw("cash.update") && <Btn size="sm" tone="ghost" onClick={() => setEditAccount(a)}>Edit</Btn>}
-                          {hasRaw("cash.deactivate") && a.status === "active" && <Btn size="sm" tone="ghost" onClick={async () => { try { await call(`/api/cash/accounts/${a.id}/deactivate`, { method: "POST" }); notify("Account deactivated."); reloadAll(); } catch (e) { notify(e.message, true); } }}>Deactivate</Btn>}
-                          {hasRaw("cash.activate") && a.status === "deactivated" && <Btn size="sm" tone="ghost" onClick={async () => { try { await call(`/api/cash/accounts/${a.id}/activate`, { method: "POST" }); notify("Account reactivated."); reloadAll(); } catch (e) { notify(e.message, true); } }}>Activate</Btn>}
+                        <div className="gk-row-actions">
+                          {onOpenCashAccountView && <RowIconBtn icon="eye" label="View" onClick={() => onOpenCashAccountView(a.id)} />}
+                          {hasRaw("cash.deposit") && a.status === "active" && <RowIconBtn icon="arrowDownLeft" label="Credit" onClick={() => setMoveAccount({ account: a, mode: "deposit" })} />}
+                          {hasRaw("cash.withdraw") && a.status === "active" && <RowIconBtn icon="arrowUpRight" label="Debit" onClick={() => setMoveAccount({ account: a, mode: "withdraw" })} />}
+                          {hasRaw("cash.update") && <RowIconBtn icon="edit" label="Edit" onClick={() => setEditAccount(a)} />}
+                          {hasRaw("cash.deactivate") && a.status === "active" && <RowIconBtn icon="ban" label="Deactivate" danger onClick={async () => { try { await call(`/api/cash/accounts/${a.id}/deactivate`, { method: "POST" }); notify("Account deactivated."); reloadAll(); } catch (e) { notify(e.message, true); } }} />}
+                          {hasRaw("cash.activate") && a.status === "deactivated" && <RowIconBtn icon="circleCheck" label="Activate" onClick={async () => { try { await call(`/api/cash/accounts/${a.id}/activate`, { method: "POST" }); notify("Account reactivated."); reloadAll(); } catch (e) { notify(e.message, true); } }} />}
                         </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
+                {/* GLOBAL FINANCIAL TABLE DESIGN round: the account footer —
+                    every matching Cash Account (all pages), each currency
+                    totalled on its own. */}
+                <tfoot>
+                  <tr className="gk-cash-acct-total">
+                    <td style={tdFoot}></td>
+                    <td style={{ ...tdFoot, fontWeight: 700, whiteSpace: "nowrap" }} colSpan={3}>{`Total — all ${accounts.length} matching accounts`}</td>
+                    <td style={tdFootMono} data-total="balance">{cashTotals.map(([c, v]) => <div key={c}>{fmtMoney(v, c)}</div>)}</td>
+                    <td style={tdFoot} colSpan={3}></td>
+                  </tr>
+                </tfoot>
               </ResizableTable>
               </TableScrollShell>
               <TableFooter firstIdx={acctPg.firstIdx} lastIdx={acctPg.lastIdx} total={acctPg.total} page={acctPg.page} totalPages={acctPg.totalPages} onPageChange={acctPg.setPage} pageSize={acctPg.pageSize} onPageSizeChange={acctPg.setPageSize} />
@@ -17940,18 +18112,23 @@ function CashInHandModule({ call, dl, notify, perm, hasRaw, onOpenCashAccountVie
             {movementsLoading ? <Spinner /> : movePg.total === 0 ? (<><Empty text="No Cash Movements Found" /><TableFooter firstIdx={movePg.firstIdx} lastIdx={movePg.lastIdx} total={movePg.total} page={movePg.page} totalPages={movePg.totalPages} onPageChange={movePg.setPage} pageSize={movePg.pageSize} onPageSizeChange={movePg.setPageSize} /></>) : (
               <>
               <TableScrollShell height={460}>
-              <ResizableTable tableKey="cashInHand.movements" className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead><tr><SortTh label="Date" /><SortTh label="Cash Account" /><SortTh label="Type" /><SortTh label="Description" /><SortTh label="Amount" /><SortTh label="Balance After" /><SortTh label="Reference" /><SortTh label="Staff" />{(hasRaw("cash.update") || hasRaw("cash.delete") || perm("accountsManage")) && <SortTh label="Actions" />}</tr></thead>
+              <ResizableTable variant="txn" tableKey="cashInHand.movements" className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+                {/* GLOBAL FINANCIAL TABLE DESIGN round: # | Date | Cash Account |
+                    Description | Reference | Credit | Debit | Balance | Staff |
+                    Actions — same values as before, Credit and Debit in
+                    their own columns, totals of every matching movement. */}
+                <thead><tr><th style={{ ...th, width: 44 }} scope="col">#</th><SortTh label="Date" /><SortTh label="Cash Account" /><SortTh label="Description" /><SortTh label="Reference" /><SortTh label="Credit" /><SortTh label="Debit" /><SortTh label="Balance" /><SortTh label="Staff" />{showMoveActions && <SortTh label="Actions" />}</tr></thead>
                 <tbody>
-                  {movePg.pageRows.map((e) => (
-                    <tr key={e.id}>
+                  {movePg.pageRows.map((e, i) => (
+                    <tr key={e.id} data-movement={e.type}>
+                      <td style={tdMono}>{movePg.firstIdx + i}</td>
                       <td style={td}><DateTimeCell value={e.date} /></td>
-                      <td style={td}>{e.cashAccount ? e.cashAccount.name : "—"}</td>
-                      <td style={td}>{e.type === "deposit" ? <Pill tone="green">Credit</Pill> : <Pill tone="red">Debit</Pill>}</td>
+                      <td style={td}>{e.cashAccount ? toTitleCase(e.cashAccount.name) : "—"}</td>
                       <td style={td}>{e.description || "—"}{e.counterpartyLabel && <div style={{ fontSize: 11, color: C.slate }}>To: {e.counterpartyLabel}</div>}</td>
-                      <td style={{ ...td, fontFamily: FONT_MONO, fontWeight: 700, color: e.type === "deposit" ? C.green : C.red }}>{e.type === "deposit" ? "+" : "-"}{fmtMoney(e.amount, e.currency)}</td>
-                      <td style={{ ...td, fontFamily: FONT_MONO }}>{fmtMoney(e.balanceAfter, e.currency)}</td>
-                      <td style={{ ...td, fontFamily: FONT_MONO, fontSize: 11.5, color: C.slate }}>{e.reference || e.referenceNumber || "—"}</td>
+                      <td style={{ ...td, fontFamily: FONT_MONO, fontSize: 12, whiteSpace: "nowrap" }}>{e.referenceNumber || e.reference || "—"}{e.referenceNumber && e.reference && e.reference !== e.referenceNumber ? <div style={{ fontSize: 11, color: C.slate }}>{e.reference}</div> : null}</td>
+                      <td style={{ ...td, textAlign: "right" }} data-col="credit">{e.type === "deposit" ? <CreditAmount value={e.amount} currency={e.currency} /> : <span style={{ color: C.slate }}>—</span>}</td>
+                      <td style={{ ...td, textAlign: "right" }} data-col="debit">{e.type !== "deposit" ? <DebitAmount value={e.amount} currency={e.currency} /> : <span style={{ color: C.slate }}>—</span>}</td>
+                      <td style={{ ...td, textAlign: "right" }} data-col="balance"><BalanceAmount value={e.balanceAfter} currency={e.currency} /></td>
                       <td style={td}>{e.staffName || "—"}</td>
                       {/* CASH MOVEMENTS EDIT/DELETE round: a plain, standalone
                           cash movement (e.editable, i.e. no source_type) gets
@@ -17982,19 +18159,19 @@ function CashInHandModule({ call, dl, notify, perm, hasRaw, onOpenCashAccountVie
                           already has its own Delete in its own tab
                           (Transfers/Exchanges above; Loans has no simple
                           one-leg delete), so only a small note is shown. */}
-                      {(hasRaw("cash.update") || hasRaw("cash.delete") || (e.sourceType === "customer_payment" && perm("accountsManage"))) && (
-                        <td style={td}>
+                      {showMoveActions && (
+                        <td style={td} onClick={(ev) => ev.stopPropagation()}>
                           {e.editable ? (
-                            <div style={{ display: "flex", gap: 4, flexWrap: "nowrap" }}>
-                              {hasRaw("cash.update") && <Btn size="sm" tone="ghost" icon="edit" onClick={() => setEditMovement(e)} />}
-                              {hasRaw("cash.delete") && <Btn size="sm" tone="danger" icon="trash" onClick={async () => {
+                            <div className="gk-row-actions">
+                              {hasRaw("cash.update") && <RowIconBtn icon="edit" label="Edit" onClick={() => setEditMovement(e)} />}
+                              {hasRaw("cash.delete") && <RowIconBtn icon="trash" label="Delete" danger onClick={async () => {
                                 if (!confirm(`Permanently delete this ${fmtMoney(e.amount, e.currency)} ${e.type}? This can't be undone.`)) return;
                                 try { await call(`/api/cash/ledger/${e.id}`, { method: "DELETE" }); notify("Cash movement deleted."); reloadAll(); }
                                 catch (err) { notify(err.message, true); }
                               }} />}
                             </div>
                           ) : e.sourceType === "customer_payment" && perm("accountsManage") ? (
-                            <Btn size="sm" tone="danger" icon="trash" onClick={async () => {
+                            <RowIconBtn icon="trash" label="Delete payment" danger onClick={async () => {
                               if (!confirm(`Permanently delete the original ${fmtMoney(e.amount, e.currency)} Payment (${e.counterpartyLabel || "this account"})? This reverses BOTH the customer's account balance AND this Cash Account entry. This can't be undone.`)) return;
                               try {
                                 const d = await call(`/api/account-ledger/${e.sourceId}`, { method: "DELETE" });
@@ -18010,6 +18187,18 @@ function CashInHandModule({ call, dl, notify, perm, hasRaw, onOpenCashAccountVie
                     </tr>
                   ))}
                 </tbody>
+                <tfoot>
+                  {moveTotals.map(([c, t], k) => (
+                    <tr key={c} className="gk-cash-move-total" data-currency={c}>
+                      <td style={tdFoot}></td>
+                      <td style={{ ...tdFoot, fontWeight: 700, whiteSpace: "nowrap" }} colSpan={4}>{k === 0 ? `Total — ${movements.length} transactions` : ""}{moveTotals.length > 1 ? ` (${c})` : ""}</td>
+                      <td style={tdFootMono} data-total="credit">+{fmtMoney(t.credit, c)}</td>
+                      <td style={tdFootMono} data-total="debit">-{fmtMoney(t.debit, c)}</td>
+                      <td style={tdFootMono} data-total="balance">{t.balance != null ? <span title={`Current balance of the active ${c} Cash Accounts`}>{fmtMoney(t.balance, c)}</span> : ""}</td>
+                      <td style={tdFoot} colSpan={showMoveActions ? 2 : 1}></td>
+                    </tr>
+                  ))}
+                </tfoot>
               </ResizableTable>
               </TableScrollShell>
               <TableFooter firstIdx={movePg.firstIdx} lastIdx={movePg.lastIdx} total={movePg.total} page={movePg.page} totalPages={movePg.totalPages} onPageChange={movePg.setPage} pageSize={movePg.pageSize} onPageSizeChange={movePg.setPageSize} />
@@ -18025,7 +18214,7 @@ function CashInHandModule({ call, dl, notify, perm, hasRaw, onOpenCashAccountVie
             {transferPg.total === 0 ? (<><Empty text="No Cash Movements Found" /><TableFooter firstIdx={transferPg.firstIdx} lastIdx={transferPg.lastIdx} total={transferPg.total} page={transferPg.page} totalPages={transferPg.totalPages} onPageChange={transferPg.setPage} pageSize={transferPg.pageSize} onPageSizeChange={transferPg.setPageSize} /></>) : (
               <>
               <TableScrollShell height={420}>
-              <ResizableTable tableKey="cashInHand.transfers" className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+              <ResizableTable variant="txn" tableKey="cashInHand.transfers" className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead><tr><SortTh label="Date" /><SortTh label="From" /><SortTh label="To" /><SortTh label="Amount" /><SortTh label="Reference" /><SortTh label="Staff" />{hasRaw("cash.delete") && <SortTh label="Actions" />}</tr></thead>
                 <tbody>
                   {transferPg.pageRows.map((t) => (
@@ -18055,7 +18244,7 @@ function CashInHandModule({ call, dl, notify, perm, hasRaw, onOpenCashAccountVie
             {exchangePg.total === 0 ? (<><Empty text="No Cash Movements Found" /><TableFooter firstIdx={exchangePg.firstIdx} lastIdx={exchangePg.lastIdx} total={exchangePg.total} page={exchangePg.page} totalPages={exchangePg.totalPages} onPageChange={exchangePg.setPage} pageSize={exchangePg.pageSize} onPageSizeChange={exchangePg.setPageSize} /></>) : (
               <>
               <TableScrollShell height={420}>
-              <ResizableTable tableKey="cashInHand.exchanges" className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+              <ResizableTable variant="txn" tableKey="cashInHand.exchanges" className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead><tr><SortTh label="Date" /><SortTh label="From" /><SortTh label="To" /><SortTh label="Given" /><SortTh label="Received" /><SortTh label="Rate" /><SortTh label="Reference" />{hasRaw("cash.delete") && <SortTh label="Actions" />}</tr></thead>
                 <tbody>
                   {exchangePg.pageRows.map((x) => (
@@ -18089,7 +18278,7 @@ function CashInHandModule({ call, dl, notify, perm, hasRaw, onOpenCashAccountVie
             {loansLoading ? <Spinner /> : loanPg.total === 0 ? (<><Empty text="No loans found." /><TableFooter firstIdx={loanPg.firstIdx} lastIdx={loanPg.lastIdx} total={loanPg.total} page={loanPg.page} totalPages={loanPg.totalPages} onPageChange={loanPg.setPage} pageSize={loanPg.pageSize} onPageSizeChange={loanPg.setPageSize} /></>) : (
               <>
               <TableScrollShell height={420}>
-              <ResizableTable tableKey="cashInHand.loans" className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+              <ResizableTable variant="txn" tableKey="cashInHand.loans" className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead><tr><SortTh label="Date" /><SortTh label="Customer" /><SortTh label="Cash Account" /><SortTh label="Principal" /><SortTh label="Outstanding" /><SortTh label="Status" /><SortTh label="Reference" /><SortTh label="Actions" /></tr></thead>
                 <tbody>
                   {loanPg.pageRows.map((l) => (
@@ -18389,7 +18578,7 @@ function CashAccountDetailPage({ call, dl, notify, perm, hasRaw, cashAccountId, 
           ) : (
             <>
             <TableScrollShell height={520}>
-            <ResizableTable tableKey="cashAccountView.movements" className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+            <ResizableTable variant="txn" tableKey="cashAccountView.movements" className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead><tr>
                 <th style={{ ...th, width: 40 }}>#</th>
                 <SortTh label="Date & Time" field="date" {...moveSort} onSort={moveSort.toggleSort} />

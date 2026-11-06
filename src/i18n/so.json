@@ -2495,5 +2495,11 @@
  "credits & debits made directly": "kiredit iyo debit si toos ah loo sameeyay",
  "cash entries": "diiwaannada lacagta",
  "exchanges, as recorded": "sarrif, sida loo diiwaangeliyay",
- "(shown tab)": "(tabka la tusay)"
+ "(shown tab)": "(tabka la tusay)",
+ "credit postings": "diiwaannada kiredit",
+ "debit postings": "diiwaannada debit",
+ "Created by this record": "Waxaa abuuray diiwaankan",
+ "Net movement of the listed payments (Credit − Debit)": "Dhaqdhaqaaqa saafiga ah ee lacag-bixinnada (Kiredit − Debit)",
+ "Current balance of the selected account": "Hadhaaga hadda ee akoonka la doortay",
+ "Net movement = Credits − Debits of all matching entries in this currency": "Dhaqdhaqaaqa saafiga = Kiredit − Debit ee dhammaan diiwaannada lacagtan"
 }
