@@ -7822,6 +7822,373 @@
      "expression": null
     }
    ]
+  },
+  {
+   "name": "daily_financial_history",
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [],
+   "checks": [
+    "status IN ('saved','updated','error')"
+   ],
+   "indexes": [
+    {
+     "name": "uq_daily_fin_history_date",
+     "unique": true,
+     "columns": [
+      "business_date"
+     ],
+     "where": null,
+     "expression": null
+    },
+    {
+     "name": "idx_daily_fin_history_updated",
+     "unique": false,
+     "columns": [
+      "updated_at"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ],
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "business_date",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "version",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "status",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "calc_version",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "timezone",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "bs_usd",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "bs_slsh",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "cash_usd",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "cash_slsh",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "data",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_by",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_by",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "update_reason",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "error",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ]
+  },
+  {
+   "name": "daily_financial_history_versions",
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [],
+   "checks": [],
+   "indexes": [
+    {
+     "name": "uq_daily_fin_history_versions",
+     "unique": true,
+     "columns": [
+      "business_date",
+      "version"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ],
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "business_date",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "version",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "calc_version",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "bs_usd",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "bs_slsh",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "cash_usd",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "cash_slsh",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "data",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "recorded_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "recorded_by",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "reason",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ]
   }
  ],
  "controlTables": [

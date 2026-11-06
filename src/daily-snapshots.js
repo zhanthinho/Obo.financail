@@ -283,6 +283,12 @@ function startScheduler() {
           // eslint-disable-next-line no-console
           console.error(`[snapshots] ${company.id}: ${e && e.message}`);
         }
+        // DAILY FINANCIAL HISTORY round: save every ended day and re-save a
+        // day (as a new version) whose figures a backdated change moved.
+        try { tenancy.withCompany(company, () => require("./daily-history").sync({ now: new Date() })); } catch (e) {
+          // eslint-disable-next-line no-console
+          console.error(`[daily-history] ${company.id}: ${e && e.message}`);
+        }
       }
     } catch (e) {
       // eslint-disable-next-line no-console

@@ -421,6 +421,9 @@ async function browserPart() {
       const group = p.locator(".gk-nav-group").filter({ has: btn });
       if (await group.count()) { const h = group.first().locator(".gk-nav-group-header").first(); if ((await h.getAttribute("aria-expanded")) === "false") { await h.click(); await p.waitForTimeout(300); } }
       await btn.click(); await p.waitForTimeout(900);
+      // DAILY FINANCIAL HISTORY round: the page now opens on Daily History;
+      // these checks are about the Daily Snapshot tab.
+      if (label === "Daily Reports") { await p.getByRole("tab", { name: /Daily Snapshot/ }).click(); await p.waitForTimeout(600); }
     };
     await p.goto(BASE); await p.waitForSelector(".gk-sidebar", { state: "attached", timeout: 15000 }); await p.waitForTimeout(600);
     await check("Reports menu holds Reports Overview, Daily Reports, Balance Sheet Report, Cash Account Report, Financial History", async () => {

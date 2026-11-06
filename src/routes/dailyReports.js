@@ -18,6 +18,7 @@ const { addAudit, getCompanySettings, getDefaultPdfTemplate, getDefaultExcelTemp
 const { fmtMoney } = require("../util");
 const { computeBalanceSheet, round2 } = require("../balance-sheet");
 const S = require("../daily-snapshots");
+const DH = require("../daily-history");
 const { renderProfessionalDocument, renderReportPDF } = require("../pdf");
 const { buildProfessionalWorkbook } = require("../xlsx-engine");
 
@@ -359,6 +360,80 @@ async function snapshotDetailPDF(snap, change, cur, user) {
   });
 }
 
+
+// ---- DAILY FINANCIAL HISTORY round ------------------------------------------
+// One row per company-local day (src/daily-history.js): saved / updated
+// (with every earlier version kept) / pending (today, not ended yet).
+function dhFigures(data, cur) {
+  if (!data) return null;
+  const o = {};
+  if (cur.includes("USD") && data.usd) o.usd = data.usd;
+  if (cur.includes("SLSH") && data.slsh) o.slsh = data.slsh;
+  o.cashAccounts = (data.cashAccounts || []).filter((a) => cur.includes(a.currency));
+  return o;
+}
+function dhRowJSON(row, cur) {
+  let data = null; try { data = JSON.parse(row.data); } catch (e) { data = null; }
+  return {
+    date: row.business_date, status: row.error ? "error" : row.status, version: Number(row.version), calcVersion: row.calc_version,
+    createdAt: row.created_at, createdBy: row.created_by, updatedAt: row.updated_at, updatedBy: row.updated_by,
+    reason: row.update_reason, error: row.error || null, ...(dhFigures(data, cur) || {}),
+  };
+}
+function dhPendingJSON(date, data, cur) {
+  return { date, status: "pending", version: 0, calcVersion: DH.CALC_VERSION, createdAt: null, updatedAt: null, reason: "The day has not ended — figures so far.", ...(dhFigures(data, cur) || {}) };
+}
+function dhChange(a, b, cur) {
+  if (!a || !b) return null;
+  const c = { previousDate: b.date };
+  for (const k of ["usd", "slsh"]) if (a[k] && b[k] && cur.includes(k.toUpperCase())) c[k] = { balanceSheet: diff(a[k].balanceSheet, b[k].balanceSheet), cash: diff(a[k].cash, b[k].cash), debt: diff(a[k].debt, b[k].debt), credit: diff(a[k].credit, b[k].credit) };
+  return c;
+}
+// A day's row: the saved one, or today's pending figures.
+function dhDay(date, cur, tz) {
+  const row = get("SELECT * FROM daily_financial_history WHERE business_date = ?", [date]);
+  if (row) return dhRowJSON(row, cur);
+  const today = S.businessDateOf(new Date(), tz);
+  if (date === today) { const t = DH.todayFigures(); return dhPendingJSON(t.date, t.data, cur); }
+  return null;
+}
+function dhList(query, cur, tz) {
+  const range = parseRange(query, tz, { defaultDays: 30, maxDays: 20000 });
+  if (range.error) return range;
+  const rows = all("SELECT * FROM daily_financial_history WHERE business_date >= ? AND business_date <= ? ORDER BY business_date DESC", [range.from, range.to]).map((r) => dhRowJSON(r, cur));
+  if (range.to >= range.today && range.from <= range.today) { const t = DH.todayFigures(); rows.unshift(dhPendingJSON(t.date, t.data, cur)); }
+  const dir = query.dir === "asc" ? 1 : -1;
+  rows.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0) * dir);
+  const pageSize = Math.min(200, Math.max(1, Number(query.pageSize) || 10));
+  const total = rows.length;
+  const page = Math.min(Math.max(1, Number(query.page) || 1), Math.max(1, Math.ceil(total / pageSize)));
+  // The day the cards show: the one asked for, else the latest SAVED day in
+  // the period (today's pending figures only when the period is just today).
+  let selDate = query.date && S.DATE_RE.test(query.date) && query.date >= range.from && query.date <= range.to ? query.date : null;
+  if (!selDate) { const saved = rows.filter((r) => r.status !== "pending").map((r) => r.date).sort(); selDate = saved.length ? saved[saved.length - 1] : rows.length ? rows[0].date : null; }
+  const selected = selDate ? dhDay(selDate, cur, tz) : null;
+  const previous = selected ? dhDay(S.addDays(selDate, -1), cur, tz) : null;
+  const savedDays = get("SELECT COUNT(*) AS n FROM daily_financial_history").n;
+  return { ...range, total, page, pageSize, savedDays, rows, pageItems: rows.slice((page - 1) * pageSize, page * pageSize), selected, change: dhChange(selected, previous, cur) };
+}
+function dhLive(cur) {
+  const bs = computeBalanceSheet(cur);
+  const o = {};
+  for (const c of cur) { const x = bs.currencies[c]; o[c.toLowerCase()] = { balanceSheet: x.balanceSheet, cash: x.cashInHand, debt: x.debt, credit: x.credit }; }
+  return o;
+}
+function dhSpec(items, cur) {
+  const cols = [{ key: "date", label: "Date", pl: "Date", w: 0.9, xw: 13 }];
+  if (cur.includes("USD")) cols.push({ key: "bsUsd", label: "Balance Sheet (USD)", pl: "Bal. Sheet USD", w: 1.15, xw: 18, align: "right", fmt: USD_FMT, c: "USD" });
+  if (cur.includes("SLSH")) cols.push({ key: "bsSlsh", label: "Balance Sheet (SLSH)", pl: "Bal. Sheet SLSH", w: 1.3, xw: 20, align: "right", fmt: SLSH_FMT, c: "SLSH" });
+  if (cur.includes("USD")) cols.push({ key: "cashUsd", label: "Cash Account (USD)", pl: "Cash USD", w: 1.1, xw: 18, align: "right", fmt: USD_FMT, c: "USD" });
+  if (cur.includes("SLSH")) cols.push({ key: "cashSlsh", label: "Cash Account (SLSH)", pl: "Cash SLSH", w: 1.25, xw: 20, align: "right", fmt: SLSH_FMT, c: "SLSH" });
+  cols.push({ key: "status", label: "Status", pl: "Status", w: 1.1, xw: 18 });
+  const label = (r) => ({ saved: "Saved", updated: `Updated (v${r.version})`, pending: "Pending", error: "Calculation Error" })[r.status] || r.status;
+  const val = (r, key) => ({ date: r.date, bsUsd: r.usd?.balanceSheet, bsSlsh: r.slsh?.balanceSheet, cashUsd: r.usd?.cash, cashSlsh: r.slsh?.cash, status: label(r) })[key];
+  return { cols, val, items };
+}
+
 // ---------------------------------------------------------------------------
 function register(router) {
   const viewer = (req, res) => {
@@ -553,6 +628,81 @@ function register(router) {
     sendJSON(res, 200, out);
   });
 
+
+  // ---- DAILY FINANCIAL HISTORY round -------------------------------------
+  const dhSync = (query) => {
+    // Bring the saved days up to date first (the scheduler does the same every
+    // minute); a failure never hides the saved history.
+    if (process.env.FINMAN_TEST_MODE === "1" && query && query.nosync === "1") return null;
+    try { DH.sync(); return null; } catch (e) { return String(e.message || e).slice(0, 200); }
+  };
+  router.get("/api/daily-history", (req, res, params, query) => {
+    const v = viewer(req, res); if (!v) return;
+    const syncError = dhSync(query);
+    const out = dhList(query || {}, v.cur, v.tz);
+    if (out.error) return badRequest(res, out.error);
+    const { rows, ...rest } = out;
+    sendJSON(res, 200, { ...rest, company: companyName(), timezone: v.tz, currencies: v.cur, live: dhLive(v.cur), syncError,
+      canExport: can(v.user, "dailyReports.export") });
+  });
+  for (const fmt of ["pdf", "xlsx"]) router.get(`/api/daily-history/export.${fmt}`, async (req, res, p0, query) => {
+    const v = exporter(req, res); if (!v) return;
+    dhSync(query);
+    const out = dhList({ ...(query || {}), pageSize: 200 }, v.cur, v.tz);
+    if (out.error) return badRequest(res, out.error);
+    const items = [...out.rows].sort((a, b) => (a.date < b.date ? 1 : -1));
+    const spec = dhSpec(items, v.cur);
+    const title = "Daily Financial Snapshots";
+    const sub = `${companyLabel()} · ${out.from} to ${out.to} · ${items.length} day(s) · end-of-day figures (${v.tz})`;
+    addAudit(v.user, "Daily history exported", `${fmt.toUpperCase()} · ${out.from} to ${out.to}`);
+    if (fmt === "pdf") sendPDF(res, `daily-history-${out.from}-${out.to}.pdf`, await specPDF({ title, meta: sub, spec, generatedBy: v.user.name }));
+    else sendXLSX(res, `daily-history-${out.from}-${out.to}.xlsx`, await specXLSX({ title, sheetName: "Daily History", subtitle: sub, spec, generatedBy: v.user.name }));
+  });
+  for (const fmt of ["pdf", "xlsx"]) router.get(`/api/daily-history/:date/export.${fmt}`, async (req, res, params, query) => {
+    const v = exporter(req, res); if (!v) return;
+    if (!S.DATE_RE.test(params.date)) return badRequest(res, "Dates must be YYYY-MM-DD.");
+    dhSync(query);
+    const day = dhDay(params.date, v.cur, v.tz);
+    if (!day) return notFound(res, "No snapshot for that day.");
+    const rows = [];
+    for (const [c, k] of [["USD", "usd"], ["SLSH", "slsh"]]) {
+      if (!day[k]) continue;
+      rows.push({ item: `Total Debt (${c})`, value: money(day[k].debt, c), note: `${day[k].debtAccounts} account(s) in debt` });
+      rows.push({ item: `Total Cash Account (${c})`, value: money(day[k].cash, c), note: `${day[k].cashAccounts} active cash account(s)` });
+      rows.push({ item: `Total Credit (${c})`, value: money(day[k].credit, c), note: `${day[k].creditAccounts} account(s) in credit` });
+      rows.push({ item: `Balance Sheet (${c})`, value: money(day[k].balanceSheet, c), note: "Debt + Cash Account - Credit" });
+    }
+    for (const a of day.cashAccounts || []) {
+      rows.push({ item: `${a.name} (${a.currency})`, value: money(a.closingBalance, a.currency),
+        note: `Opening ${money(a.openingBalance, a.currency)} · In ${money(a.cashIn, a.currency)} · Out ${money(a.cashOut, a.currency)} · Transfers +${money(a.transferIn, a.currency)} / -${money(a.transferOut, a.currency)} · Exchange +${money(a.exchangeIn, a.currency)} / -${money(a.exchangeOut, a.currency)}` });
+    }
+    const statusLabel = { saved: "SAVED", updated: `UPDATED v${day.version}`, pending: "PENDING", error: "ERROR" }[day.status] || "SAVED";
+    addAudit(v.user, "Daily history exported", `${fmt.toUpperCase()} · ${day.date}`);
+    if (fmt === "pdf") {
+      const buf = await renderProfessionalDocument({
+        company: getCompanySettings(), template: getDefaultPdfTemplate("reports"), generatedBy: v.user.name,
+        docTypeLabel: "DAILY FINANCIAL SNAPSHOT", docNumber: day.date, statusLabel, statusTone: day.status === "pending" ? "amber" : "green",
+        subtitleLines: [`End-of-day position for ${day.date} (${v.tz}) — historical figures, not today's live balances.`, day.reason || ""],
+        infoRows: [["Company", companyLabel()], ["Date", day.date], ["Version", String(day.version || "—")], ["Last updated", day.updatedAt ? `${day.updatedAt.replace("T", " ").slice(0, 19)} UTC` : "—"]],
+        table: { columns: [{ key: "item", label: "Item", width: 1.6 }, { key: "value", label: "Amount", width: 1.1, align: "right" }, { key: "note", label: "Details", width: 2.6 }], rows, cellText: (r, key) => String(r[key] ?? "") },
+      });
+      return sendPDF(res, `daily-snapshot-${day.date}.pdf`, buf);
+    }
+    const spec = { cols: [{ key: "item", label: "Item", xw: 34 }, { key: "value", label: "Amount", xw: 20, align: "right" }, { key: "note", label: "Details", xw: 80 }], val: (r, k) => r[k], items: rows };
+    sendXLSX(res, `daily-snapshot-${day.date}.xlsx`, await specXLSX({ title: "Daily Financial Snapshot", sheetName: day.date, subtitle: `${companyLabel()} · ${day.date} · ${statusLabel}`, spec, generatedBy: v.user.name }));
+  });
+  router.get("/api/daily-history/:date", (req, res, params, query) => {
+    const v = viewer(req, res); if (!v) return;
+    if (!S.DATE_RE.test(params.date)) return badRequest(res, "Dates must be YYYY-MM-DD.");
+    dhSync(query);
+    const day = dhDay(params.date, v.cur, v.tz);
+    if (!day) return notFound(res, "No snapshot for that day.");
+    const prev = dhDay(S.addDays(params.date, -1), v.cur, v.tz);
+    const versions = all("SELECT version, calc_version, bs_usd, bs_slsh, cash_usd, cash_slsh, recorded_at, recorded_by, reason FROM daily_financial_history_versions WHERE business_date = ? ORDER BY version ASC", [params.date])
+      .map((r) => ({ version: Number(r.version), calcVersion: r.calc_version, recordedAt: r.recorded_at, recordedBy: r.recorded_by, reason: r.reason,
+        ...(v.cur.includes("USD") ? { bsUsd: r.bs_usd, cashUsd: r.cash_usd } : {}), ...(v.cur.includes("SLSH") ? { bsSlsh: r.bs_slsh, cashSlsh: r.cash_slsh } : {}) }));
+    sendJSON(res, 200, { day, change: dhChange(day, prev, v.cur), versions, currencies: v.cur, timezone: v.tz });
+  });
   // ---- administration ----
   router.get("/api/daily-reports/settings", (req, res) => {
     const user = manager(req, res); if (!user) return;

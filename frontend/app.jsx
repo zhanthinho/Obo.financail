@@ -156,6 +156,72 @@ const THEME_CSS = `
   .gk-amt-debit { color: var(--c-debit); font-weight: 600; white-space: nowrap; }
   .gk-bal { font-weight: 700; white-space: nowrap; }
   .gk-bal[data-sign="pos"] { color: var(--c-bal-pos); } .gk-bal[data-sign="neg"] { color: var(--c-bal-neg); } .gk-bal[data-sign="zero"] { color: var(--c-bal-zero); }
+  .gk-dh { display: flex; flex-direction: column; gap: 12px; }
+  .gk-dh-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; background: var(--c-card); border: 1px solid var(--c-line); border-radius: 12px; padding: 12px 14px; }
+  .gk-dh-title { display: flex; gap: 10px; align-items: center; min-width: 0; }
+  .gk-dh-title h3 { margin: 0; font-size: 16px; color: var(--c-ink); }
+  .gk-dh-title-icon, .gk-dh-card-icon { width: 34px; height: 34px; border-radius: 9px; background: #E6F6F1; color: #0F5B50; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .gk-dh-subtitle { font-size: 12px; color: var(--c-slate); }
+  .gk-dh-filters { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+  .gk-dh-field { display: flex; flex-direction: column; gap: 3px; font-size: 11px; font-weight: 600; color: var(--c-ink); }
+  .gk-dh-field select, .gk-dh-field input { height: 32px; border: 1px solid #CBD5D8; border-radius: 8px; padding: 0 8px; background: #fff; color: var(--c-ink); font: inherit; font-size: 12.5px; }
+  .gk-dh-asof { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 12.5px; color: var(--c-ink); min-height: 24px; }
+  .gk-dh-note { font-size: 11.5px; color: var(--c-slate); }
+  .gk-dh-loading { display: inline-flex; align-items: center; gap: 6px; color: #0F5B50; font-weight: 600; font-size: 12px; }
+  .gk-dh-spin { width: 12px; height: 12px; border: 2px solid #A7E3D2; border-top-color: #0F5B50; border-radius: 50%; display: inline-block; animation: gk-dh-spin .8s linear infinite; }
+  @keyframes gk-dh-spin { to { transform: rotate(360deg); } }
+  .gk-dh-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  @media (max-width: 1000px) { .gk-dh-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 480px) { .gk-dh-cards { grid-template-columns: minmax(0, 1fr); } }
+  .gk-dh-card { display: flex; gap: 10px; align-items: flex-start; background: #fff; border: 1px solid #DDE5E8; border-radius: 12px; padding: 12px; box-shadow: 0 1px 3px rgba(15,23,42,.05); min-height: 78px; }
+  .gk-dh-card-body { min-width: 0; }
+  .gk-dh-card-label { font-size: 11.5px; font-weight: 700; color: #0B1F33; }
+  .gk-dh-card-value { font-size: 18px; font-weight: 800; margin-top: 3px; font-family: var(--c-font-num); font-variant-numeric: tabular-nums; }
+  .gk-dh-card-empty { font-size: 18px; color: var(--c-slate); margin-top: 3px; }
+  .gk-dh-card-sub { font-size: 11px; color: var(--c-slate); margin-top: 2px; }
+  .gk-dh-card-skel { height: 20px; width: 70%; margin-top: 5px; border-radius: 6px; background: linear-gradient(90deg, #EEF3F4, #F7FAFA, #EEF3F4); }
+  .gk-dh-num { font-weight: 700; font-family: var(--c-font-num); font-variant-numeric: tabular-nums; }
+  .gk-dh-num.is-pos { color: #059669; } .gk-dh-num.is-neg { color: #DC2626; } .gk-dh-num.is-zero { color: #0B1F33; }
+  .gk-dh-live { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 11.5px; color: var(--c-slate); background: var(--c-paper); border: 1px dashed var(--c-line); border-radius: 8px; padding: 6px 10px; }
+  .gk-dh-empty { display: flex; gap: 10px; align-items: center; padding: 16px; border: 1px dashed #CBD5D8; border-radius: 12px; background: #fff; color: var(--c-slate); font-size: 12.5px; }
+  .gk-dh-tablewrap { overflow-x: auto; border: 1px solid #DDE5E8; border-radius: 10px; background: #fff; }
+  .gk-dh-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .gk-dh-table thead th { background: #0F3D38; color: #fff; text-align: left; font-weight: 700; font-size: 11.5px; padding: 8px 10px; white-space: nowrap; }
+  .gk-dh-table thead th svg { vertical-align: -2px; margin-right: 5px; opacity: .9; }
+  .gk-dh-table th.gk-dh-num-h { text-align: right; }
+  .gk-dh-sort { background: none; border: none; color: inherit; font: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 0; }
+  .gk-dh-table tbody td { padding: 7px 10px; border-top: 1px solid #E6ECEE; white-space: nowrap; }
+  .gk-dh-table tbody tr:hover td { background: #FAFCFC; }
+  .gk-dh-table tbody tr.is-selected td { box-shadow: inset 0 1px 0 #10B981, inset 0 -1px 0 #10B981; }
+  .gk-dh-table td.gk-dh-bal, .gk-dh-table tbody tr:hover td.gk-dh-bal { background: #F0FAF7; text-align: right; }
+  .gk-dh-idx { color: var(--c-slate); width: 44px; }
+  .gk-dh-date { font-family: var(--c-font-num); font-weight: 600; }
+  .gk-dh-view { display: inline-flex; align-items: center; gap: 5px; border: 1px solid #CBD5D8; background: #fff; border-radius: 7px; padding: 3px 9px; font: inherit; font-size: 12px; cursor: pointer; color: #0F5B50; font-weight: 600; }
+  .gk-dh-view:hover { border-color: #10B981; }
+  .gk-dh-none { text-align: center; color: var(--c-slate); padding: 16px !important; }
+  .gk-dh-detail-row > td { background: #FBFDFD; padding: 0 !important; white-space: normal !important; }
+  .gk-dh-detail { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+  .gk-dh-detail-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .gk-dh-detail-grid { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(0, 2.2fr); gap: 14px; }
+  @media (max-width: 1000px) { .gk-dh-detail-grid { grid-template-columns: minmax(0, 1fr); } }
+  .gk-dh-detail h4 { margin: 0 0 6px; font-size: 12.5px; display: flex; align-items: center; gap: 6px; color: #0B1F33; }
+  .gk-dh-kvs { display: grid; grid-template-columns: 1fr; gap: 3px; }
+  .gk-dh-kv { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; padding: 3px 0; border-bottom: 1px dashed #E6ECEE; }
+  .gk-dh-summary { margin-top: 8px; font-size: 11.5px; color: var(--c-ink); display: flex; flex-direction: column; gap: 3px; }
+  .gk-dh-cash-wrap { overflow-x: auto; }
+  .gk-dh-cash { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+  .gk-dh-cash th { background: #E6F2EF; color: #0B1F33; text-align: right; padding: 5px 7px; white-space: nowrap; }
+  .gk-dh-cash th:first-child, .gk-dh-cash th:nth-child(2), .gk-dh-cash td:first-child, .gk-dh-cash td:nth-child(2) { text-align: left; }
+  .gk-dh-cash td { padding: 5px 7px; border-top: 1px solid #E6ECEE; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .gk-dh-cash td.is-in { color: #059669; } .gk-dh-cash td.is-out { color: #DC2626; }
+  .gk-dh-cash td.gk-dh-bal { background: #F0FAF7; }
+  .gk-dh-versions summary { cursor: pointer; font-size: 12px; font-weight: 600; display: inline-flex; gap: 5px; align-items: center; }
+  .gk-dh-versions ul { margin: 6px 0 0; padding-left: 18px; font-size: 11.5px; color: var(--c-ink); }
+  .gk-dh-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .gk-dh-total { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--c-slate); }
+  :root[data-theme="dark"] .gk-dh-card, :root[data-theme="dark"] .gk-dh-tablewrap, :root[data-theme="dark"] .gk-dh-empty, :root[data-theme="dark"] .gk-dh-view { background: var(--c-card); }
+  :root[data-theme="dark"] .gk-dh-card-label, :root[data-theme="dark"] .gk-dh-num.is-zero, :root[data-theme="dark"] .gk-dh-detail h4 { color: var(--c-ink); }
+  :root[data-theme="dark"] .gk-dh-table td.gk-dh-bal, :root[data-theme="dark"] .gk-dh-cash td.gk-dh-bal { background: rgba(43,165,138,.10); }
   .gk-asearch { background: #F0FAF7; border: 1px solid #D5EDE5; border-left: 4px solid #10B981; border-radius: 12px; padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 7px; min-width: 0; }
   .gk-asearch.is-compact { padding: 10px; border-left-width: 3px; }
   .gk-asearch-label { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; color: var(--c-ink, #0B1F33); margin: 0; }
@@ -5374,7 +5440,7 @@ function App() {
             {view === "history-slsh" && perm("reports") && hasRaw("currency.slsh") && <TransactionHistoryModule currency="SLSH" call={call} dl={dl} preview={preview} print={print} notify={notify} perm={perm} rate={rate} saleRate={saleRate} onOpenQuotations={(qStatus, quotationId) => { setView(quotationStatusView(qStatus)); if (quotationId) setQuotationFocusId(quotationId); }} focusEntryId={historyFocusEntryId} onConsumeFocusEntry={() => setHistoryFocusEntryId(null)} hasRaw={hasRaw} onOpenAccountView={openAccountView} />}
             {view === "expenses" && hasRaw("expenses.view") && <ExpensesModule call={call} dl={dl} notify={notify} hasRaw={hasRaw} token={token} />}
             {view === "reports" && <ReportsModule call={call} dl={dl} notify={notify} perm={perm} hasRaw={hasRaw} />}
-            {view.startsWith("daily-reports") && hasRaw("dailyReports.view") && <DailyReportsModule call={call} dl={dl} preview={preview} notify={notify} initialTab={{ "daily-reports-balance": "balance", "daily-reports-cash": "cash" }[view] || "snapshot"} />}
+            {view.startsWith("daily-reports") && hasRaw("dailyReports.view") && <DailyReportsModule call={call} dl={dl} preview={preview} notify={notify} initialTab={{ "daily-reports-balance": "balance", "daily-reports-cash": "cash" }[view] || "history"} />}
             {view === "users" && perm("users") && <UsersModule call={call} notify={notify} currentUser={user} hasRaw={hasRaw} />}
             {view === "roles" && hasRaw("roles.view") && <RolesModule call={call} notify={notify} currentUser={user} hasRaw={hasRaw} />}
             {view === "usersRoles-overview" && perm("users") && <SystemOverviewModule call={call} notify={notify} />}
@@ -15714,7 +15780,7 @@ function DeleteRoleModal({ role, allRoles, call, notify, onClose, onDone }) {
    history replayed from the cash ledger. The live position is only ever
    shown on request and is labelled LIVE.
    ========================================================================= */
-const DR_TABS = [["snapshot", "Daily Snapshot", "calendar"], ["balance", "Balance Sheet History", "landmark"], ["cash", "Cash Account History", "wallet"]];
+const DR_TABS = [["history", "Daily History", "history"], ["snapshot", "Daily Snapshot", "calendar"], ["balance", "Balance Sheet History", "landmark"], ["cash", "Cash Account History", "wallet"]];
 const DR_PRESETS = [["today", "Today"], ["yesterday", "Yesterday"], ["last7", "Last 7 Days"], ["last30", "Last 30 Days"], ["thisMonth", "This Month"], ["lastMonth", "Last Month"], ["thisYear", "This Year"], ["custom", "Custom Date Range"]];
 function drAddDays(d, n) { const [y, m, dd] = d.split("-").map(Number); return new Date(Date.UTC(y, m - 1, dd + n)).toISOString().slice(0, 10); }
 function drPresetRange(key, today) {
@@ -16075,7 +16141,7 @@ function CustomerProfileView({ id, call, notify, perm, onBack, onOpenAccountView
 }
 
 function DailyReportsModule({ call, dl, preview, notify, initialTab }) {
-  const [tab, setTab] = useState(initialTab || "snapshot");
+  const [tab, setTab] = useState(initialTab || "history");
   useEffect(() => { if (initialTab) setTab(initialTab); }, [initialTab]);
   const [status, setStatus] = useState(null);
   const [statusErr, setStatusErr] = useState("");
@@ -16115,10 +16181,251 @@ function DailyReportsModule({ call, dl, preview, notify, initialTab }) {
           </button>
         ))}
       </div>
+      {tab === "history" && <DailyHistoryView key={`h${reloadKey}`} call={call} dl={dl} preview={preview} notify={notify} status={status} onRefresh={refresh} />}
       {tab === "snapshot" && <DrSnapshotTab key={`s${reloadKey}`} call={call} dl={dl} preview={preview} notify={notify} status={status} />}
       {tab === "balance" && <DrBalanceTab key={`b${reloadKey}`} call={call} dl={dl} preview={preview} notify={notify} status={status} />}
       {tab === "cash" && <DrCashTab key={`c${reloadKey}`} call={call} dl={dl} preview={preview} notify={notify} status={status} />}
       {settingsOpen && <DrSettingsModal call={call} notify={notify} onClose={() => setSettingsOpen(false)} onChanged={refresh} />}
+    </div>
+  );
+}
+
+
+// ---------------------------------------------------------------------------
+// DAILY FINANCIAL HISTORY round — Daily Financial Snapshots: one row per
+// company-local day (saved automatically at the end of each day; a
+// backdated change re-saves the affected days as a new version), four
+// cards for the selected day, and that day's details on request. The cards,
+// the table and the details all follow the one date filter; today's live
+// balances are shown apart and never in place of a historical day.
+// ---------------------------------------------------------------------------
+const DH_PRESETS = [["today", "Today"], ["yesterday", "Yesterday"], ["last7", "Last 7 Days"], ["last30", "Last 30 Days"], ["thisMonth", "This Month"], ["lastMonth", "Previous Month"], ["thisYear", "This Year"], ["all", "All Time"], ["custom", "Custom Date Range"]];
+const DH_STATUS = { saved: ["green", "circleCheck", "Saved"], updated: ["cyan", "refresh", "Updated"], pending: ["amber", "clock", "Pending"], error: ["red", "circleAlert", "Calculation Error"] };
+function dhMoney(v, cur, cls) {
+  if (v == null) return <span style={{ color: C.slate }}>—</span>;
+  const n = Number(v);
+  return <span className={`gk-dh-num ${n > 0 ? "is-pos" : n < 0 ? "is-neg" : "is-zero"}${cls ? ` ${cls}` : ""}`}>{fmtMoney(n, cur)}</span>;
+}
+function dhSigned(v, cur) { if (v == null) return ""; const n = Number(v); return `${n > 0 ? "+" : ""}${fmtMoney(n, cur)}`; }
+function DhStatus({ row }) {
+  const st = DH_STATUS[row.status] || DH_STATUS.saved;
+  return <span data-status={row.status} title={row.status === "updated" ? `Version ${row.version}${row.updatedAt ? ` · updated ${row.updatedAt.replace("T", " ").slice(0, 16)} UTC` : ""}` : row.reason || undefined}>
+    <Pill tone={st[0]}><span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><NavIcon name={st[1]} size={12} />{st[2]}{row.status === "updated" ? ` v${row.version}` : ""}</span></Pill>
+  </span>;
+}
+function DailyHistoryView({ call, dl, preview, notify, status, onRefresh }) {
+  const today = status && status.today;
+  const [preset, setPreset] = useState("last30");
+  const [range, setRange] = useState(() => drPresetRange("last30", today));
+  useEffect(() => { if (today && preset !== "custom" && preset !== "all") setRange(drPresetRange(preset, today)); }, [today]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [dir, setDir] = useState("desc");
+  const [selDate, setSelDate] = useState(null); // a day picked with View Details (else the latest saved day)
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
+  const [openDate, setOpenDate] = useState(null);
+  const seq = useRef(0);
+  const params = useMemo(() => ({ from: range ? range.from : undefined, to: range ? range.to : undefined }), [range]);
+  const load = useCallback(() => {
+    const my = ++seq.current;
+    setLoading(true);
+    call("/api/daily-history" + qs({ ...params, page, pageSize, dir: dir === "asc" ? "asc" : undefined, date: selDate || undefined }))
+      .then((d) => { if (my !== seq.current) return; setData(d); setErr(""); })
+      .catch((e) => { if (my !== seq.current) return; setErr(e.message); setData(null); })
+      .finally(() => { if (my === seq.current) setLoading(false); });
+  }, [call, params, page, pageSize, dir, selDate]);
+  useEffect(() => { load(); }, [load]);
+  const choosePreset = (k) => {
+    setPreset(k); setPage(1); setSelDate(null); setOpenDate(null);
+    if (k === "all") setRange({ from: "2000-01-01", to: today || new Date().toISOString().slice(0, 10) });
+    else if (k !== "custom") setRange(drPresetRange(k, today));
+  };
+  const setCustom = (patch) => { setPreset("custom"); setPage(1); setSelDate(null); setOpenDate(null); setRange((r) => ({ ...(r || {}), ...patch })); };
+  const sel = data && data.selected;
+  const cur = data ? data.currencies || ["USD", "SLSH"] : ["USD", "SLSH"];
+  const ch = data && data.change;
+  const card = (key, icon, label, k, field, c) => {
+    if (!cur.includes(c)) return null;
+    const v = sel && sel[k] ? sel[k][field] : null;
+    const delta = ch && ch[k] ? ch[k][field] : null;
+    return (
+      <div className="gk-dh-card" data-card={key} key={key}>
+        <span className="gk-dh-card-icon"><NavIcon name={icon} size={17} /></span>
+        <div className="gk-dh-card-body">
+          <div className="gk-dh-card-label">{label}</div>
+          {loading && !data ? <div className="gk-dh-card-skel" /> : v == null ? <div className="gk-dh-card-empty">—</div> : <div className="gk-dh-card-value">{dhMoney(v, c)}</div>}
+          {sel && delta != null && <div className="gk-dh-card-sub">{dhSigned(delta, c)} vs {ch.previousDate}</div>}
+        </div>
+      </div>
+    );
+  };
+  const exportRange = (fmt) => dl(`/api/daily-history/export.${fmt}` + qs(params), `daily-history-${params.from || "all"}-${params.to || ""}.${fmt}`);
+  const canExport = data ? data.canExport : status && status.canExport;
+  const rows = data ? data.pageItems : [];
+  const total = data ? data.total : 0;
+  const firstIdx = total ? (data.page - 1) * data.pageSize + 1 : 0;
+  return (
+    <div className="gk-dh" aria-busy={loading ? "true" : "false"}>
+      <div className="gk-dh-head">
+        <div className="gk-dh-title">
+          <span className="gk-dh-title-icon"><NavIcon name="calendar" size={18} /></span>
+          <div>
+            <h3>Daily Financial Snapshots</h3>
+            <div className="gk-dh-subtitle">Automatically saved daily Balance Sheet and Cash Account history.{data && data.company ? <> · <b>{data.company}</b></> : null}</div>
+          </div>
+        </div>
+        <div className="gk-dh-filters">
+          <label className="gk-dh-field"><span>Period</span>
+            <select aria-label="Period" value={preset} onChange={(e) => choosePreset(e.target.value)}>{DH_PRESETS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
+          </label>
+          {preset === "custom" && <>
+            <label className="gk-dh-field"><span>From</span><input type="date" aria-label="From date" value={range ? range.from || "" : ""} max={range && range.to} onChange={(e) => setCustom({ from: e.target.value })} /></label>
+            <label className="gk-dh-field"><span>To</span><input type="date" aria-label="To date" value={range ? range.to || "" : ""} min={range && range.from} onChange={(e) => setCustom({ to: e.target.value })} /></label>
+          </>}
+          <Btn tone="subtle" size="sm" icon="refresh" onClick={() => { load(); onRefresh && onRefresh(); }}>Refresh</Btn>
+          {canExport && <>
+            <Btn tone="ghost" size="sm" icon="download" onClick={() => exportRange("xlsx")}>Excel</Btn>
+            <Btn tone="ghost" size="sm" icon="download" onClick={() => exportRange("pdf")}>PDF</Btn>
+            <Btn tone="ghost" size="sm" icon="print" onClick={() => preview(`/api/daily-history/export.pdf` + qs(params))}>Print</Btn>
+          </>}
+        </div>
+      </div>
+
+      <div className="gk-dh-asof" role="status" aria-live="polite">
+        {loading && <span className="gk-dh-loading"><span className="gk-dh-spin" aria-hidden="true" />Updating…</span>}
+        {err ? <span style={{ color: C.red }}>{err}</span>
+          : sel ? <>Showing end-of-day figures for <b>{sel.date}</b> <DhStatus row={sel} />{sel.status === "pending" ? <span className="gk-dh-note">Today has not ended — figures so far.</span> : null}</>
+          : data ? <span>No snapshot for {range && range.from === range.to ? range.from : "this period"}.</span> : null}
+      </div>
+
+      {data && !sel ? (
+        <div className="gk-dh-empty"><NavIcon name="calendar" size={20} /><div><b>No snapshot for this period.</b><div>Snapshots are saved automatically at the end of each day from the company's first transaction. Choose another date.</div></div></div>
+      ) : (
+        <div className="gk-dh-cards">
+          {card("bsUsd", "wallet", "Balance Sheet (USD)", "usd", "balanceSheet", "USD")}
+          {card("bsSlsh", "banknote", "Balance Sheet (SLSH)", "slsh", "balanceSheet", "SLSH")}
+          {card("cashUsd", "landmark", "Cash Account (USD)", "usd", "cash", "USD")}
+          {card("cashSlsh", "bank", "Cash Account (SLSH)", "slsh", "cash", "SLSH")}
+        </div>
+      )}
+      {data && data.live && (
+        <div className="gk-dh-live" title="Current live balances — not part of the historical snapshot">
+          <NavIcon name="clock" size={13} /><span>Live now (not historical):</span>
+          {cur.map((c) => { const x = data.live[c.toLowerCase()]; return x ? <span key={c}>Balance Sheet {c} <b>{fmtMoney(x.balanceSheet, c)}</b> · Cash {c} <b>{fmtMoney(x.cash, c)}</b></span> : null; })}
+        </div>
+      )}
+
+      <div className="gk-dh-tablewrap">
+        <table className="gk-dh-table">
+          <thead><tr>
+            <th style={{ width: 44 }}>#</th>
+            <th><button type="button" className="gk-dh-sort" onClick={() => { setDir((d) => (d === "asc" ? "desc" : "asc")); setPage(1); }} aria-label={`Date, sorted ${dir === "asc" ? "oldest" : "latest"} first`}><NavIcon name="calendar" size={13} />Date<NavIcon name="chevronDown" size={12} style={{ transform: dir === "asc" ? "rotate(180deg)" : "none" }} /></button></th>
+            {cur.includes("USD") && <th className="gk-dh-num-h"><NavIcon name="wallet" size={13} />Balance Sheet (USD)</th>}
+            {cur.includes("SLSH") && <th className="gk-dh-num-h"><NavIcon name="banknote" size={13} />Balance Sheet (SLSH)</th>}
+            {cur.includes("USD") && <th className="gk-dh-num-h"><NavIcon name="landmark" size={13} />Cash Account (USD)</th>}
+            {cur.includes("SLSH") && <th className="gk-dh-num-h"><NavIcon name="bank" size={13} />Cash Account (SLSH)</th>}
+            <th><NavIcon name="circleCheck" size={13} />Status</th>
+            <th><NavIcon name="eye" size={13} />Action</th>
+          </tr></thead>
+          <tbody>
+            {rows.length === 0 && !loading && <tr><td colSpan={8} className="gk-dh-none">No snapshot for this period.</td></tr>}
+            {rows.map((r, i) => (
+              <React.Fragment key={r.date}>
+                <tr data-date={r.date} className={`${openDate === r.date ? "is-open" : ""}${sel && sel.date === r.date ? " is-selected" : ""}`}>
+                  <td className="gk-dh-idx">{firstIdx + i}</td>
+                  <td className="gk-dh-date">{r.date}</td>
+                  {cur.includes("USD") && <td className="gk-dh-bal">{dhMoney(r.usd && r.usd.balanceSheet, "USD")}</td>}
+                  {cur.includes("SLSH") && <td className="gk-dh-bal">{dhMoney(r.slsh && r.slsh.balanceSheet, "SLSH")}</td>}
+                  {cur.includes("USD") && <td className="gk-dh-bal">{dhMoney(r.usd && r.usd.cash, "USD")}</td>}
+                  {cur.includes("SLSH") && <td className="gk-dh-bal">{dhMoney(r.slsh && r.slsh.cash, "SLSH")}</td>}
+                  <td><DhStatus row={r} /></td>
+                  <td>
+                    <button type="button" className="gk-dh-view" aria-expanded={openDate === r.date} aria-label={`View Details ${r.date}`}
+                      onClick={() => { const next = openDate === r.date ? null : r.date; setOpenDate(next); if (next) setSelDate(next); }}>
+                      <NavIcon name={openDate === r.date ? "chevronDown" : "eye"} size={14} />{openDate === r.date ? "Hide" : "View Details"}
+                    </button>
+                  </td>
+                </tr>
+                {openDate === r.date && (
+                  <tr className="gk-dh-detail-row"><td colSpan={8}>
+                    <DailyHistoryDetail call={call} dl={dl} preview={preview} date={r.date} cur={cur} canExport={canExport} onClose={() => setOpenDate(null)} />
+                  </td></tr>
+                )}
+              </React.Fragment>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="gk-dh-foot">
+        <span className="gk-dh-total"><NavIcon name="archive" size={13} />{data ? `${data.savedDays} saved day${data.savedDays === 1 ? "" : "s"} in total · ${total} in this period` : ""}</span>
+        {data && total > 0 && <TableFooter firstIdx={firstIdx} lastIdx={Math.min(firstIdx + rows.length - 1, total)} total={total} page={data.page} totalPages={Math.max(1, Math.ceil(total / data.pageSize))} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={(n) => { setPageSize(n); setPage(1); }} />}
+      </div>
+    </div>
+  );
+}
+function DailyHistoryDetail({ call, dl, preview, date, cur, canExport, onClose }) {
+  const [d, setD] = useState(null);
+  const [err, setErr] = useState("");
+  useEffect(() => { let live = true; call(`/api/daily-history/${date}`).then((x) => live && setD(x)).catch((e) => live && setErr(e.message)); return () => { live = false; }; }, [call, date]);
+  if (err) return <div className="gk-dh-detail" style={{ color: C.red }}>{err}</div>;
+  if (!d) return <div className="gk-dh-detail"><span className="gk-dh-spin" /> Loading details…</div>;
+  const day = d.day, ch = d.change;
+  const bsItem = (label, k, field, c) => (day[k] ? <div className="gk-dh-kv" key={label}><span>{label}</span><b>{dhMoney(day[k][field], c)}</b></div> : null);
+  return (
+    <div className="gk-dh-detail">
+      <div className="gk-dh-detail-head">
+        <b>{day.date}</b> <DhStatus row={day} />
+        {day.updatedAt && <span className="gk-dh-note">Last updated {day.updatedAt.replace("T", " ").slice(0, 16)} UTC{day.updatedBy ? ` by ${day.updatedBy}` : ""}</span>}
+        <span style={{ flex: 1 }} />
+        {canExport && <>
+          <Btn tone="ghost" size="sm" icon="download" onClick={() => dl(`/api/daily-history/${date}/export.xlsx`, `daily-snapshot-${date}.xlsx`)}>Excel</Btn>
+          <Btn tone="ghost" size="sm" icon="download" onClick={() => dl(`/api/daily-history/${date}/export.pdf`, `daily-snapshot-${date}.pdf`)}>PDF</Btn>
+          <Btn tone="ghost" size="sm" icon="print" onClick={() => preview(`/api/daily-history/${date}/export.pdf`)}>Print</Btn>
+        </>}
+        <Btn tone="subtle" size="sm" icon="x" onClick={onClose}>Close Details</Btn>
+      </div>
+      <div className="gk-dh-detail-grid">
+        <section>
+          <h4><NavIcon name="wallet" size={14} />Balance Sheet Details</h4>
+          <div className="gk-dh-kvs">
+            {cur.includes("USD") && [bsItem("Total Debt (USD)", "usd", "debt", "USD"), bsItem("Total Cash Account (USD)", "usd", "cash", "USD"), bsItem("Total Credit (USD)", "usd", "credit", "USD"), bsItem("Balance Sheet (USD)", "usd", "balanceSheet", "USD")]}
+            {cur.includes("SLSH") && [bsItem("Total Debt (SLSH)", "slsh", "debt", "SLSH"), bsItem("Total Cash Account (SLSH)", "slsh", "cash", "SLSH"), bsItem("Total Credit (SLSH)", "slsh", "credit", "SLSH"), bsItem("Balance Sheet (SLSH)", "slsh", "balanceSheet", "SLSH")]}
+          </div>
+          <div className="gk-dh-summary">
+            {ch ? cur.map((c) => { const x = ch[c.toLowerCase()]; return x ? <div key={c}>Daily change {c}: Balance Sheet <b>{dhSigned(x.balanceSheet, c)}</b> · Cash <b>{dhSigned(x.cash, c)}</b> (vs {ch.previousDate})</div> : null; }) : <div>No earlier day to compare with.</div>}
+            {day.reason && <div className="gk-dh-note">{day.reason}</div>}
+          </div>
+        </section>
+        <section>
+          <h4><NavIcon name="landmark" size={14} />Cash Account Details</h4>
+          <div className="gk-dh-cash-wrap">
+            <table className="gk-dh-cash">
+              <thead><tr><th>Cash Account</th><th>Currency</th><th>Opening</th><th>Cash In</th><th>Cash Out</th><th>Transfers In</th><th>Transfers Out</th><th>Exchange In</th><th>Exchange Out</th><th>Closing</th></tr></thead>
+              <tbody>
+                {(day.cashAccounts || []).length === 0 && <tr><td colSpan={10} className="gk-dh-none">No active Cash Accounts.</td></tr>}
+                {(day.cashAccounts || []).map((a) => (
+                  <tr key={a.id}>
+                    <td>{toTitleCase(a.name)}</td><td>{a.currency}</td>
+                    <td>{fmtMoney(a.openingBalance, a.currency)}</td>
+                    <td className="is-in">{fmtMoney(a.cashIn, a.currency)}</td><td className="is-out">{fmtMoney(a.cashOut, a.currency)}</td>
+                    <td className="is-in">{fmtMoney(a.transferIn, a.currency)}</td><td className="is-out">{fmtMoney(a.transferOut, a.currency)}</td>
+                    <td className="is-in">{fmtMoney(a.exchangeIn, a.currency)}</td><td className="is-out">{fmtMoney(a.exchangeOut, a.currency)}</td>
+                    <td className="gk-dh-bal">{dhMoney(a.closingBalance, a.currency)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+      {(d.versions || []).length > 0 && (
+        <details className="gk-dh-versions">
+          <summary><NavIcon name="history" size={13} />Versions and audit ({d.versions.length})</summary>
+          <ul>{d.versions.map((v) => <li key={v.version}><b>v{v.version}</b> · {String(v.recordedAt).replace("T", " ").slice(0, 16)} UTC · {v.recordedBy} — {v.reason}{v.bsUsd != null ? ` · BS USD ${fmtMoney(v.bsUsd, "USD")}` : ""}{v.bsSlsh != null ? ` · BS SLSH ${fmtMoney(v.bsSlsh, "SLSH")}` : ""}</li>)}</ul>
+        </details>
+      )}
     </div>
   );
 }
