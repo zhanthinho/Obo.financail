@@ -16689,7 +16689,7 @@ function QuickEntryForm({ call, notify, cur, type, rate, today, onPosted, onCanc
         <DoField icon="alignLeft" label={type === "expense" ? "Description *" : "Description / Notes"} wide>
           <input style={inputStyle} aria-label="Description" value={f.description} onChange={(e) => set("description", e.target.value)} placeholder="What is this for?" disabled={busy} />
         </DoField>
-        {type === "expense" && <DoField icon="notebookPen" label="Notes" wide><input style={inputStyle} aria-label="Notes" value={f.notes} onChange={(e) => set("notes", e.target.value)} placeholder="Optional" disabled={busy} /></DoField>}
+        {type === "expense" && <div className="gk-do-field is-wide"><OptionalNotes value={f.notes} onChange={(e) => set("notes", e.target.value)} disabled={busy} multiline={false} /></div>}
       </div>
       {isEx && (
         <div className="gk-do-exsum" data-exchange-summary>
@@ -16854,7 +16854,7 @@ function DailyReconciliation({ call, notify, data, onSaved }) {
             <span><NavIcon name={diff != null && Math.abs(diff) >= 0.005 ? "triangleAlert" : "circleCheck"} size={15} />Difference</span>
             <b className="gk-do-num">{diff == null ? "—" : `${diff > 0 ? "+" : diff < 0 ? "−" : ""}${fmtMoney(Math.abs(diff), cur)}`}</b>
           </div>
-          <DoField icon="notebookPen" label="Notes / Explanation"><textarea style={{ ...inputStyle, minHeight: 54 }} aria-label="Reconciliation notes" value={notes} onChange={(e) => setNotes(e.target.value)} disabled={busy || closed || !data.can.reconcile} placeholder="Explain any difference" /></DoField>
+          <OptionalNotes key={`${cur}-${r ? r.version : 0}`} label="Add Notes / Explanation" filledLabel="Notes / Explanation" value={notes} onChange={(e) => setNotes(e.target.value)} disabled={busy || closed || !data.can.reconcile} placeholder="Explain any difference" />
           <div className="gk-do-recon-status">
             <Pill tone={st[0]}><span className="gk-do-pill"><NavIcon name={st[1]} size={12} />{st[2]}</span></Pill>
             {r && <span className="gk-do-hint"><NavIcon name="userRound" size={12} />{r.performedBy} · <NavIcon name="clock" size={12} />{String(r.performedAt).replace("T", " ").slice(0, 16)} UTC · v{r.version}</span>}

@@ -32,7 +32,7 @@ const SA_PW = process.env.SUPER_ADMIN_INITIAL_PASSWORD;
 
 // GLOBAL SMART ACCOUNT SEARCH round: account selectors are searchable
 // combos now — open one and click the account's card.
-async function pickCombo(p, sel, id) { await p.click(sel); await p.waitForTimeout(150); await p.locator(`${sel} + .gk-acombo-panel [data-account-id="${id}"]`).click(); await p.waitForTimeout(150); }
+async function pickCombo(p, sel, id, text) { await p.click(sel); await p.waitForTimeout(150); if (text) { await p.locator(`${sel} + .gk-acombo-panel input`).fill(text); await p.waitForTimeout(150); } await p.locator(`${sel} + .gk-acombo-panel [data-account-id="${id}"]`).click(); await p.waitForTimeout(150); }
 
 let passed = 0;
 const failures = [];
@@ -269,7 +269,7 @@ async function browserChecks() {
     });
     await check("UI: with a From Account it opens the payment fields (Cash In To, Reference, Date)", async () => {
       await p.getByRole("radio", { name: /Track in Account/ }).click(); await p.waitForTimeout(300);
-      await pickCombo(p, "#qx-from", A.id); await pickCombo(p, "#qx-to", R.id); await p.waitForTimeout(500);
+      await pickCombo(p, "#qx-from", A.id, A.name); await pickCombo(p, "#qx-to", R.id, R.name); await p.waitForTimeout(500);
       await p.fill("#qx-amount", "50");
       await p.check("#qx-markpaid"); await p.waitForTimeout(800);
       const t = await p.locator(".gk-qx-paid").innerText();
