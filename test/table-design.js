@@ -60,6 +60,10 @@ async function run() {
     if (i % 3 === 0) await api(`/api/accounts/${a.id}/deposit`, { method: "POST", token: SA, body: { amount: 10 + i, currency: "USD", cashAccountId: till.id } });
     if (i === 4) await api(`/api/accounts/${a.id}/withdraw`, { method: "POST", token: SA, body: { amount: 7.25, currency: "USD", cashAccountId: till.id } });
   }
+  // A plain (editable) cash movement, made last — the newest entry.
+  await new Promise((r) => setTimeout(r, 1100));
+  const top = await api(`/api/cash/accounts/${till.id}/deposit`, { method: "POST", token: SA, body: { amount: 3.5, description: "Td float top-up" } });
+  assert(top.status < 300, `cash deposit ${top.status} ${JSON.stringify(top.json)}`);
   const A = (await api("/api/auth/login", { method: "POST", body: { username: "amina.yusuf", password: PW } })).json.token;
   const usdCustomers = (await api("/api/accounts?currency=USD&type=customer", { token: A })).json.accounts;
   const ledger = (await api("/api/account-ledger?currency=USD", { token: A })).json.entries;
@@ -193,6 +197,53 @@ async function run() {
       const cr = r2(mv.filter((e) => e.type === "deposit").reduce((n, e) => n + e.amount, 0));
       const foot = await t.locator('tfoot tr[data-currency="USD"]').innerText();
       assert(foot.includes(`+$${money(cr)}`), foot);
+    });
+
+    console.log("\nOne Cash Account (Account View design)");
+    await check("# | Date & Time | Description | Reference | Credit | Debit | Balance — no Actions column", async () => {
+      await go("Cash Account");
+      await p.getByText("Cash Accounts", { exact: true }).first().click(); await p.waitForTimeout(800);
+      await p.locator("table.gk-table tbody").getByText(/^Td Till/i).first().click(); await p.waitForTimeout(1500);
+      const t = p.locator("table.gk-cash-view-table");
+      const heads = (await t.locator("thead th").allInnerTexts()).map((x) => x.trim().toUpperCase()).filter(Boolean);
+      assert(JSON.stringify(heads) === JSON.stringify(["#", "DATE & TIME", "DESCRIPTION", "REFERENCE", "CREDIT", "DEBIT", "BALANCE"]), heads.join(" | "));
+      assert(await style(t.locator("thead th").nth(1), "backgroundColor") === EMERALD, "header color");
+      assert(await t.locator("tbody td.gk-col-balance").count() === await t.locator("tbody tr").count(), "mint balance column");
+    });
+    await check("newest first; credits green +, debits red -, amounts right-aligned", async () => {
+      const t = p.locator("table.gk-cash-view-table");
+      assert(/Td float top-up/.test(await t.locator("tbody tr").first().innerText()), "newest not first");
+      const cr = t.locator('tbody td[data-col="credit"]').first();
+      assert(await style(cr, "textAlign") === "right", "right aligned");
+      assert(await style(cr.locator(".gk-amt-credit"), "color") === "rgb(22, 163, 74)", "credit color");
+    });
+    await check("footer: count, total credit, total debit of every movement and the account's current balance", async () => {
+      const t = p.locator("table.gk-cash-view-table");
+      const acc = (await api(`/api/cash/accounts/${till.id}`, { token: A })).json.account;
+      const mv = (await api(`/api/cash/ledger?cashAccountId=${till.id}`, { token: A })).json.entries;
+      const cr = r2(mv.filter((e) => e.type === "deposit").reduce((n, e) => n + e.amount, 0));
+      const db = r2(mv.filter((e) => e.type !== "deposit").reduce((n, e) => n + e.amount, 0));
+      const txt = (k) => t.locator(`tfoot td[data-total="${k}"]`).innerText();
+      assert((await txt("count")).includes(`Total — ${mv.length} transactions`), await txt("count"));
+      assert((await txt("credit")).includes(`+$${money(cr)}`) && (await txt("debit")).includes(`-$${money(db)}`), `${await txt("credit")} ${await txt("debit")}`);
+      assert((await txt("balance")).includes(money(acc.balance)), `${await txt("balance")} vs ${acc.balance}`);
+      await p.getByPlaceholder("Reference #…").fill(mv[mv.length - 1].referenceNumber); await p.waitForTimeout(500);
+      assert((await txt("count")).includes("Total — 1 transactions"), `filtered: ${await txt("count")}`);
+      assert((await txt("balance")).includes(money(acc.balance)), "current balance changed with a filter");
+      await p.getByPlaceholder("Reference #…").fill(""); await p.waitForTimeout(400);
+    });
+    await check("the Reference opens the movement with its details, and Edit for a plain movement", async () => {
+      const t = p.locator("table.gk-cash-view-table");
+      await t.locator("tbody tr").first().locator("button.gk-cash-ref-link").click();
+      const dlg = p.getByRole("dialog"); await dlg.waitFor({ timeout: 5000 });
+      assert(/Td float top-up/.test(await dlg.innerText()), "details");
+      assert(await dlg.getByRole("button", { name: "Edit", exact: true }).count() === 1, "edit missing");
+      await dlg.getByRole("button", { name: "Close", exact: true }).first().click(); await p.waitForTimeout(300);
+      await t.locator("tbody tr").filter({ hasText: "Payment" }).first().locator("button.gk-cash-ref-link").click();
+      const d2 = p.getByRole("dialog"); await d2.waitFor({ timeout: 5000 });
+      await d2.locator('[data-related-item="ledger"]').waitFor({ timeout: 5000 });
+      assert(await d2.getByRole("button", { name: "Edit", exact: true }).count() === 0, "edit on a linked entry");
+      await d2.getByRole("button", { name: "Close", exact: true }).first().click(); await p.waitForTimeout(300);
     });
 
     console.log("\nResponsive");

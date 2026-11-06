@@ -2503,5 +2503,10 @@
  "Current balance of the selected account": "Hadhaaga hadda ee akoonka la doortay",
  "Net movement = Credits − Debits of all matching entries in this currency": "Dhaqdhaqaaqa saafiga = Kiredit − Debit ee dhammaan diiwaannada lacagtan",
  "Negative opening balance — the account starts with a debt (money owed).": "Hadhaaga furitaanka waa taban — akoonku wuxuu ku bilaabanayaa deyn (lacag lagu leeyahay).",
- "Opening balance is too large.": "Hadhaaga furitaanku aad buu u weyn yahay."
+ "Opening balance is too large.": "Hadhaaga furitaanku aad buu u weyn yahay.",
+ "Open this transaction": "Fur macaamilkan",
+ "External reference": "Tixraac dibadda",
+ "Counterparty": "Dhinaca kale",
+ "Delete Payment": "Tirtir Lacag-bixinta",
+ "Current balance of this Cash Account": "Haraaga hadda ee Akoonka Lacagtan"
 }

@@ -156,6 +156,9 @@ const THEME_CSS = `
   .gk-amt-debit { color: var(--c-debit); font-weight: 600; white-space: nowrap; }
   .gk-bal { font-weight: 700; white-space: nowrap; }
   .gk-bal[data-sign="pos"] { color: var(--c-bal-pos); } .gk-bal[data-sign="neg"] { color: var(--c-bal-neg); } .gk-bal[data-sign="zero"] { color: var(--c-bal-zero); }
+  .gk-table tfoot .gk-cash-current { color: var(--c-tfoot-mint-fg); font-weight: 800; }
+  .gk-table tfoot .gk-amt-credit { color: var(--c-credit); } .gk-table tfoot .gk-amt-debit { color: var(--c-debit); }
+  .gk-cash-ref-link:hover { color: var(--c-navy-light) !important; }
   .gk-row-actions { display: inline-flex; gap: 6px; align-items: center; flex-wrap: nowrap; }
   /* CUSTOMERS TABLE REDESIGN round: compact horizontal padding + vertically
      centred rows so all ten columns fit a laptop screen without scrolling. */
@@ -16711,6 +16714,66 @@ function cashMovementBadge(e) {
   return e.type === "deposit" ? { label: "Credit", tone: "green" } : { label: "Debit", tone: "red" };
 }
 
+// CASH ACCOUNT TABLE REDESIGN round — one movement's details, opened from
+// its Reference (the table has no Actions column any more). Shows the
+// fields, where the movement comes from and the records linked to it (the
+// same /api/history/related the Transaction History uses), and — only for
+// a plain movement and only with permission — the existing Edit / Delete.
+function CashMovementDetailModal({ entry: e, call, actions, onClose }) {
+  const [related, setRelated] = useState(null);
+  useEffect(() => {
+    let live = true;
+    call("/api/history/related" + qs({ recordType: "cash", id: e.id }))
+      .then((d) => { if (live) setRelated(d.items || []); })
+      .catch(() => { if (live) setRelated([]); });
+    return () => { live = false; };
+  }, [e.id, call]);
+  const badge = cashMovementBadge(e);
+  const others = (related || []).filter((it) => !it.isSelf);
+  const row = (label, value) => <div><div style={{ color: C.slate, marginBottom: 2 }}>{label}</div><div style={{ fontWeight: 700 }}>{value}</div></div>;
+  return (
+    <Modal title={`${badge.label} · ${e.referenceNumber || e.reference || ""}`} onClose={onClose} width={620}>
+      <div className="gk-cash-move-detail" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16, fontSize: 12.5 }}>
+        {row("Reference", <span style={{ fontFamily: FONT_MONO }}>{e.referenceNumber || "—"}</span>)}
+        {row("Date & Time", <DateTimeCell value={e.date} />)}
+        {row("Cash Account", e.cashAccount ? toTitleCase(e.cashAccount.name) : "—")}
+        {row("Type", <Pill tone={badge.tone}>{badge.label}</Pill>)}
+        {row(e.type === "deposit" ? "Credit" : "Debit", e.type === "deposit" ? <CreditAmount value={e.amount} currency={e.currency} /> : <DebitAmount value={e.amount} currency={e.currency} />)}
+        {row("Balance", <BalanceAmount value={e.balanceAfter} currency={e.currency} />)}
+        {e.reference && e.reference !== e.referenceNumber && row("External reference", e.reference)}
+        {row("Staff", e.staffName || "—")}
+        {e.counterpartyLabel && row("Counterparty", e.counterpartyLabel)}
+        <div style={{ gridColumn: "1 / -1" }}>{row("Description", e.description || "—")}</div>
+      </div>
+      {e.sourceType && e.sourceType !== "opening_balance" && (
+        <div style={{ fontSize: 12.5, padding: 10, background: C.paper, borderRadius: 6, marginBottom: 12 }}>
+          This entry belongs to {CASH_LINKED_SOURCE_LABEL[e.sourceType] || "another record"} — it is changed only through that record.
+        </div>
+      )}
+      <div className="gk-th-related" style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: C.slate, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}><NavIcon name="link" size={13} />Related records</div>
+        {related == null ? <div style={{ fontSize: 12.5, color: C.slate }}>Loading…</div>
+          : !others.length ? <div style={{ fontSize: 12.5, color: C.slate }}>No other records are linked to this transaction.</div>
+          : (
+          <div style={{ border: `1px solid ${C.line}`, borderRadius: 8, overflow: "hidden" }}>
+            {others.map((it) => (
+              <div key={`${it.recordType}-${it.id}`} data-related-item={it.recordType} style={{ display: "grid", gridTemplateColumns: "minmax(0,1.1fr) minmax(0,1fr) minmax(0,1.4fr)", gap: 10, padding: "7px 10px", fontSize: 12.5, borderTop: `1px solid ${C.line}` }}>
+                <b style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.label}</b>
+                <span style={{ fontFamily: FONT_MONO }}>{it.reference || "—"}</span>
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{toTitleCase(it.accountName || "")} · <span style={{ fontFamily: FONT_MONO, fontWeight: 600 }}>{fmtMoney(it.amount, it.currency)}</span></span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, flexWrap: "wrap" }}>
+        <Btn tone="ghost" onClick={onClose}>Close</Btn>
+        {actions}
+      </div>
+    </Modal>
+  );
+}
+
 function CashAccountFormModal({ account, onClose, onSubmit }) {
   const [name, setName] = useState(account?.name || "");
   const [type, setType] = useState(account?.type || "bank");
@@ -17959,8 +18022,11 @@ function CashInHandModule({ call, dl, notify, perm, hasRaw, onOpenCashAccountVie
       .then((d) => setMovements(d.entries || [])).catch((e) => notify(e.message, true)).finally(() => setMovementsLoading(false));
   }, [call, moveCurrency, moveType, moveSearch, notify]);
   useEffect(() => { if (tab === "movements") reloadMovements(); }, [tab, reloadMovements]);
-  const movePg = usePagination(movements, { initialPageSize: 10 });
-  const showMoveActions = hasRaw("cash.update") || hasRaw("cash.delete") || perm("accountsManage");
+  // CASH ACCOUNT TABLE REDESIGN round: sortable, newest first by default.
+  const sortableMoves = useMemo(() => movements.map((e) => ({ ...e, cashAccountName: e.cashAccount ? e.cashAccount.name : "", creditAmt: e.type === "deposit" ? e.amount : null, debitAmt: e.type !== "deposit" ? e.amount : null })), [movements]);
+  const moveSort = useSortableRows(sortableMoves, "date", "desc");
+  const movePg = usePagination(moveSort.sorted, { initialPageSize: 10 });
+  const [detailMovement, setDetailMovement] = useState(null);
   // Totals of every matching movement (all pages), one row per currency;
   // Current Balance = the active Cash Accounts of that currency now.
   const moveTotals = useMemo(() => {
@@ -18113,89 +18179,55 @@ function CashInHandModule({ call, dl, notify, perm, hasRaw, onOpenCashAccountVie
               <>
               <TableScrollShell height={460}>
               <ResizableTable variant="txn" tableKey="cashInHand.movements" className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
-                {/* GLOBAL FINANCIAL TABLE DESIGN round: # | Date | Cash Account |
-                    Description | Reference | Credit | Debit | Balance | Staff |
-                    Actions — same values as before, Credit and Debit in
-                    their own columns, totals of every matching movement. */}
-                <thead><tr><th style={{ ...th, width: 44 }} scope="col">#</th><SortTh label="Date" /><SortTh label="Cash Account" /><SortTh label="Description" /><SortTh label="Reference" /><SortTh label="Credit" /><SortTh label="Debit" /><SortTh label="Balance" /><SortTh label="Staff" />{showMoveActions && <SortTh label="Actions" />}</tr></thead>
+                {/* CASH ACCOUNT TABLE REDESIGN round: # | Date & Time | Cash
+                    Account | Description | Reference | Credit | Debit |
+                    Balance — newest first; the Reference (or the row) opens
+                    the movement with its related records and the existing
+                    Edit / Delete where allowed, so no Actions column. */}
+                <thead><tr>
+                  <th style={{ ...th, width: 44 }} scope="col">#</th>
+                  <SortTh label="Date & Time" field="date" {...moveSort} onSort={moveSort.toggleSort} />
+                  <SortTh label="Cash Account" field="cashAccountName" {...moveSort} onSort={moveSort.toggleSort} />
+                  <SortTh label="Description" field="description" {...moveSort} onSort={moveSort.toggleSort} />
+                  <SortTh label="Reference" field="referenceNumber" {...moveSort} onSort={moveSort.toggleSort} />
+                  <SortTh label="Credit" field="creditAmt" {...moveSort} onSort={moveSort.toggleSort} />
+                  <SortTh label="Debit" field="debitAmt" {...moveSort} onSort={moveSort.toggleSort} />
+                  <SortTh label="Balance" field="balanceAfter" resizeKey="balance" {...moveSort} onSort={moveSort.toggleSort} />
+                </tr></thead>
                 <tbody>
-                  {movePg.pageRows.map((e, i) => (
-                    <tr key={e.id} data-movement={e.type}>
-                      <td style={tdMono}>{movePg.firstIdx + i}</td>
-                      <td style={td}><DateTimeCell value={e.date} /></td>
-                      <td style={td}>{e.cashAccount ? toTitleCase(e.cashAccount.name) : "—"}</td>
-                      <td style={td}>{e.description || "—"}{e.counterpartyLabel && <div style={{ fontSize: 11, color: C.slate }}>To: {e.counterpartyLabel}</div>}</td>
-                      <td style={{ ...td, fontFamily: FONT_MONO, fontSize: 12, whiteSpace: "nowrap" }}>{e.referenceNumber || e.reference || "—"}{e.referenceNumber && e.reference && e.reference !== e.referenceNumber ? <div style={{ fontSize: 11, color: C.slate }}>{e.reference}</div> : null}</td>
-                      <td style={{ ...td, textAlign: "right" }} data-col="credit">{e.type === "deposit" ? <CreditAmount value={e.amount} currency={e.currency} /> : <span style={{ color: C.slate }}>—</span>}</td>
-                      <td style={{ ...td, textAlign: "right" }} data-col="debit">{e.type !== "deposit" ? <DebitAmount value={e.amount} currency={e.currency} /> : <span style={{ color: C.slate }}>—</span>}</td>
-                      <td style={{ ...td, textAlign: "right" }} data-col="balance"><BalanceAmount value={e.balanceAfter} currency={e.currency} /></td>
-                      <td style={td}>{e.staffName || "—"}</td>
-                      {/* CASH MOVEMENTS EDIT/DELETE round: a plain, standalone
-                          cash movement (e.editable, i.e. no source_type) gets
-                          real Edit/Delete buttons here — the backend
-                          endpoints (PATCH/DELETE /api/cash/ledger/:id)
-                          already existed, this tab just never exposed them.
-                          CUSTOMER-PAYMENT DELETE round: a row that's the
-                          cash-side leg of a customer Payment (source_type
-                          'customer_payment' — e.g. a Zaad/account Deposit
-                          made with a Cash Account attached) now ALSO gets a
-                          real Delete button, by request — it deletes the
-                          ORIGINAL Payment via the exact same
-                          DELETE /api/account-ledger/:id the Payment's own
-                          module uses, which already (see routes/ledger.js)
-                          removes the account-side ledger row, rebuilds that
-                          customer account's balance, AND deletes this same
-                          mirrored Cash in Hand leg + rebuilds the cash
-                          account's balance, all in one transaction — so
-                          deleting it from here is the real originating
-                          Payment deletion, not a partial/local one, and
-                          both sides of the money movement stay in sync
-                          exactly like deleting it from the Payment side
-                          would. Gated on accountsManage (the same permission
-                          that endpoint itself requires), not cash.delete.
-                          A Cash Transfer/Exchange/Loan leg is left exactly
-                          as protected as before (rejectIfLinked on the
-                          server refuses deleting those from here) — each
-                          already has its own Delete in its own tab
-                          (Transfers/Exchanges above; Loans has no simple
-                          one-leg delete), so only a small note is shown. */}
-                      {showMoveActions && (
-                        <td style={td} onClick={(ev) => ev.stopPropagation()}>
-                          {e.editable ? (
-                            <div className="gk-row-actions">
-                              {hasRaw("cash.update") && <RowIconBtn icon="edit" label="Edit" onClick={() => setEditMovement(e)} />}
-                              {hasRaw("cash.delete") && <RowIconBtn icon="trash" label="Delete" danger onClick={async () => {
-                                if (!confirm(`Permanently delete this ${fmtMoney(e.amount, e.currency)} ${e.type}? This can't be undone.`)) return;
-                                try { await call(`/api/cash/ledger/${e.id}`, { method: "DELETE" }); notify("Cash movement deleted."); reloadAll(); }
-                                catch (err) { notify(err.message, true); }
-                              }} />}
-                            </div>
-                          ) : e.sourceType === "customer_payment" && perm("accountsManage") ? (
-                            <RowIconBtn icon="trash" label="Delete payment" danger onClick={async () => {
-                              if (!confirm(`Permanently delete the original ${fmtMoney(e.amount, e.currency)} Payment (${e.counterpartyLabel || "this account"})? This reverses BOTH the customer's account balance AND this Cash Account entry. This can't be undone.`)) return;
-                              try {
-                                const d = await call(`/api/account-ledger/${e.sourceId}`, { method: "DELETE" });
-                                notify(d.orphanCleanup ? "That payment record was already gone — cleared this leftover Cash Account entry." : "Payment deleted — account balance and Cash Account both reversed.");
-                                reloadAll();
-                              } catch (err) { notify(err.message, true); }
-                            }} />
-                          ) : (
-                            <span style={{ fontSize: 11, color: C.slate }}>Linked — see {CASH_LINKED_SOURCE_LABEL[e.sourceType] || "its source"}</span>
-                          )}
+                  {movePg.pageRows.map((e, i) => {
+                    const badge = cashMovementBadge(e);
+                    return (
+                      <tr key={e.id} data-movement={e.type} onClick={() => setDetailMovement(e)} style={{ cursor: "pointer" }}>
+                        <td style={tdMono}>{movePg.firstIdx + i}</td>
+                        <td style={td}><DateTimeCell value={e.date} /></td>
+                        <td style={td}>{e.cashAccount ? toTitleCase(e.cashAccount.name) : "—"}</td>
+                        <td style={td}>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}><Pill tone={badge.tone}>{badge.label}</Pill><span>{e.description || "—"}</span></span>
+                          {e.counterpartyLabel && <div style={{ fontSize: 11, color: C.slate, marginTop: 2 }}>To: {e.counterpartyLabel}</div>}
                         </td>
-                      )}
-                    </tr>
-                  ))}
+                        <td style={{ ...td, whiteSpace: "nowrap" }} onClick={(ev) => ev.stopPropagation()}>
+                          <button type="button" className="gk-cash-ref-link" onClick={() => setDetailMovement(e)} title="Open this transaction"
+                            style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: FONT_MONO, fontSize: 12, fontWeight: 600, color: C.navy, textDecoration: "underline", textUnderlineOffset: 2 }}>
+                            {e.referenceNumber || e.reference || "—"}
+                          </button>
+                          {e.referenceNumber && e.reference && e.reference !== e.referenceNumber ? <div style={{ fontSize: 11, color: C.slate }}>{e.reference}</div> : null}
+                        </td>
+                        <td style={{ ...td, textAlign: "right" }} data-col="credit">{e.type === "deposit" ? <CreditAmount value={e.amount} currency={e.currency} /> : <span style={{ color: C.slate }}>—</span>}</td>
+                        <td style={{ ...td, textAlign: "right" }} data-col="debit">{e.type !== "deposit" ? <DebitAmount value={e.amount} currency={e.currency} /> : <span style={{ color: C.slate }}>—</span>}</td>
+                        <td style={{ ...td, textAlign: "right" }} data-col="balance"><BalanceAmount value={e.balanceAfter} currency={e.currency} /></td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
                 <tfoot>
                   {moveTotals.map(([c, t], k) => (
                     <tr key={c} className="gk-cash-move-total" data-currency={c}>
                       <td style={tdFoot}></td>
                       <td style={{ ...tdFoot, fontWeight: 700, whiteSpace: "nowrap" }} colSpan={4}>{k === 0 ? `Total — ${movements.length} transactions` : ""}{moveTotals.length > 1 ? ` (${c})` : ""}</td>
-                      <td style={tdFootMono} data-total="credit">+{fmtMoney(t.credit, c)}</td>
-                      <td style={tdFootMono} data-total="debit">-{fmtMoney(t.debit, c)}</td>
-                      <td style={tdFootMono} data-total="balance">{t.balance != null ? <span title={`Current balance of the active ${c} Cash Accounts`}>{fmtMoney(t.balance, c)}</span> : ""}</td>
-                      <td style={tdFoot} colSpan={showMoveActions ? 2 : 1}></td>
+                      <td style={tdFootMono} data-total="credit"><span className="gk-amt-credit">+{fmtMoney(t.credit, c)}</span></td>
+                      <td style={tdFootMono} data-total="debit"><span className="gk-amt-debit">-{fmtMoney(t.debit, c)}</span></td>
+                      <td style={tdFootMono} data-total="balance">{t.balance != null ? <span className="gk-cash-current" title={`Current balance of the active ${c} Cash Accounts`}>{fmtMoney(t.balance, c)}</span> : ""}</td>
                     </tr>
                   ))}
                 </tfoot>
@@ -18320,8 +18352,32 @@ function CashInHandModule({ call, dl, notify, perm, hasRaw, onOpenCashAccountVie
         try { await call(`/api/cash/accounts/${moveAccount.account.id}/${moveAccount.mode}`, { method: "POST", body }); notify(moveAccount.mode === "deposit" ? "Credit recorded." : "Debit recorded."); setMoveAccount(null); reloadAll(); }
         catch (e) { notify(e.message, true); }
       }} />}
+      {detailMovement && !editMovement && (
+        <CashMovementDetailModal entry={detailMovement} call={call} onClose={() => setDetailMovement(null)}
+          actions={detailMovement.editable ? <>
+            {hasRaw("cash.update") && <Btn tone="subtle" onClick={() => setEditMovement(detailMovement)}>Edit</Btn>}
+            {hasRaw("cash.delete") && <Btn tone="danger" onClick={async () => {
+              const e = detailMovement;
+              if (!confirm(`Permanently delete this ${fmtMoney(e.amount, e.currency)} ${e.type}? This can't be undone.`)) return;
+              try { await call(`/api/cash/ledger/${e.id}`, { method: "DELETE" }); notify("Cash movement deleted."); setDetailMovement(null); reloadAll(); }
+              catch (err) { notify(err.message, true); }
+            }}>Delete</Btn>}
+          </> : detailMovement.sourceType === "customer_payment" && perm("accountsManage") ? (
+            // CUSTOMER-PAYMENT DELETE round (kept): deletes the ORIGINAL
+            // Payment, which reverses both the account and this cash entry.
+            <Btn tone="danger" onClick={async () => {
+              const e = detailMovement;
+              if (!confirm(`Permanently delete the original ${fmtMoney(e.amount, e.currency)} Payment (${e.counterpartyLabel || "this account"})? This reverses BOTH the customer's account balance AND this Cash Account entry. This can't be undone.`)) return;
+              try {
+                const d = await call(`/api/account-ledger/${e.sourceId}`, { method: "DELETE" });
+                notify(d.orphanCleanup ? "That payment record was already gone — cleared this leftover Cash Account entry." : "Payment deleted — account balance and Cash Account both reversed.");
+                setDetailMovement(null); reloadAll();
+              } catch (err) { notify(err.message, true); }
+            }}>Delete Payment</Btn>
+          ) : null} />
+      )}
       {editMovement && <EditCashMovementModal entry={editMovement} onClose={() => setEditMovement(null)} onSubmit={async (body) => {
-        try { await call(`/api/cash/ledger/${editMovement.id}`, { method: "PATCH", body }); notify("Cash movement updated."); setEditMovement(null); reloadAll(); }
+        try { await call(`/api/cash/ledger/${editMovement.id}`, { method: "PATCH", body }); notify("Cash movement updated."); setEditMovement(null); setDetailMovement(null); reloadAll(); }
         catch (e) { notify(e.message, true); }
       }} />}
       {transferFormOpen && <CashTransferFormModal accounts={allActiveAccounts} onClose={() => setTransferFormOpen(false)} onSubmit={async (body) => {
@@ -18436,8 +18492,19 @@ function CashAccountDetailPage({ call, dl, notify, perm, hasRaw, cashAccountId, 
   // clicks a column header — useSortableRows then sorts whole row objects,
   // so Type/Deposit/Withdrawal/Balance After on any one row can never be
   // detached from each other.
-  const moveSort = useSortableRows(filteredMovements, null, "desc");
+  // CASH ACCOUNT TABLE REDESIGN round: newest first by Date & Time (ties
+  // keep the server's newest-first order); Credit / Debit sort by amount.
+  const sortableMovements = useMemo(() => filteredMovements.map((e) => ({ ...e, creditAmt: e.type === "deposit" ? e.amount : null, debitAmt: e.type === "withdrawal" ? e.amount : null })), [filteredMovements]);
+  const moveSort = useSortableRows(sortableMovements, "date", "desc");
   const movePg = usePagination(moveSort.sorted, { initialPageSize: 10 });
+  const [detailMovement, setDetailMovement] = useState(null);
+  const cur = account ? account.currency : (movements[0] && movements[0].currency) || "USD";
+  // Footer totals over every movement matching the filters (all pages).
+  const viewTotals = useMemo(() => {
+    let credit = 0, debit = 0;
+    for (const e of filteredMovements) { if (e.type === "deposit") credit += Number(e.amount) || 0; else debit += Number(e.amount) || 0; }
+    return { count: filteredMovements.length, credit: Math.round(credit * 100) / 100, debit: Math.round(debit * 100) / 100 };
+  }, [filteredMovements]);
 
   // SUMMARY CARDS round (spec section 10): purely a display derivation over
   // the already-correct, already-fetched `movements` array (date-filtered
@@ -18578,68 +18645,62 @@ function CashAccountDetailPage({ call, dl, notify, perm, hasRaw, cashAccountId, 
           ) : (
             <>
             <TableScrollShell height={520}>
-            <ResizableTable variant="txn" tableKey="cashAccountView.movements" className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+            <ResizableTable variant="txn" tableKey="cashAccountView.movements" className="gk-table gk-cash-view-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+              {/* CASH ACCOUNT TABLE REDESIGN round: # | Date & Time |
+                  Description | Reference | Credit | Debit | Balance — the
+                  type and linked source sit in Description, the Reference
+                  opens the movement (details, related records, and the
+                  existing Edit / Delete where allowed). */}
               <thead><tr>
-                <th style={{ ...th, width: 40 }}>#</th>
+                <th style={{ ...th, width: 44 }} scope="col">#</th>
                 <SortTh label="Date & Time" field="date" {...moveSort} onSort={moveSort.toggleSort} />
-                <SortTh label="Type" />
                 <SortTh label="Description" field="description" {...moveSort} onSort={moveSort.toggleSort} />
-                <SortTh label="Credit" />
-                <SortTh label="Debit" />
-                <SortTh label="Balance After" field="balanceAfter" {...moveSort} onSort={moveSort.toggleSort} />
-                <SortTh label="Reference" />
-                <SortTh label="Staff" field="staffName" {...moveSort} onSort={moveSort.toggleSort} />
-                <th style={{ ...th, width: 84 }}>Actions</th>
+                <SortTh label="Reference" field="referenceNumber" {...moveSort} onSort={moveSort.toggleSort} />
+                <SortTh label="Credit" field="creditAmt" {...moveSort} onSort={moveSort.toggleSort} />
+                <SortTh label="Debit" field="debitAmt" {...moveSort} onSort={moveSort.toggleSort} />
+                <SortTh label="Balance" field="balanceAfter" resizeKey="balance" {...moveSort} onSort={moveSort.toggleSort} />
               </tr></thead>
               <tbody>
                 {movePg.pageRows.map((e, i) => {
                   const badge = cashMovementBadge(e);
-                  // CASH FLOW TRACEABILITY round (spec section 8): a linked
-                  // movement's counterparty — its own counterpartyLabel when
-                  // the backend already resolved one (e.g. "To: Abdi —
-                  // Customer"), otherwise the generic CASH_LINKED_SOURCE_LABEL
-                  // fallback ("Linked — see its X record"), exactly like the
-                  // Cash in Hand module's own Cash Movements tab already
-                  // shows (app.jsx's CASH_LINKED_SOURCE_LABEL usage).
-                  const linkedNote = e.sourceType
+                  // CASH FLOW TRACEABILITY round: a linked movement's source
+                  // (and counterparty when known) stays under its description.
+                  const linkedNote = e.sourceType && e.sourceType !== "opening_balance"
                     ? (e.counterpartyLabel ? `${CASH_MOVEMENT_BADGE[e.sourceType]?.label || "Linked"} — ${e.counterpartyLabel}` : `Linked — see ${CASH_LINKED_SOURCE_LABEL[e.sourceType] || "its source"}`)
                     : null;
                   return (
-                    <tr key={e.id}>
+                    <tr key={e.id} data-movement={e.type} onClick={() => setDetailMovement(e)} style={{ cursor: "pointer" }}>
                       <td style={tdMono}>{movePg.firstIdx + i}</td>
                       <td style={td}><DateTimeCell value={e.date} /></td>
-                      <td style={td}><Pill tone={badge.tone}>{badge.label}</Pill></td>
                       <td style={td}>
-                        {e.description || "—"}
-                        {linkedNote && <div style={{ fontSize: 10.5, color: C.slate, marginTop: 1 }}>{linkedNote}</div>}
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}><Pill tone={badge.tone}>{badge.label}</Pill><span>{e.description || "—"}</span></span>
+                        {linkedNote && <div style={{ fontSize: 10.5, color: C.slate, marginTop: 2 }}>{linkedNote}</div>}
                       </td>
-                      <td style={{ ...tdMono, fontWeight: 700, color: e.type === "deposit" ? C.depositGreen : undefined }}>
-                        {e.type === "deposit" ? `+${fmtMoney(e.amount, e.currency)}` : "—"}
+                      <td style={{ ...td, whiteSpace: "nowrap" }} onClick={(ev) => ev.stopPropagation()}>
+                        <button type="button" className="gk-cash-ref-link" onClick={() => setDetailMovement(e)} title="Open this transaction"
+                          style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: FONT_MONO, fontSize: 12, fontWeight: 600, color: C.navy, textDecoration: "underline", textUnderlineOffset: 2 }}>
+                          {e.referenceNumber || e.reference || "—"}
+                        </button>
+                        {e.reference && e.referenceNumber && e.reference !== e.referenceNumber && <div style={{ fontSize: 11, color: C.slate }}>{e.reference}</div>}
                       </td>
-                      <td style={{ ...tdMono, fontWeight: 700, color: e.type === "withdrawal" ? C.withdrawRed : undefined }}>
-                        {e.type === "withdrawal" ? `-${fmtMoney(e.amount, e.currency)}` : "—"}
-                      </td>
-                      <td style={{ ...tdMono, fontWeight: 700 }}>{fmtMoney(e.balanceAfter, e.currency)}</td>
-                      <td style={{ ...tdMono, fontSize: 11, color: C.slate }}>{e.reference || e.referenceNumber || "—"}</td>
-                      <td style={td}>{e.staffName || "—"}</td>
-                      <td style={td}>
-                        {e.editable ? (
-                          <div style={{ display: "flex", gap: 4, flexWrap: "nowrap" }}>
-                            {hasRaw("cash.update") && <Btn size="sm" tone="ghost" icon="edit" onClick={() => setEditMovement(e)} />}
-                            {hasRaw("cash.delete") && <Btn size="sm" tone="danger" icon="trash" onClick={async () => {
-                              if (!confirm(`Permanently delete this ${fmtMoney(e.amount, e.currency)} ${e.type}? This can't be undone.`)) return;
-                              try { await call(`/api/cash/ledger/${e.id}`, { method: "DELETE" }); notify("Cash movement deleted."); reloadAll(); }
-                              catch (err) { notify(err.message, true); }
-                            }} />}
-                          </div>
-                        ) : (
-                          <span style={{ fontSize: 11, color: C.slate }}>Linked — see {CASH_LINKED_SOURCE_LABEL[e.sourceType] || "its source"}</span>
-                        )}
-                      </td>
+                      <td style={{ ...td, textAlign: "right" }} data-col="credit">{e.type === "deposit" ? <CreditAmount value={e.amount} currency={e.currency} /> : <span style={{ color: C.slate }}>—</span>}</td>
+                      <td style={{ ...td, textAlign: "right" }} data-col="debit">{e.type === "withdrawal" ? <DebitAmount value={e.amount} currency={e.currency} /> : <span style={{ color: C.slate }}>—</span>}</td>
+                      <td style={{ ...td, textAlign: "right" }} data-col="balance"><BalanceAmount value={e.balanceAfter} currency={e.currency} /></td>
                     </tr>
                   );
                 })}
               </tbody>
+              {/* Footer: every matching movement (all pages, current filters);
+                  Current Balance is this Cash Account's own balance from the server. */}
+              <tfoot>
+                <tr className="gk-cash-view-total">
+                  <td style={tdFoot}></td>
+                  <td style={{ ...tdFoot, fontWeight: 700, whiteSpace: "nowrap" }} colSpan={3} data-total="count">{`Total — ${viewTotals.count} transactions`}</td>
+                  <td style={tdFootMono} data-total="credit"><span className="gk-amt-credit">+{fmtMoney(viewTotals.credit, cur)}</span></td>
+                  <td style={tdFootMono} data-total="debit"><span className="gk-amt-debit">-{fmtMoney(viewTotals.debit, cur)}</span></td>
+                  <td style={tdFootMono} data-total="balance" title="Current balance of this Cash Account">{account ? <span className="gk-cash-current">{fmtMoney(account.balance, cur)}</span> : "—"}</td>
+                </tr>
+              </tfoot>
             </ResizableTable>
             </TableScrollShell>
             <TableFooter firstIdx={movePg.firstIdx} lastIdx={movePg.lastIdx} total={movePg.total} page={movePg.page} totalPages={movePg.totalPages} onPageChange={movePg.setPage} pageSize={movePg.pageSize} onPageSizeChange={movePg.setPageSize} />
@@ -18648,8 +18709,20 @@ function CashAccountDetailPage({ call, dl, notify, perm, hasRaw, cashAccountId, 
         </div>
       </div>
 
+      {detailMovement && !editMovement && (
+        <CashMovementDetailModal entry={detailMovement} call={call} onClose={() => setDetailMovement(null)}
+          actions={detailMovement.editable ? <>
+            {hasRaw("cash.update") && <Btn tone="subtle" onClick={() => setEditMovement(detailMovement)}>Edit</Btn>}
+            {hasRaw("cash.delete") && <Btn tone="danger" onClick={async () => {
+              const e = detailMovement;
+              if (!confirm(`Permanently delete this ${fmtMoney(e.amount, e.currency)} ${e.type}? This can't be undone.`)) return;
+              try { await call(`/api/cash/ledger/${e.id}`, { method: "DELETE" }); notify("Cash movement deleted."); setDetailMovement(null); reloadAll(); }
+              catch (err) { notify(err.message, true); }
+            }}>Delete</Btn>}
+          </> : null} />
+      )}
       {editMovement && <EditCashMovementModal entry={editMovement} onClose={() => setEditMovement(null)} onSubmit={async (body) => {
-        try { await call(`/api/cash/ledger/${editMovement.id}`, { method: "PATCH", body }); notify("Cash movement updated."); setEditMovement(null); reloadAll(); }
+        try { await call(`/api/cash/ledger/${editMovement.id}`, { method: "PATCH", body }); notify("Cash movement updated."); setEditMovement(null); setDetailMovement(null); reloadAll(); }
         catch (e) { notify(e.message, true); }
       }} />}
     </div>
