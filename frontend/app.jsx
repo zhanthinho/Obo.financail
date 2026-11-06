@@ -812,7 +812,11 @@ const THEME_CSS = `
   .gk-av-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   /* COMPACT SUMMARY CARDS round: five ~60px cards in one row on desktop. */
   /* TRANSACTION HISTORY CONSOLE round (shares the Accounts console styles) */
-  .gk-th-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+  .gk-th-kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+  .gk-th-tabs { flex-wrap: wrap; }
+  .gk-th-tab-count { margin-left: 6px; min-width: 20px; padding: 1px 6px; border-radius: 999px; font-size: 11px; font-weight: 700; line-height: 16px; text-align: center; background: color-mix(in srgb, var(--c-navy) 10%, transparent); color: var(--c-navy); font-variant-numeric: tabular-nums; }
+  .gk-acc-tab.is-active .gk-th-tab-count { background: var(--c-navy); color: #fff; }
+  .gk-th-origin { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; white-space: nowrap; }
   .gk-th-kpis .gk-acc-kpi { padding: 9px 11px; gap: 9px; }
   .gk-th-kpis .gk-acc-kpi-icon { width: 34px; height: 34px; border-radius: 9px; }
   .gk-th-kpis .gk-acc-kpi-value { font-size: 22px; }
@@ -11054,6 +11058,11 @@ function DepositsWithdrawalsModule({ currency, call, dl, preview, notify, perm, 
   const [tab, setTab] = useState("transactions");
   const [type, setType] = useState("all"); const [search, setSearch] = useState("");
   const [from, setFrom] = useState(""); const [to, setTo] = useState("");
+  // PROFESSIONAL TRANSACTION MANAGEMENT round: this module lists Payments —
+  // credits / debits made directly. "All account postings" also shows the
+  // postings an Exchange, Transfer or Quotation made (read-only here; they
+  // are changed through the record that made them).
+  const [origin, setOrigin] = useState("payment");
   const [rows, setRows] = useState([]); const [loading, setLoading] = useState(true);
   // PAYMENT & TRANSFER UPGRADE round (spec item 4 — "[ Deposit ] [ Withdraw ]
   // [ Transfer ]"): Transfer is now reachable from this top-level Payment
@@ -11101,6 +11110,11 @@ function DepositsWithdrawalsModule({ currency, call, dl, preview, notify, perm, 
     // Cash in Hand accounts configured).
     { key: "cashInHand", label: "Cash Account", render: (e) => e.cashAccount ? toTitleCase(e.cashAccount.name) : "—" },
     { key: "reference", label: "Reference", sortField: "reference", render: (e) => <span style={{ fontFamily: FONT_MONO, fontSize: 11.5 }}>{e.reference || "—"}</span> },
+    { key: "origin", label: "Origin", sortField: "origin", render: (e) => {
+      const o = e.origin || "payment";
+      const tone = { payment: "navy", exchange: "cyan", transfer: "amber", quotation: "navy" }[o] || "slate";
+      return <span data-origin={o}><Pill tone={tone}><span className="gk-th-origin"><NavIcon name={HISTORY_ORIGIN_ICON[o] || "wallet"} size={12} />{{ payment: "Payment", exchange: "Exchange", transfer: "Transfer", quotation: "Quotation" }[o] || o}</span></Pill>{e.relatedReference && o !== "payment" ? <div style={{ fontFamily: FONT_MONO, fontSize: 11, color: C.slate, marginTop: 2 }}>{e.relatedReference}</div> : null}</span>;
+    } },
     { key: "deposit", label: "Credit", sortField: "depositAmt", render: (e) => e.type === "deposit" ? <span style={{ fontFamily: FONT_MONO, color: C.depositGreen, fontWeight: 700 }}>+{fmtMoney(e.amount, e.currency)}</span> : "" },
     { key: "withdrawal", label: "Debit", sortField: "withdrawalAmt", render: (e) => e.type === "withdrawal" ? <span style={{ fontFamily: FONT_MONO, color: C.withdrawRed, fontWeight: 700 }}>-{fmtMoney(e.amount, e.currency)}</span> : "" },
     { key: "balanceAfter", label: "Balance after", sortField: "balanceAfter", render: (e) => <span style={{ fontFamily: FONT_MONO, fontWeight: 700 }}>{fmtMoney(e.balanceAfter, e.currency)}</span> },
@@ -11110,9 +11124,10 @@ function DepositsWithdrawalsModule({ currency, call, dl, preview, notify, perm, 
 
   const reload = useCallback(() => {
     setLoading(true);
-    call("/api/account-ledger" + qs({ currency, type, search, from, to })).then((d) => setRows(d.entries.map((e) => ({ ...e, depositAmt: e.type === "deposit" ? e.amount : 0, withdrawalAmt: e.type === "withdrawal" ? e.amount : 0 })))).catch((e) => notify(e.message, true)).finally(() => setLoading(false));
-  }, [call, currency, type, search, from, to, notify]);
+    call("/api/account-ledger" + qs({ currency, type, search, from, to, origin })).then((d) => setRows(d.entries.map((e) => ({ ...e, depositAmt: e.type === "deposit" ? e.amount : 0, withdrawalAmt: e.type === "withdrawal" ? e.amount : 0 })))).catch((e) => notify(e.message, true)).finally(() => setLoading(false));
+  }, [call, currency, type, search, from, to, origin, notify]);
   useEffect(() => { if (tab === "transactions") reload(); }, [tab, reload]);
+  const isLinkedRow = (e) => !!e.origin && e.origin !== "payment";
 
   const listTotals = useMemo(() => {
     let deposited = 0, withdrawn = 0;
@@ -11138,8 +11153,8 @@ function DepositsWithdrawalsModule({ currency, call, dl, preview, notify, perm, 
           currency={currency}
           onBack={() => setViewingEntry(null)}
           onOpenAccountView={onOpenAccountView}
-          onEdit={perm("accountsManage") ? () => { setViewingEntry(null); setEditEntry(viewingEntry); } : undefined}
-          onDelete={perm("accountsManage") ? () => setDeleteEntry(viewingEntry) : undefined}
+          onEdit={perm("accountsManage") && !isLinkedRow(viewingEntry) ? () => { setViewingEntry(null); setEditEntry(viewingEntry); } : undefined}
+          onDelete={perm("accountsManage") && !isLinkedRow(viewingEntry) ? () => setDeleteEntry(viewingEntry) : undefined}
         />
         {editEntry && (
           <EditLedgerEntryModal
@@ -11167,8 +11182,8 @@ function DepositsWithdrawalsModule({ currency, call, dl, preview, notify, perm, 
     <div>
       <SectionHeader title={`Credits & Debits — ${currency}`} sub={`Move ${currency} in or out of any ${currency} account — without opening the account first`}
         actions={<>
-          <Btn tone="subtle" onClick={() => dl("/api/account-ledger/export.csv" + qs({ currency, type, search, from, to }), `obo-credits-debits-${currency}.csv`)}>Export CSV</Btn>
-          <Btn tone="subtle" onClick={() => dl("/api/account-ledger/export.pdf" + qs({ currency, type, search, from, to }), `obo-credits-debits-${currency}.pdf`)}>Export PDF</Btn>
+          <Btn tone="subtle" onClick={() => dl("/api/account-ledger/export.csv" + qs({ currency, type, search, from, to, origin }), `obo-credits-debits-${currency}.csv`)}>Export CSV</Btn>
+          <Btn tone="subtle" onClick={() => dl("/api/account-ledger/export.pdf" + qs({ currency, type, search, from, to, origin }), `obo-credits-debits-${currency}.pdf`)}>Export PDF</Btn>
           {/* BULK TRANSACTION WORKSPACE round: this replaces the old single-
               transaction "+ New deposit / withdrawal" button as the primary
               way to record a transaction from this page (per the user's
@@ -11192,6 +11207,7 @@ function DepositsWithdrawalsModule({ currency, call, dl, preview, notify, perm, 
         <>
           <div className="gk-filterbar">
             <Field label="Type" width={150}><Select value={type} onChange={(e) => setType(e.target.value)}><option value="all">All</option><option value="deposit">Credits</option><option value="withdrawal">Debits</option></Select></Field>
+            <Field label="Show" width={190}><Select aria-label="Show records" value={origin} onChange={(e) => setOrigin(e.target.value)}><option value="payment">Payments only</option><option value="any">All account postings</option><option value="exchange">Exchange postings</option><option value="transfer">Transfer postings</option><option value="quotation">Quotation postings</option></Select></Field>
             <Field label="Search" width={220} hint="Account name, #, or phone"><SearchInput placeholder="Search account…" value={search} onChange={(e) => setSearch(e.target.value)} /></Field>
             <Field label="From" width={140}><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></Field>
             <Field label="To" width={140}><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></Field>
@@ -11199,11 +11215,12 @@ function DepositsWithdrawalsModule({ currency, call, dl, preview, notify, perm, 
           <ActiveFilters
             filters={[
               { label: "Type", value: type, defaultValue: "all", display: type === "deposit" ? "Credits" : "Debits", onClear: () => setType("all") },
+              { label: "Show", value: origin, defaultValue: "payment", display: { any: "All account postings", exchange: "Exchange postings", transfer: "Transfer postings", quotation: "Quotation postings" }[origin], onClear: () => setOrigin("payment") },
               { label: "Search", value: search, onClear: () => setSearch("") },
               { label: "From", value: from, onClear: () => setFrom("") },
               { label: "To", value: to, onClear: () => setTo("") },
             ]}
-            onClearAll={() => { setType("all"); setSearch(""); setFrom(""); setTo(""); }}
+            onClearAll={() => { setType("all"); setOrigin("payment"); setSearch(""); setFrom(""); setTo(""); }}
           />
           <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
             <TableCustomizeButton tableKey={tableKey} columnDefs={PAYMENTS_COLUMNS} layoutState={layoutState} canSetSystemDefault={hasRaw && hasRaw("settings.manageTableDefaults")} notify={notify} />
@@ -11231,8 +11248,8 @@ function DepositsWithdrawalsModule({ currency, call, dl, preview, notify, perm, 
                       <td style={densityStyle(td, density)} onClick={(ev) => ev.stopPropagation()}>
                         <div style={{ display: "flex", gap: 6 }}>
                           <Btn size="sm" tone="ghost" onClick={() => setViewingEntry(e)}>View</Btn>
-                          {perm("accountsManage") && <Btn size="sm" tone="ghost" onClick={() => setEditEntry(e)}>Edit</Btn>}
-                          {perm("accountsManage") && <Btn size="sm" tone="danger" onClick={() => setDeleteEntry(e)}>Delete</Btn>}
+                          {perm("accountsManage") && !isLinkedRow(e) && <Btn size="sm" tone="ghost" onClick={() => setEditEntry(e)}>Edit</Btn>}
+                          {perm("accountsManage") && !isLinkedRow(e) && <Btn size="sm" tone="danger" onClick={() => setDeleteEntry(e)}>Delete</Btn>}
                         </div>
                       </td>
                     </tr>
@@ -12308,7 +12325,10 @@ function DeleteTransferModal({ transfer: t, onClose, onSubmit, saving }) {
 // existing positive/negative money color system rather than inventing new
 // colors (spec section 19: reuse green for money in, red for money back
 // out, never a new primary color).
-const HISTORY_TYPE_TONE = { exchange: "cyan", transfer: "emerald", ledger: "navy" };
+// PROFESSIONAL TRANSACTION MANAGEMENT round — one color per module:
+// Payments blue, Exchanges teal, Transfers orange, Credits green, Debits
+// red, Quotations blue, Quotation Payments green, Cash Account emerald.
+const HISTORY_TYPE_TONE = { exchange: "cyan", transfer: "amber", ledger: "navy", cash: "emerald" };
 // QUOTATION PAYMENT INTEGRATION round: switches on the ledger row's own
 // sourceType — never on the quotation's current status — so a real payment
 // and a refund credit (both Deposit legs) are never collapsed into the same
@@ -12325,8 +12345,20 @@ function historyTypeLabelFor(e) {
     // never an actual payment.
     return e.ledgerType === "withdrawal" ? "Quotation Charge" : "Quotation Adjustment";
   }
-  if (e.recordType === "ledger") return e.ledgerType === "withdrawal" ? "Debit" : "Credit";
+  if (e.recordType === "ledger") {
+    const dir = e.ledgerType === "withdrawal" ? "Debit" : "Credit";
+    if (!e.origin || e.origin === "payment") return dir;
+    if (e.origin === "quotation") return historyTypeLabelFor({ ...e, recordType: "quotation" });
+    return `${e.origin === "exchange" ? "Exchange" : "Transfer"} ${dir}`;
+  }
+  if (e.recordType === "cash") return e.cashLabel || "Cash Account";
   return { exchange: "Exchange", transfer: "Transfer" }[e.recordType] || e.recordType;
+}
+// Where a row comes from (its module) — the icon shown with its type.
+const HISTORY_ORIGIN_ICON = { payment: "wallet", exchange: "arrowLeftRight", transfer: "transfer", quotation: "fileText", cash: "landmark" };
+function historyOriginOf(e) {
+  if (e.recordType === "ledger") return e.origin || "payment";
+  return e.recordType;
 }
 // QUOTATION PAYMENT INTEGRATION round (spec section 19): a real payment
 // reads GREEN/EMERALD (the system's existing positive-money color), a
@@ -12341,7 +12373,15 @@ function historyTypeToneFor(e) {
     // Quotation Payment badge is never confused with a Transfer badge.
     if (e.sourceType === "quotation_paid") return "green";
     if (e.sourceType === "quotation_refund") return "red";
-    return "slate";
+    return "navy";
+  }
+  if (e.recordType === "ledger") {
+    // A posting made by an Exchange / Transfer / Quotation keeps the color
+    // of the module that made it; a payment reads green (credit) / red (debit).
+    if (e.origin === "exchange") return "cyan";
+    if (e.origin === "transfer") return "amber";
+    if (e.origin === "quotation") return historyTypeToneFor({ ...e, recordType: "quotation" });
+    return e.ledgerType === "withdrawal" ? "red" : "green";
   }
   return HISTORY_TYPE_TONE[e.recordType] || "slate";
 }
@@ -12361,6 +12401,7 @@ function historyRowStatusTone(e) {
 // below still tints a transfer row red, matching its existing behavior,
 // since it's always shown from the outgoing/FROM side).
 function historyAmountTone(e) {
+  if (e.recordType === "cash") return e.ledgerType === "deposit" ? C.depositGreen : C.withdrawRed;
   if (e.recordType === "ledger") return e.ledgerType === "deposit" ? C.depositGreen : C.withdrawRed;
   // Quotation ledger legs: the initial charge is a Withdrawal leg (money
   // owed leaving this side), while a settlement payment or a refund are
@@ -12401,9 +12442,28 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
   // flag, kept in sync via the onExchangeEditOpenChange callback passed to
   // TransactionDetailModal below, is what the early return checks.
   const [historyExchangeEditOpen, setHistoryExchangeEditOpen] = useState(false);
-  const historySort = useSortableRows(rows, "date", "desc");
-  const historyPg = usePagination(historySort.sorted, { initialPageSize: 10 });
+  // PROFESSIONAL TRANSACTION MANAGEMENT round: sorting and paging happen on
+  // the server (page / pageSize / sort / dir) — the browser only ever holds
+  // one page of rows, however many transactions the company has.
+  const [sortKey, setSortKey] = useState("date");
+  const [sortDir, setSortDir] = useState("desc");
+  const toggleSort = useCallback((key) => {
+    if (key === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(key); setSortDir(key === "date" ? "desc" : "asc"); }
+  }, [sortKey]);
+  const historySort = { sortKey, sortDir, toggleSort };
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSizeRaw] = useState(10);
+  const [pageInfo, setPageInfo] = useState({ total: 0, totalPages: 1 });
+  const historyPg = {
+    page, pageSize, total: pageInfo.total, totalPages: pageInfo.totalPages, pageRows: rows,
+    firstIdx: pageInfo.total === 0 ? 0 : (page - 1) * pageSize + 1,
+    lastIdx: pageInfo.total === 0 ? 0 : Math.min(page * pageSize, pageInfo.total),
+    setPage, setPageSize: (n) => { setPageSizeRaw(n); setPage(1); },
+  };
   const queryParams = { currency, type, accountType, status, staffId, accountId: accountFilter?.id, from, to, search };
+  // Any filter change starts again at page 1.
+  useEffect(() => { setPage(1); }, [currency, type, accountType, status, staffId, accountFilter, from, to, search]);
   // TABLE CUSTOMIZATION round 3: this table has no Actions column at all
   // (the whole row opens the Detail modal instead) — only the leading "#"
   // display-order column stays fixed, same "always shown, always first"
@@ -12413,8 +12473,20 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
   const layoutState = useTableLayout(tableKey, call);
   const density = resolveDensity(layoutState.effective);
   const HISTORY_COLUMNS = [
-    { key: "type", label: "Type", sortField: "recordType", render: (e) => <Pill tone={historyTypeToneFor(e)}>{historyTypeLabelFor(e)}</Pill> },
+    { key: "type", label: "Type", sortField: "recordType", render: (e) => <span data-type-tone={historyTypeToneFor(e)}><Pill tone={historyTypeToneFor(e)}><span className="gk-th-origin"><NavIcon name={HISTORY_ORIGIN_ICON[historyOriginOf(e)] || "history"} size={12} />{historyTypeLabelFor(e)}</span></Pill></span> },
     { key: "reference", label: "Reference", sortField: "reference", render: (e) => <span style={{ fontFamily: FONT_MONO }}>{e.reference}</span> },
+    // PROFESSIONAL TRANSACTION MANAGEMENT round: the record a posting or a
+    // Cash Account entry belongs to (an Exchange's / Transfer's reference,
+    // a quotation number) — the details view links to all of them.
+    { key: "related", label: "Origin / Related", render: (e) => {
+      const rel = e.relatedReference || (e.recordType === "quotation" || (e.recordType === "ledger" && e.origin === "quotation") ? e.quotationNumber : null);
+      const origin = historyOriginOf(e);
+      const isLinked = (e.recordType === "ledger" && origin !== "payment") || (e.recordType === "cash" && !e.cashOriginal);
+      return <span className="gk-th-origin" data-related={rel || ""} title={isLinked ? "Created by another transaction" : "Original record"}>
+        <NavIcon name={isLinked ? "link" : HISTORY_ORIGIN_ICON[origin] || "history"} size={12} />
+        {rel ? <span style={{ fontFamily: FONT_MONO }}>{rel}</span> : <span style={{ color: C.slate }}>{isLinked ? "Linked" : "Original"}</span>}
+      </span>;
+    } },
     // ALL-TABLES DATE+TIME round: /api/history pads a bare "YYYY-MM-DD"
     // date up to "...T00:00:00.000Z" on e.date so cross-record-type sorting
     // works — that padding is NOT a real recorded time, so showing it would
@@ -12425,7 +12497,7 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
     { key: "account", label: "Account", required: true, sortField: "accountName", render: (e) => (
       <>
         <b>{toTitleCase(e.accountName)}</b>
-        <div><Pill tone="slate">{e.accountType === "company" ? "Company" : "Customer"}</Pill></div>
+        <div><Pill tone={e.accountType === "cash" ? "emerald" : "slate"}>{e.accountType === "cash" ? "Cash Account" : e.accountType === "company" ? "Company" : "Customer"}</Pill>{e.recordType === "cash" && e.counterpartyName ? <span style={{ marginLeft: 6, fontSize: 11.5, color: C.slate }}>{toTitleCase(e.counterpartyName)}</span> : null}</div>
       </>
     ) },
     // GLOBAL REDESIGN round: a Description column was missing even though the
@@ -12450,14 +12522,27 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
   const reload = useCallback((isRefresh) => {
     const seq = ++reqSeq.current;
     if (isRefresh === true) setRefreshing(true);
-    return call("/api/history" + qs({ ...queryParams, withSummary: "1" }))
-      .then((d) => { if (seq !== reqSeq.current) return; setRows(d.entries); setSummary(d.summary || null); setLoadError(""); })
+    return call("/api/history" + qs({ ...queryParams, withSummary: "1", page, pageSize, sort: sortKey, dir: sortDir }))
+      .then((d) => {
+        if (seq !== reqSeq.current) return;
+        setRows(d.entries); setSummary(d.summary || null); setLoadError("");
+        setPageInfo({ total: d.total ?? d.entries.length, totalPages: d.totalPages || 1 });
+        if (d.page && d.page !== page) setPage(d.page);
+        if (d.summary && d.summary.staff) d.summary.staff.forEach(([id, name]) => staffSeen.current.set(id, name));
+      })
       .catch((e) => { if (seq !== reqSeq.current) return; setLoadError(e.message); notify(e.message, true); })
       .finally(() => { if (seq !== reqSeq.current) return; setLoading(false); setRefreshing(false); });
-  }, [currency, type, accountType, status, staffId, accountFilter, from, to, search, call, notify]);
+  }, [currency, type, accountType, status, staffId, accountFilter, from, to, search, page, pageSize, sortKey, sortDir, call, notify]);
+  const staffSeen = useRef(new Map());
+  const [pendingFocus, setPendingFocus] = useState(null);
+  useEffect(() => {
+    if (!pendingFocus || loading) return;
+    const m = rows.find((r) => r.id === pendingFocus.id && r.recordType === pendingFocus.recordType);
+    if (m) { setDetailEntry(m); setPendingFocus(null); }
+  }, [pendingFocus, rows, loading]);
 
   useEffect(() => {
-    setLoading(true);
+    setLoading((l) => l || !rows.length);
     const t = setTimeout(reload, search ? 300 : 0); // small debounce only while typing a search term
     return () => clearTimeout(t);
   }, [reload, search]);
@@ -12470,12 +12555,16 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
   // the App-level `view` switch), so whichever one is showing is the one
   // that should act on this.
   useEffect(() => {
-    if (!focusEntryId || !rows.length) return;
+    if (!focusEntryId || loading) return;
     const match = rows.find((e) => e.id === focusEntryId);
     if (match) setDetailEntry(match);
+    else {
+      // Not on this page — look it up across every matching entry.
+      call("/api/history" + qs({ currency })).then((d) => { const m = d.entries.find((e) => e.id === focusEntryId); if (m) setDetailEntry(m); }).catch(() => {});
+    }
     onConsumeFocusEntry?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focusEntryId, rows]);
+  }, [focusEntryId, rows, loading]);
 
   useEffect(() => {
     if (accountFilter || !accountQuery.trim()) { setAccountResults([]); return; }
@@ -12487,7 +12576,11 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
 
   // Staff filter options are built from whatever's currently loaded, same
   // pattern ExchangeModule uses for its own Staff filter.
-  const staffOptions = useMemo(() => { const m = new Map(); rows.forEach((e) => { if (e.staffId) m.set(e.staffId, e.staffOrCreator); }); return [...m.entries()]; }, [rows]);
+  // PROFESSIONAL TRANSACTION MANAGEMENT round: with server paging the
+  // loaded rows are one page only, so the list comes from the server's
+  // summary (every matching entry), remembered across filter changes.
+  const staffOptions = useMemo(() => { rows.forEach((e) => { if (e.staffId) staffSeen.current.set(e.staffId, e.staffOrCreator); }); return [...staffSeen.current.entries()].sort((a, b) => String(a[1]).localeCompare(String(b[1]))); }, [rows, summary]);
+  const tabCounts = summary ? summary.tabCounts || null : null;
   // SUMMARY FOR EVERY TABLE: this unified ledger's whole point is mixing
   // record types together, so the most useful stat strip is a breakdown by
   // type across whatever's currently filtered in — not a dollar total, which
@@ -12528,9 +12621,17 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
         </>} />
 
       <div className="gk-acc-tabs gk-th-tabs" role="tablist" aria-label="Transaction category">
-        {[["all", "All", "dashboard"], ["exchange", "Exchanges", "arrowLeftRight"], ["transfer", "Transfers", "transfer"], ["quotation", "Quotations", "fileText"], ["quotation_payment", "Quotation Payments", "receipt"], ["deposit", "Credits", "arrowDownLeft"], ["withdrawal", "Debits", "arrowUpRight"]].map(([k, l, ic]) => (
-          <button key={k} type="button" role="tab" aria-selected={type === k} onClick={() => setType(k)} className={`gk-acc-tab${type === k ? " is-active" : ""}`}>
+        {/* PROFESSIONAL TRANSACTION MANAGEMENT round: one tab per module,
+            each with the server's count under the current filters. "All"
+            lists every business record once; Credits / Debits list every
+            account posting (including the ones an Exchange, Transfer or
+            Quotation made); Cash Account lists every cash entry. */}
+        {[["all", "All", "dashboard"], ["payment", "Payments", "wallet"], ["exchange", "Exchanges", "arrowLeftRight"], ["transfer", "Transfers", "transfer"], ["deposit", "Credits", "arrowDownLeft"], ["withdrawal", "Debits", "arrowUpRight"], ["quotation", "Quotations", "fileText"], ["quotation_charge", "Quotation Charges", "clipboardList"], ["quotation_payment", "Quotation Payments", "receipt"], ["cash", "Cash Account", "landmark"]]
+          .filter(([k]) => k !== "cash" || (tabCounts && tabCounts.cash != null))
+          .map(([k, l, ic]) => (
+          <button key={k} type="button" role="tab" aria-selected={type === k} aria-label={l} data-tab={k} onClick={() => setType(k)} className={`gk-acc-tab${type === k ? " is-active" : ""}`}>
             <NavIcon name={ic} size={15} /><span>{l}</span>
+            {tabCounts && tabCounts[k] != null && <span className="gk-th-tab-count" aria-hidden="true">{tabCounts[k]}</span>}
           </button>
         ))}
       </div>
@@ -12606,13 +12707,20 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
       </div>
 
       <div className="gk-th-kpis">
+        {/* Cards: the shown tab's total, then each module's own count under
+            the same filters (tabCounts) — every record is counted once, in
+            its own module. Money stays per currency (Credits / Debits). */}
         {[
-          ["entries", "Entries", "history", counts ? counts.entries : null, "matching the filters", ""],
-          ["exchanges", "Exchanges", "arrowLeftRight", counts ? counts.exchanges : null, "money exchange records", ""],
-          ["transfers", "Transfers", "transfer", counts ? counts.transfers : null, "between accounts", ""],
-          ["qcharges", "Quotation Charges", "fileText", counts ? counts.quotationCharges : null, "charged to accounts", ""],
-          ["qpayments", "Quotation Payments", "receipt", counts ? counts.quotationPayments : null, "received", "is-pos"],
-          ["ledger", "Credits & Debits", "arrowDownLeft", counts ? counts.creditsDebits : null, counts ? `${counts.credits} credit · ${counts.debits} debit` : "", ""],
+          ["entries", "Total Transactions", "history", counts ? counts.entries : null, "matching the filters", ""],
+          ["payments", "Payments", "wallet", tabCounts ? tabCounts.payment : null, "credits & debits made directly", ""],
+          ["credits", "Credits", "arrowDownLeft", tabCounts ? tabCounts.deposit : null, summary && summary.money ? fmtMoney((summary.money[currency] || {}).credits || 0, currency) + " (shown tab)" : "", "is-pos"],
+          ["debits", "Debits", "arrowUpRight", tabCounts ? tabCounts.withdrawal : null, summary && summary.money ? fmtMoney((summary.money[currency] || {}).debits || 0, currency) + " (shown tab)" : "", "is-neg"],
+          ["exchanges", "Exchanges", "arrowLeftRight", tabCounts ? tabCounts.exchange : null, "money exchange records", ""],
+          ["transfers", "Transfers", "transfer", tabCounts ? tabCounts.transfer : null, "between accounts", ""],
+          ["qcharges", "Quotation Charges", "fileText", tabCounts ? tabCounts.quotation_charge : null, "charged to accounts", ""],
+          ["qpayments", "Quotation Payments", "receipt", tabCounts ? tabCounts.quotation_payment : null, "received", "is-pos"],
+          ...(summary && summary.profit ? [["profit", "Exchange Profit", "trendUp", fmtMoney(summary.profit.usd, "USD"), `${summary.profit.exchanges} exchanges, as recorded`, summary.profit.usd < 0 ? "is-neg" : "is-pos"]] : []),
+          ...(tabCounts && tabCounts.cash != null ? [["cash", "Cash Account", "landmark", tabCounts.cash, "cash entries", ""]] : []),
         ].map(([k, l, ic, v, sub, cls]) => (
           <div key={k} className={`gk-acc-kpi ${cls}`} data-kpi={k}>
             <span className="gk-acc-kpi-icon"><NavIcon name={ic} size={18} /></span>
@@ -12683,6 +12791,14 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
           onViewAccount={(id) => { setDetailEntry(null); onOpenAccountView(id); }}
           onOpenQuotations={(qStatus, quotationId) => { setDetailEntry(null); onOpenQuotations?.(qStatus, quotationId); }}
           onExchangeEditOpenChange={setHistoryExchangeEditOpen}
+          onOpenRelated={(it) => {
+            // Jump to the related record: its own tab, searched by its reference.
+            setDetailEntry(null);
+            const tab = { exchange: "exchange", transfer: "transfer", cash: "cash", deposit: "deposit", withdrawal: "withdrawal" }[it.tab] || "all";
+            setType(tab); setStatus("all"); setStaffId(""); setAccountFilter(null); setAccountQuery("");
+            setSearch(it.reference || "");
+            setPendingFocus({ recordType: it.recordType, id: it.id });
+          }}
         />
       )}
     </div>
@@ -12701,18 +12817,30 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
 // from here at all (it's one leg of a two-step settlement the Quotations
 // module itself owns) — instead this offers a source-module link that jumps
 // straight to that quotation's own status tab in Quotations.
-function TransactionDetailModal({ entry: e, call, notify, perm, rate, saleRate, onClose, onChanged, onViewAccount, onOpenQuotations, onExchangeEditOpenChange }) {
+function TransactionDetailModal({ entry: e, call, notify, perm, rate, saleRate, onClose, onChanged, onViewAccount, onOpenQuotations, onExchangeEditOpenChange, onOpenRelated }) {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  // PROFESSIONAL TRANSACTION MANAGEMENT round: a posting an Exchange,
+  // Transfer or Quotation made — or a Cash Account entry — is changed only
+  // through the record it belongs to (the server refuses it too).
+  const isLinkedPosting = e.recordType === "ledger" && e.origin && e.origin !== "payment";
+  const [related, setRelated] = useState(null); // { items } | { error }
+  useEffect(() => {
+    let live = true;
+    call("/api/history/related" + qs({ recordType: e.recordType, id: e.id }))
+      .then((d) => { if (live) setRelated(d); })
+      .catch((err) => { if (live) setRelated({ error: err.message, items: [] }); });
+    return () => { live = false; };
+  }, [e.recordType, e.id, call]);
 
   const canUpdate = e.recordType === "exchange" ? perm("exchangeUpdate") && e.status !== "voided"
     : e.recordType === "transfer" ? perm("transferUpdate") && e.status !== "voided"
-    : e.recordType === "ledger" ? perm("accountsManage")
+    : e.recordType === "ledger" ? perm("accountsManage") && !isLinkedPosting
     : false;
   const canDelete = e.recordType === "exchange" ? perm("exchangeDelete") && e.status !== "voided"
     : e.recordType === "transfer" ? perm("transferDelete") && e.status !== "voided"
-    : e.recordType === "ledger" ? perm("accountsManage")
+    : e.recordType === "ledger" ? perm("accountsManage") && !isLinkedPosting
     : false;
 
   async function submitUpdate(body) {
@@ -12796,8 +12924,9 @@ function TransactionDetailModal({ entry: e, call, notify, perm, rate, saleRate, 
           {e.raw?.createdAt && <div><div style={{ color: C.slate, marginBottom: 2 }}>Created At</div><div style={{ fontWeight: 700 }}>{fmtDateTime(e.raw.createdAt)}</div></div>}
           <div>
             <div style={{ color: C.slate, marginBottom: 2 }}>Account</div>
-            <button onClick={() => onViewAccount(e.accountId)} disabled={!e.accountId} style={{ background: "none", border: "none", padding: 0, color: e.accountId ? C.navy : C.ink, textDecoration: e.accountId ? "underline" : "none", cursor: e.accountId ? "pointer" : "default", fontWeight: 700, fontSize: 13 }}>{toTitleCase(e.accountName)}</button>
-            <div><Pill tone="slate">{e.accountType === "company" ? "Company" : "Customer"}</Pill></div>
+            {e.recordType === "cash" ? <b style={{ fontSize: 13 }}>{toTitleCase(e.accountName)}</b> : <button onClick={() => onViewAccount(e.accountId)} disabled={!e.accountId} style={{ background: "none", border: "none", padding: 0, color: e.accountId ? C.navy : C.ink, textDecoration: e.accountId ? "underline" : "none", cursor: e.accountId ? "pointer" : "default", fontWeight: 700, fontSize: 13 }}>{toTitleCase(e.accountName)}</button>}
+            <div><Pill tone={e.recordType === "cash" ? "emerald" : "slate"}>{e.recordType === "cash" ? "Cash Account" : e.accountType === "company" ? "Company" : "Customer"}</Pill></div>
+            {e.recordType === "cash" && e.counterpartyName && <div style={{ marginTop: 4 }}><span style={{ color: C.slate }}>Counterparty: </span>{e.accountId ? <button onClick={() => onViewAccount(e.accountId)} style={{ background: "none", border: "none", padding: 0, color: C.navy, textDecoration: "underline", cursor: "pointer", fontWeight: 700 }}>{toTitleCase(e.counterpartyName)}</button> : <b>{toTitleCase(e.counterpartyName)}</b>}</div>}
           </div>
           <div>
             <div style={{ color: C.slate, marginBottom: 2 }}>Amount</div>
@@ -12833,6 +12962,46 @@ function TransactionDetailModal({ entry: e, call, notify, perm, rate, saleRate, 
             <div><div style={{ color: C.slate, marginBottom: 2 }}>Remaining (current)</div><div style={{ fontWeight: 700, fontFamily: FONT_MONO }}>{fmtMoney(e.remaining, e.accountCurrency)}</div></div>
           )}
           {e.notes && <div style={{ gridColumn: "1 / -1" }}><div style={{ color: C.slate, marginBottom: 2 }}>Notes</div><div>{e.notes}</div></div>}
+        </div>
+
+        {(isLinkedPosting || (e.recordType === "cash" && !e.cashOriginal)) && e.origin !== "quotation" && (
+          <div className="gk-th-linked-note" style={{ fontSize: 12.5, color: C.ink, padding: 10, background: C.paper, borderRadius: 6, marginBottom: 12 }}>
+            This entry was created by {e.relatedReference ? <b style={{ fontFamily: FONT_MONO }}>{e.relatedReference}</b> : "another transaction"} — it is changed or deleted only through that record, so the two always stay in step.
+          </div>
+        )}
+        {e.recordType === "cash" && e.cashOriginal && (
+          <div className="gk-th-linked-note" style={{ fontSize: 12.5, color: C.ink, padding: 10, background: C.paper, borderRadius: 6, marginBottom: 12 }}>
+            Cash Account entries are managed in Cash Accounts.
+          </div>
+        )}
+
+        <div className="gk-th-related" style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: C.slate, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}><NavIcon name="link" size={13} />Related records</div>
+          {!related ? <div style={{ fontSize: 12.5, color: C.slate }}>Loading…</div>
+            : related.error ? <div style={{ fontSize: 12.5, color: C.slate }}>{related.error}</div>
+            : (related.items || []).length <= 1 ? <div style={{ fontSize: 12.5, color: C.slate }}>No other records are linked to this transaction.</div>
+            : (
+            <div style={{ border: `1px solid ${C.line}`, borderRadius: 8, overflow: "hidden" }}>
+              {related.items.map((it) => (
+                <div key={`${it.recordType}-${it.id}`} data-related-item={it.recordType} data-self={it.isSelf ? "1" : undefined}
+                  style={{ display: "grid", gridTemplateColumns: "minmax(0,1.2fr) minmax(0,1fr) minmax(0,1.2fr) auto", gap: 10, alignItems: "center", padding: "7px 10px", fontSize: 12.5, borderTop: `1px solid ${C.line}`, background: it.isSelf ? C.paper : "transparent" }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                    <NavIcon name={{ exchange: "arrowLeftRight", transfer: "transfer", ledger: "wallet", cash: "landmark", quotation_doc: "fileText" }[it.recordType] || "history"} size={13} />
+                    <b style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.label}</b>
+                  </span>
+                  <span style={{ fontFamily: FONT_MONO, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.reference || "—"}</span>
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {toTitleCase(it.accountName || "")}{" · "}
+                    <span style={{ fontFamily: FONT_MONO, fontWeight: 600, color: it.direction === "credit" || it.direction === "in" ? C.depositGreen : it.direction === "debit" || it.direction === "out" ? C.withdrawRed : C.ink }}>
+                      {it.direction === "credit" || it.direction === "in" ? "+" : it.direction === "debit" || it.direction === "out" ? "-" : ""}{fmtMoney(it.amount, it.currency)}
+                    </span>
+                  </span>
+                  {it.isSelf ? <span style={{ fontSize: 11.5, color: C.slate }}>This record</span>
+                    : <button type="button" className="gk-acc-btn" style={{ padding: "3px 8px" }} onClick={() => (it.recordType === "quotation_doc" ? onOpenQuotations(it.status, it.id) : onOpenRelated?.(it))}>Open</button>}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {e.recordType === "quotation" && (

@@ -54,6 +54,17 @@ function queryLedger(query, allowed, user) {
   const hidden = user ? [...require("../account-access").hiddenIds(user)] : [];
   if (hidden.length) { clauses.push(`l.client_id NOT IN (${hidden.map(() => "?").join(",")})`); params.push(...hidden); }
   if (allowed) { clauses.push(`l.currency IN (${allowed.map(() => "?").join(",") || "'__none__'"})`); params.push(...allowed); }
+  // PROFESSIONAL TRANSACTION MANAGEMENT round: the Payment module lists
+  // Payment records — postings made through Payment (credits / debits,
+  // opening balances), i.e. without a source. The account postings an
+  // Exchange, Transfer or Quotation creates are those records' effects and
+  // are only listed when asked for (origin=all|exchange|transfer|quotation),
+  // labelled with their origin and the original's reference.
+  // ("any" is the same as "all" — the browser's query helper drops "all".)
+  const origin = query.origin === "any" ? "all" : ["all", "payment", "exchange", "transfer", "quotation"].includes(query.origin) ? query.origin : "payment";
+  if (origin === "payment") clauses.push("l.source_type IS NULL");
+  else if (origin === "exchange" || origin === "transfer") { clauses.push("l.source_type = ?"); params.push(origin); }
+  else if (origin === "quotation") clauses.push("l.source_type IN ('quotation_charge','quotation_paid','quotation_refund')");
   if (query.type && ["deposit", "withdrawal"].includes(query.type)) { clauses.push("l.type = ?"); params.push(query.type); }
   if (query.currency && ["USD", "SLSH"].includes(query.currency)) { clauses.push("l.currency = ?"); params.push(query.currency); }
   if (query.from) { clauses.push("date(l.date) >= date(?)"); params.push(query.from); }
@@ -65,8 +76,11 @@ function queryLedger(query, allowed, user) {
   }
   const where = clauses.length ? "WHERE " + clauses.join(" AND ") : "";
   const rows = all(
-    `SELECT l.*, c.name AS account_name, c.account_number, c.account_type
-     FROM account_ledger l JOIN clients c ON c.id = l.client_id ${where} ORDER BY l.date DESC, l.created_at DESC, l.id DESC`,
+    `SELECT l.*, c.name AS account_name, c.account_number, c.account_type, x.reference_number AS exchange_ref, tr.reference_number AS transfer_ref
+     FROM account_ledger l JOIN clients c ON c.id = l.client_id
+     LEFT JOIN exchange_transactions x ON l.source_type = 'exchange' AND x.id = l.source_id
+     LEFT JOIN transfers tr ON l.source_type = 'transfer' AND tr.id = l.source_id
+     ${where} ORDER BY l.date DESC, l.created_at DESC, l.id DESC`,
     params
   );
   newestFirst(rows);
@@ -91,6 +105,11 @@ function queryLedger(query, allowed, user) {
     // entries. Adding it here is additive only: no existing field is
     // removed, no query/calculation changes.
     referenceNumber: l.reference_number,
+    // Where the posting comes from (payment = the Payment module itself) and
+    // the original record's reference for the others.
+    origin: !l.source_type ? "payment" : l.source_type.startsWith("quotation") ? "quotation" : l.source_type,
+    sourceType: l.source_type || null,
+    relatedReference: l.source_type === "exchange" ? l.exchange_ref : l.source_type === "transfer" ? l.transfer_ref : l.source_type && l.source_type.startsWith("quotation") ? l.reference_number : null,
   }));
 }
 

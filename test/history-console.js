@@ -184,12 +184,14 @@ async function browserPart() {
     await go("USD Transactions");
     const s0 = await hist(ctx.adm, "currency=USD");
     const fmt = (n) => new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.abs(n));
-    await check("title, 7 category tabs, filter toolbar and six KPI cards with the server's counts", async () => {
+    await check("title, the category tabs, filter toolbar and KPI cards with the server's counts", async () => {
       assert(await p.locator("h1", { hasText: "Transaction History — USD" }).count() === 1, "title");
       for (const t of ["All", "Exchanges", "Transfers", "Quotations", "Quotation Payments", "Credits", "Debits"]) assert(await p.getByRole("tab", { name: t, exact: true }).count() === 1, `${t} tab`);
       for (const l of ["Account type", "Status", "Staff", "Account", "Date from", "Date to", "Search transactions"]) assert(await p.getByLabel(l, { exact: true }).count() >= 1, `${l} missing`);
       assert(await kpi("entries") === String(s0.summary.counts.entries) && await kpi("exchanges") === String(s0.summary.counts.exchanges) && await kpi("transfers") === String(s0.summary.counts.transfers), "kpis");
-      assert(await kpi("qpayments") === String(s0.summary.counts.quotationPayments) && await kpi("ledger") === String(s0.summary.counts.creditsDebits), "kpis 2");
+      // PROFESSIONAL TRANSACTION MANAGEMENT round: Credits / Debits cards
+      // count every account posting (their tabs), Payments the direct ones.
+      assert(await kpi("qpayments") === String(s0.summary.counts.quotationPayments) && await kpi("credits") === String(s0.summary.tabCounts.deposit) && await kpi("debits") === String(s0.summary.tabCounts.withdrawal) && await kpi("payments") === String(s0.summary.tabCounts.payment), "kpis 2");
       if (process.env.HIST_SHOT) await p.screenshot({ path: process.env.HIST_SHOT });
     });
     await check("Credit and Debit columns, and totals for all matching entries", async () => {

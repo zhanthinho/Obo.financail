@@ -55,7 +55,8 @@
     "test:integrity-security": "node test/integrity-security.js",
     "test:account-access": "node test/account-access.js",
     "test:numeric-typography": "node test/numeric-typography.js",
-    "test:bulk-search": "node test/bulk-search.js"
+    "test:bulk-search": "node test/bulk-search.js",
+    "test:transaction-history": "node test/transaction-history-unified.js"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",
