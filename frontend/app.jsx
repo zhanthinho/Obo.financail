@@ -9502,7 +9502,7 @@ function ImportAccountsModal({ onClose, call, dl, notify, onImported, canImportO
             <StatCard label="Duplicates" value={summary.duplicate} accent={C.amber} />
             <StatCard label="Errors" value={summary.invalid} accent={C.red} />
           </div>
-          {!canImportOpeningBalance && rows.some((r) => r.openingBalance > 0 && r.result === "valid") && (
+          {!canImportOpeningBalance && rows.some((r) => r.openingBalance !== 0 && r.result === "valid") && (
             <div style={{ background: C.amberBg, color: C.amber, borderRadius: 6, padding: "8px 12px", fontSize: 12, marginBottom: 12 }}>
               Your role can't import opening balances — new accounts with an opening balance in this file will be created with $0 / SLSH 0 and shown as an error below unless that's granted.
             </div>

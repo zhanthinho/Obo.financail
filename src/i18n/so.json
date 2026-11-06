@@ -2501,5 +2501,7 @@
  "Created by this record": "Waxaa abuuray diiwaankan",
  "Net movement of the listed payments (Credit − Debit)": "Dhaqdhaqaaqa saafiga ah ee lacag-bixinnada (Kiredit − Debit)",
  "Current balance of the selected account": "Hadhaaga hadda ee akoonka la doortay",
- "Net movement = Credits − Debits of all matching entries in this currency": "Dhaqdhaqaaqa saafiga = Kiredit − Debit ee dhammaan diiwaannada lacagtan"
+ "Net movement = Credits − Debits of all matching entries in this currency": "Dhaqdhaqaaqa saafiga = Kiredit − Debit ee dhammaan diiwaannada lacagtan",
+ "Negative opening balance — the account starts with a debt (money owed).": "Hadhaaga furitaanka waa taban — akoonku wuxuu ku bilaabanayaa deyn (lacag lagu leeyahay).",
+ "Opening balance is too large.": "Hadhaaga furitaanku aad buu u weyn yahay."
 }

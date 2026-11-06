@@ -105,10 +105,22 @@ function buildRow(mapped, rowNumber) {
   const obRaw = row.openingBalanceRaw.trim();
   if (!obRaw) { row.openingBalance = 0; }
   else {
-    const n = Number(obRaw.replace(/,/g, ""));
-    if (!Number.isFinite(n)) row.errors.push(`Invalid opening balance: "${row.openingBalanceRaw}".`);
-    else if (n < 0) row.errors.push("Negative opening balance is not allowed.");
-    else row.openingBalance = n;
+    // NEGATIVE OPENING BALANCE IMPORT round: a negative opening balance is
+    // allowed (money the customer already owed, e.g. -100), exactly like
+    // creating the account by hand. Accepted forms: -100, −100 (Unicode
+    // minus), (100) accounting style, with or without thousands commas or a
+    // currency sign.
+    let t = obRaw.replace(/,/g, "").replace(/\u2212/g, "-").replace(/\s+/g, "");
+    let neg = false;
+    if (/^\(.*\)$/.test(t)) { neg = true; t = t.slice(1, -1); }
+    t = t.replace(/^(-?)(?:\$|USD|SLSH|SL)/i, "$1");
+    const n = t === "" ? NaN : Number(t) * (neg ? -1 : 1);
+    if (!Number.isFinite(n) || (neg && Number(t) < 0)) row.errors.push(`Invalid opening balance: "${row.openingBalanceRaw}".`);
+    else if (Math.abs(n) > 1e13) row.errors.push("Opening balance is too large.");
+    else {
+      row.openingBalance = Math.round(n * 100) / 100;
+      if (row.openingBalance < 0) row.warnings.push("Negative opening balance — the account starts with a debt (money owed).");
+    }
   }
 
   if (!row.phone) row.warnings.push("Phone is empty.");
@@ -164,7 +176,7 @@ function classifyRows(rows) {
       // it clearly so the UI can show it, even though the commit step never
       // applies it either way unless the caller explicitly chooses "Update
       // Account Details" (and even then, only non-financial fields move).
-      if (row.openingBalance > 0) row.warnings.push("This account already exists — its opening balance/current balance will NOT be changed by this import.");
+      if (row.openingBalance !== 0) row.warnings.push("This account already exists — its opening balance/current balance will NOT be changed by this import.");
     } else {
       row.status = "valid";
     }
@@ -206,6 +218,8 @@ const TEMPLATE_EXAMPLE_ROWS = [
   ["", "A-Raheen Moh'ed Ali", "Customer", "USD", "252634000000", "araheen@example.com", "Active", "500", ""],
   ["", "Abdirahin Mohamed", "Customer", "USD", "252634000001", "", "Active", "1000", ""],
   ["", "Company Account", "Company", "SLSH", "252634000002", "", "Active", "250000", "Corporate account"],
+  // A customer who already owes money starts with a negative balance.
+  ["", "Hodan Customer", "Customer", "USD", "252634000003", "", "Active", "-100", "Already owes $100"],
 ];
 
 // Plain, professional data-entry template — bold/frozen header, autofilter,

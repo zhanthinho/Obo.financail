@@ -497,6 +497,7 @@ function register(router) {
       ["", "A-Raheen Moh'ed Ali", "Customer", "USD", "252634000000", "araheen@example.com", "Active", "500", ""],
       ["", "Abdirahin Mohamed", "Customer", "USD", "252634000001", "", "Active", "1000", ""],
       ["", "Company Account", "Company", "SLSH", "252634000002", "", "Active", "250000", "Corporate account"],
+      ["", "Hodan Customer", "Customer", "USD", "252634000003", "", "Active", "-100", "Already owes $100"],
     ], { raw: true });
     sendCSV(res, "obo-accounts-import-template.csv", csv);
   });
@@ -635,7 +636,7 @@ function register(router) {
           report.push({ row: row.rowNumber, accountNumber: row.accountNumber || null, accountName: row.name, result: "Skipped", reason: "Excluded by the user before import." });
           continue;
         }
-        if (row.openingBalance > 0 && !canImportOpeningBalance) {
+        if (row.openingBalance !== 0 && !canImportOpeningBalance) {
           errorCount += 1;
           report.push({ row: row.rowNumber, accountNumber: row.accountNumber || null, accountName: row.name, result: "Error", reason: "Opening balance import requires the 'Import Opening Balances' permission — account not created." });
           continue;
@@ -648,7 +649,11 @@ function register(router) {
           "INSERT INTO clients (id, name, account_number, account_type, currency, contact, email, notes, balance_usd, balance_slsh, status, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
           [id, row.name, accountNumber, row.accountType, row.currency, row.phone || null, row.email || null, row.notes || null, balUSD, balSLSH, row.accountStatus || "active", nowISO()]
         );
-        if (row.openingBalance > 0) {
+        if (row.openingBalance !== 0) {
+          // NEGATIVE OPENING BALANCE IMPORT round: a negative opening
+          // balance is one "withdrawal" Opening balance row (amount stored
+          // as a positive magnitude) — the same as POST /api/accounts.
+          const openingType = row.openingBalance > 0 ? "deposit" : "withdrawal";
           // BALANCE & LAST TRANSACTION FIX round: this insert was missing
           // `created_at` (every other account_ledger insert sets it) — it
           // did no harm to ordering by itself, since this row's `date` is
@@ -660,11 +665,11 @@ function register(router) {
           const importedAt = nowISO();
           run(
             "INSERT INTO account_ledger (id, client_id, type, currency, amount, balance_after, notes, staff_id, staff_name, date, created_at, reference_number) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
-            [uid("ldg"), id, "deposit", row.currency, row.openingBalance, row.openingBalance, "Opening balance", user.id, user.name, importedAt, importedAt, nextLedgerReference("deposit")]
+            [uid("ldg"), id, openingType, row.currency, Math.abs(row.openingBalance), row.openingBalance, "Opening balance", user.id, user.name, importedAt, importedAt, nextLedgerReference(openingType)]
           );
         }
         importedCount += 1;
-        report.push({ row: row.rowNumber, accountNumber, accountName: row.name, result: "Imported", reason: row.openingBalance > 0 ? `Created with opening balance ${fmtMoney(row.openingBalance, row.currency)}.` : "Created." });
+        report.push({ row: row.rowNumber, accountNumber, accountName: row.name, result: "Imported", reason: row.openingBalance !== 0 ? `Created with opening balance ${fmtMoney(row.openingBalance, row.currency)}.` : "Created." });
       }
 
       run(
