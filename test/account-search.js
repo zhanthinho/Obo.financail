@@ -145,7 +145,7 @@ async function run() {
     });
     await check("no match → 'No matching accounts found.'; clearing shows every permitted account again", async () => {
       await box.fill("zz-nobody-zz"); await p.waitForTimeout(700);
-      assert((await names()).length === 0 && /No matching accounts found\./.test(await p.locator(".gk-bulk-search-results").innerText()), "no-match");
+      assert((await names()).length === 0 && /No matching accounts found/.test(await p.locator(".gk-bulk-search-results").innerText()), "no-match");
       await p.getByRole("button", { name: "Clear search" }).click(); await p.waitForTimeout(800);
       const n = await names();
       assert(n.length >= 3 && !n.some((x) => /hidden|other company/i.test(x)), n.join(" | "));
@@ -175,7 +175,7 @@ async function run() {
       const toPanel = p.locator("#qx-to + .gk-acombo-panel");
       assert((await toPanel.locator(".gk-acard .gk-acard-cur").allInnerTexts()).every((x) => x === "SLSH"), "Receiving currency");
       await toPanel.locator("input").fill("zz-none"); await p.waitForTimeout(150);
-      assert(/No matching accounts found\./.test(await toPanel.innerText()), "no match text");
+      assert(/No matching accounts found/.test(await toPanel.innerText()), "no match text");
       await p.keyboard.press("Escape"); await p.waitForTimeout(200);
       assert(await p.locator("#qx-to + .gk-acombo-panel").count() === 0, "panel did not close");
       assert(await p.locator(".gk-exw-cashpair-arrow svg").count() === 1, "direction arrow");

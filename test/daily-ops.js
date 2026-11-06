@@ -302,9 +302,11 @@ async function run() {
       await qe.locator('.gk-do-curbtn[data-currency="SLSH"]').click(); await p.waitForTimeout(200);
       await qe.locator('.gk-do-typebtn[data-type="credit"]').click(); await p.waitForTimeout(800);
       await p.click("#do-account"); await p.waitForTimeout(250);
+      assert(await p.locator("#do-account + .gk-acombo-panel [data-account-id]").count() === 0, "accounts listed before typing");
+      await p.locator("#do-account + .gk-acombo-panel input").fill("Ob Customer"); await p.waitForTimeout(200);
       const ids = await p.locator("#do-account + .gk-acombo-panel [data-account-id]").evaluateAll((els) => els.map((e) => e.getAttribute("data-account-id")));
       assert(ids.includes(cs.id) && !ids.includes(cu.id), `accounts ${ids.join(",")}`);
-      await p.keyboard.press("Escape");
+      assert(await p.locator("#do-account + .gk-acombo-panel").count() === 1, "panel closed");
       assert(/SLSH/.test(await qe.locator(".gk-do-amount span").first().innerText()), "amount currency");
     });
     await check("Quick Entry posts a SLSH Credit through the existing endpoint — cards and table refresh", async () => {
@@ -329,6 +331,32 @@ async function run() {
       assert(!missing.length, `no icon: ${missing.join(" | ")}`);
       const tones = await qe.evaluate((el) => ["credit", "debit", "exchange"].map((k) => getComputedStyle(el.querySelector(`.gk-do-typebtn[data-type="${k}"] .gk-do-typeic`)).color));
       assert(tones[0] === "rgb(21, 128, 61)" && tones[1] === "rgb(185, 28, 28)" && tones[2] === "rgb(15, 118, 110)", tones.join(" "));
+      await qe.getByRole("button", { name: /^Cancel$/ }).click();
+    });
+    await check("account search: nothing listed until typed; account number + Enter selects; compact selected card; no Quotation in Quick Entry", async () => {
+      assert(await qe.locator('.gk-do-typebtn[data-type="quotation"]').count() === 0 && !/Quotation/.test(await qe.locator(".gk-do-types").innerText()), "Quotation still in Quick Entry");
+      await qe.locator('.gk-do-curbtn[data-currency="USD"]').click(); await p.waitForTimeout(150);
+      await qe.locator('.gk-do-typebtn[data-type="transfer"]').click(); await p.waitForTimeout(800);
+      await p.click("#do-from"); await p.waitForTimeout(250);
+      const panel = p.locator("#do-from + .gk-acombo-panel");
+      assert(await panel.locator("[data-account-id]").count() === 0 && /Type a name/.test(await panel.innerText()), "listed before typing");
+      const box = await panel.boundingBox(), trig = await p.locator("#do-from").boundingBox();
+      assert(Math.abs(box.y - (trig.y + trig.height)) < 12 || Math.abs(box.y + box.height - trig.y) < 12, "panel not attached to the selector");
+      await panel.locator("input").fill(cu.accountNumber); await p.waitForTimeout(200);
+      const ids = await panel.locator("[data-account-id]").evaluateAll((els) => els.map((e) => e.getAttribute("data-account-id")));
+      assert(ids.length === 1 && ids[0] === cu.id, ids.join(","));
+      assert(await panel.locator(".gk-acombo-list").evaluate((e) => getComputedStyle(e).maxHeight) === "240px", "max height");
+      await p.keyboard.press("Enter"); await p.waitForTimeout(250);
+      assert(await p.locator("#do-from + .gk-acombo-panel").count() === 0, "dropdown still open");
+      const t = await p.locator("#do-from").innerText();
+      assert(/Ob Customer Uniform/i.test(t) && t.includes(cu.accountNumber) && /USD/.test(t) && /\$/.test(t) && /Change/.test(t), t);
+      await p.click("#do-from"); await p.waitForTimeout(200);
+      await panel.locator("input").fill("Ob Customer"); await p.waitForTimeout(200);
+      assert(await panel.locator(`[data-account-id="${cu.id}"]`).count() === 0, "selected account duplicated in the list");
+      await panel.locator("input").fill("zz-nothing"); await p.waitForTimeout(150);
+      assert(/No matching accounts found/.test(await panel.innerText()), "no-match");
+      await p.keyboard.press("Escape"); await p.waitForTimeout(200);
+      assert(await p.locator("#do-from + .gk-acombo-panel").count() === 0, "Escape did not close");
       await qe.getByRole("button", { name: /^Cancel$/ }).click();
     });
     await check("Cash Account tab: Cash In / Out / Transfer / Exchange, USD Cash Accounts only", async () => {

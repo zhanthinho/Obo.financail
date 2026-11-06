@@ -268,7 +268,7 @@ async function browserChecks() {
     return { c, p };
   };
   // GLOBAL SMART ACCOUNT SEARCH round: the From Account is a searchable combo.
-  const pick = async (p, acc) => { await p.click("#qx-from"); await p.waitForTimeout(150); await p.locator(`#qx-from + .gk-acombo-panel [data-account-id="${acc.id}"]`).click(); await p.waitForTimeout(600); };
+  const pick = async (p, acc) => { await p.click("#qx-from"); await p.waitForTimeout(150); await p.locator("#qx-from + .gk-acombo-panel input").fill(acc.name); await p.waitForTimeout(150); await p.locator(`#qx-from + .gk-acombo-panel [data-account-id="${acc.id}"]`).click(); await p.waitForTimeout(600); };
   const dialog = (p) => p.locator('[role="dialog"]').last();
   const useBtn = (p) => dialog(p).getByRole("button", { name: /Use Selected Amount/ });
   try {

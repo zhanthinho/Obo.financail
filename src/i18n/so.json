@@ -2660,5 +2660,9 @@
  "Perform Reconciliation": "Samee Isu-dheellitir",
  "Update Historical Snapshot": "Cusboonaysii Sawirka Taariikheed",
  "Close Daily Operations": "Xir Hawlaha Maalinlaha",
- "Reopen Closed Day": "Dib u fur Maalin la Xiray"
+ "Reopen Closed Day": "Dib u fur Maalin la Xiray",
+ "Type a name, account number, or phone number to find an account.": "Qor magac, lambarka akoonka, ama lambarka taleefanka si aad u hesho akoon.",
+ "Type a name, account number, or phone…": "Qor magac, lambarka akoonka, ama taleefan…",
+ "Type a name, account number, or phone number to search.": "Qor magac, lambarka akoonka, ama lambarka taleefanka si aad u raadiso.",
+ "No matching accounts found": "Akoon u dhigma lama helin"
 }

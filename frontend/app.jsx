@@ -362,10 +362,19 @@ const THEME_CSS = `
   .gk-acombo-trigger > .gk-acard { border: none; padding: 4px 6px; background: transparent; box-shadow: none; flex: 1 1 auto; }
   .gk-acombo-ph { flex: 1 1 auto; padding: 0 8px; color: var(--c-slate); font-size: 13px; }
   .gk-acombo-chev { flex: 0 0 auto; color: #0F5B50; }
-  .gk-acombo-panel { margin-top: 6px; }
-  .gk-acombo-list { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; margin-top: 4px; }
+  .gk-acombo-panel { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 80; background: #fff; border: 1px solid #CDE3DC; border-radius: 12px; box-shadow: 0 12px 28px rgba(6,78,59,.16); padding: 8px; min-width: 260px; }
+  .gk-acombo-panel.is-up { top: auto; bottom: calc(100% + 4px); }
+  .gk-acombo-search { position: relative; }
+  .gk-acombo-search .gk-asearch-input { height: 38px; font-size: 13.5px; }
+  .gk-acombo-list { display: flex; flex-direction: column; gap: 4px; max-height: 240px; overflow-y: auto; margin-top: 6px; overscroll-behavior: contain; }
+  .gk-acombo-opt { border-radius: 10px; } .gk-acombo-opt > .gk-acard { width: 100%; }
+  .gk-acombo-opt.is-active > .gk-acard, .gk-acombo-none.is-active { border-color: #10B981; background: #F0FDF8; }
   .gk-acombo-none { text-align: left; padding: 9px 12px; background: #fff; border: 1px dashed #CBD5D8; border-radius: 10px; cursor: pointer; font: inherit; font-size: 12.5px; color: var(--c-slate); }
-  .gk-acombo-empty { padding: 12px; text-align: center; font-size: 12.5px; color: var(--c-slate); background: #fff; border: 1px dashed #CBD5D8; border-radius: 10px; }
+  .gk-acombo-empty { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 12px; text-align: center; font-size: 12.5px; color: var(--c-slate); background: #F8FBFA; border: 1px dashed #CBD5D8; border-radius: 10px; }
+  .gk-acombo-change { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 700; color: #0F766E; background: #F0FDFA; border: 1px solid #CCEFE6; border-radius: 7px; padding: 3px 7px; }
+  .gk-acombo-ph { display: inline-flex; align-items: center; gap: 7px; }
+  .gk-acombo-trigger.has-value { min-height: 48px; }
+  :root[data-theme="dark"] .gk-acombo-panel { background: var(--c-card); border-color: rgba(43,165,138,.3); }
   .gk-acct-group .gk-acombo-trigger, .gk-acct-group .gk-asearch-input { border-color: #CBD5D8 !important; background: #fff !important; }
   :root[data-theme="dark"] .gk-asearch { background: rgba(43,165,138,.10); border-color: rgba(43,165,138,.25); border-left-color: #10B981; }
   :root[data-theme="dark"] .gk-acard, :root[data-theme="dark"] .gk-acombo-trigger, :root[data-theme="dark"] .gk-asearch-input, :root[data-theme="dark"] .gk-acombo-none, :root[data-theme="dark"] .gk-acombo-empty { background: var(--c-card) !important; color: var(--c-ink) !important; }
@@ -1992,6 +2001,8 @@ Object.assign(NAV_ICON_PATHS, {
   lockKeyhole: <><circle cx="12" cy="16" r="1" /><rect x="3" y="10" width="18" height="12" rx="2" /><path d="M7 10V7a5 5 0 0 1 10 0v3" /></>,
   lockOpen: <><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 9.9-1" /></>,
   repeat2: <><path d="m2 9 3-3 3 3" /><path d="M13 18H7a2 2 0 0 1-2-2V6" /><path d="m22 15-3 3-3-3" /><path d="M11 6h6a2 2 0 0 1 2 2v10" /></>,
+  searchX: <><path d="m13.5 8.5-5 5M8.5 8.5l5 5" /><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></>,
+  loaderCircle: <path d="M21 12a9 9 0 1 1-6.219-8.56" />,
   calendarDays: <><path d="M8 2v4M16 2v4" /><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" /></>,
 });
 const NAV_ICON_WARNED = new Set();
@@ -9080,11 +9091,11 @@ function QuotationEditor({ initial, rate, call, notify, userColumnPrefs, systemC
   // backend from the typed name (findOrCreateClient), so New Client no
   // longer needs its own account search at all (spec item 5).
   useEffect(() => {
-    if (isEdit || clientMode !== "existing" || account) { setAccountResults([]); return; }
+    if (isEdit || clientMode !== "existing" || account || !normSearch(accountQuery)) { setAccountResults([]); setAccountListLoading(false); return; }
     setAccountListLoading(true);
     const t = setTimeout(() => {
       call("/api/accounts" + qs({ currency: quotationCurrency, search: accountQuery }))
-        .then((d) => setAccountResults(d.accounts.slice(0, 30)))
+        .then((d) => setAccountResults(d.accounts.filter((a) => !a.currency || a.currency === quotationCurrency).slice(0, 30)))
         .catch(() => {})
         .finally(() => setAccountListLoading(false));
     }, 220);
@@ -9408,7 +9419,7 @@ function QuotationEditor({ initial, rate, call, notify, userColumnPrefs, systemC
                       </div>
                     ) : (
                       <div style={{ padding: "12px 4px" }}>
-                        <div style={{ fontSize: 12.5, color: C.slate, marginBottom: 6 }}>No {quotationCurrency} account found.</div>
+                        <div className="gk-acombo-empty" style={{ marginBottom: 6 }}>{normSearch(accountQuery) ? <><NavIcon name="searchX" size={16} />No matching accounts found</> : <><NavIcon name="search" size={16} />Type a name, account number, or phone number to find an account.</>}</div>
                         <button type="button" onClick={() => changeClientMode("new")}
                           style={{ background: "none", border: "none", padding: 0, color: C.navy, fontWeight: 700, fontSize: 12.5, cursor: "pointer", textDecoration: "underline" }}>
                           Create New Client
@@ -11897,9 +11908,9 @@ function NewLedgerMoveModal({ currency, call, onClose, onSubmit, presetAccount, 
   const [formError, setFormError] = useState("");
 
   useEffect(() => {
-    if (selected) { setResults([]); return; }
+    if (selected || !normSearch(query)) { setResults([]); return; }
     const t = setTimeout(() => {
-      call("/api/accounts" + qs({ currency, search: query })).then((d) => setResults(d.accounts.slice(0, 8))).catch(() => {});
+      call("/api/accounts" + qs({ currency, search: query })).then((d) => setResults(d.accounts.filter((a) => !a.currency || a.currency === currency).slice(0, 8))).catch(() => {});
     }, 250);
     return () => clearTimeout(t);
   }, [query, selected, call, currency]);
@@ -11937,7 +11948,7 @@ function NewLedgerMoveModal({ currency, call, onClose, onSubmit, presetAccount, 
           <AccountSearchPanel label={`Search for ${currency === "USD" ? "a" : "an"} ${currency} account`} ariaLabel={`Search for a ${currency} account`} value={query} onChange={setQuery} autoFocus inputId="tx-acct-search">
             <div className="gk-acard-list" role="listbox" aria-label="Matching accounts" style={{ marginTop: 6, maxHeight: 300, overflowY: "auto" }}>
               {results.filter((a) => accountMatchesSearch(a, query)).map((a) => <AccountResultCard key={a.id} a={{ ...a, currency: a.currency || currency }} term={query} onClick={() => setSelected(a)} />)}
-              {results.filter((a) => accountMatchesSearch(a, query)).length === 0 && <div className="gk-acombo-empty">{normSearch(query) ? "No matching accounts found." : `No ${currency} accounts found.`}</div>}
+              {results.filter((a) => accountMatchesSearch(a, query)).length === 0 && <div className="gk-acombo-empty">{normSearch(query) ? <><NavIcon name="searchX" size={16} />No matching accounts found</> : <><NavIcon name="search" size={16} />Type a name, account number, or phone number to find an account.</>}</div>}
             </div>
           </AccountSearchPanel>
         </>
@@ -12071,7 +12082,7 @@ function accountMatchesSearch(a, term) {
 }
 // The mint search panel (Add Transaction design): icon + bold label, a
 // large input with the search icon inside, a clear button and helper text.
-function AccountSearchPanel({ label, ariaLabel, value, onChange, autoFocus, helper = "Type to search — leave blank to see all.", icon = "landmark", compact, children, inputId }) {
+function AccountSearchPanel({ label, ariaLabel, value, onChange, autoFocus, helper = "Type a name, account number, or phone number to search.", icon = "landmark", compact, children, inputId }) {
   return (
     <div className={`gk-asearch${compact ? " is-compact" : ""}`}>
       {label && <label className="gk-asearch-label" htmlFor={inputId}><NavIcon name={icon} size={16} className="gk-asearch-label-icon" />{label}</label>}
@@ -12117,38 +12128,81 @@ function AccountResultCard({ a, term, kind, onClick, selected, as = "button", ro
 // account as a card; opening it shows the mint search box and the matching
 // account cards, filtered live from the accounts this form already loaded
 // (which the server returned for this user and company only).
-function AccountCombo({ id, accounts, value, onChange, kind, placeholder = "Select an account…", noneLabel, disabled, invalid, ariaLabel, searchLabel }) {
+function AccountCombo({ id, accounts, value, onChange, kind, placeholder = "Select an account…", noneLabel, disabled, invalid, ariaLabel, searchLabel, loading, requireSearch }) {
+  // ACCOUNT SEARCH REDESIGN round: customer / company accounts are found by
+  // typing (name, account number or phone) — nothing is listed until the user
+  // types, so a long account list never floods the form. Cash Accounts (a
+  // handful per company) still list in full. The panel opens directly below
+  // the selector (or above it when there is no room below), the search box
+  // stays fixed at its top, results scroll inside a ~240px list, and the
+  // keyboard works: ↑ ↓ to move, Enter to choose, Escape to close.
+  const mustType = requireSearch !== undefined ? requireSearch : kind !== "cash";
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
+  const [active, setActive] = useState(0);
+  const [up, setUp] = useState(false);
   const root = useRef(null);
+  const trigger = useRef(null);
+  const listRef = useRef(null);
+  const isLoading = loading || accounts == null;
   const selected = (accounts || []).find((a) => a.id === value) || null;
-  const shown = (accounts || []).filter((a) => accountMatchesSearch(a, q));
+  const term = normSearch(q);
+  const shown = (mustType && !term) ? [] : (accounts || []).filter((a) => a.id !== value && accountMatchesSearch(a, q));
+  const options = [...(noneLabel && !term ? [null] : []), ...shown];
+  useEffect(() => { setActive(0); }, [q, open]);
   useEffect(() => {
     if (!open) return undefined;
     const away = (e) => { if (root.current && !root.current.contains(e.target)) setOpen(false); };
-    const esc = (e) => { if (e.key === "Escape") { e.stopPropagation(); setOpen(false); } };
     document.addEventListener("mousedown", away);
-    root.current && root.current.addEventListener("keydown", esc);
-    const r = root.current;
-    return () => { document.removeEventListener("mousedown", away); r && r.removeEventListener("keydown", esc); };
+    if (trigger.current) {
+      const r = trigger.current.getBoundingClientRect();
+      const below = window.innerHeight - r.bottom, above = r.top;
+      setUp(below < 320 && above > below);
+    }
+    return () => document.removeEventListener("mousedown", away);
   }, [open]);
-  const pick = (a) => { onChange(a ? a.id : ""); setOpen(false); setQ(""); };
+  useEffect(() => {
+    if (!open || !listRef.current) return;
+    const el = listRef.current.querySelector(`[data-opt-index="${active}"]`);
+    if (el && el.scrollIntoView) el.scrollIntoView({ block: "nearest" });
+  }, [active, open]);
+  const close = (focus) => { setOpen(false); setQ(""); if (focus && trigger.current) trigger.current.focus(); };
+  const pick = (a) => { onChange(a ? a.id : ""); close(true); };
+  const onKey = (e) => {
+    if (e.key === "Escape") { e.stopPropagation(); e.preventDefault(); close(true); return; }
+    if (e.key === "ArrowDown") { e.preventDefault(); setActive((i) => Math.min(i + 1, Math.max(options.length - 1, 0))); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setActive((i) => Math.max(i - 1, 0)); }
+    else if (e.key === "Enter") { e.preventDefault(); if (options.length) pick(options[Math.min(active, options.length - 1)]); }
+  };
+  const listId = id ? `${id}-list` : undefined;
   return (
     <div className="gk-acombo" ref={root} data-open={open ? "1" : undefined}>
-      <button type="button" id={id} className={`gk-acombo-trigger${invalid ? " is-invalid" : ""}`} aria-haspopup="listbox" aria-expanded={open} aria-label={ariaLabel}
-        aria-invalid={invalid || undefined} disabled={disabled} data-value={value || ""} onClick={() => setOpen((o) => !o)}>
-        {selected ? <AccountResultCard a={selected} kind={kind} as="span" role={undefined} /> : <span className="gk-acombo-ph">{placeholder}</span>}
-        <NavIcon name="chevronDown" size={16} className="gk-acombo-chev" />
+      <button type="button" id={id} ref={trigger} className={`gk-acombo-trigger${invalid ? " is-invalid" : ""}${selected ? " has-value" : ""}`} aria-haspopup="listbox" aria-expanded={open} aria-label={ariaLabel}
+        aria-invalid={invalid || undefined} disabled={disabled} data-value={value || ""} onClick={() => (open ? close(false) : setOpen(true))}
+        onKeyDown={(e) => { if (!open && (e.key === "ArrowDown" || e.key === "Enter")) { e.preventDefault(); setOpen(true); } }}>
+        {selected ? <AccountResultCard a={selected} kind={kind} as="span" role={undefined} /> : <span className="gk-acombo-ph"><NavIcon name={kind === "cash" ? "wallet" : "landmark"} size={15} />{placeholder}</span>}
+        {selected ? <span className="gk-acombo-change" title="Change account"><NavIcon name="arrowLeftRight" size={13} />Change</span> : <NavIcon name="chevronDown" size={16} className="gk-acombo-chev" />}
       </button>
       {open && (
-        <div className="gk-acombo-panel">
-          <AccountSearchPanel compact value={q} onChange={setQ} autoFocus ariaLabel={searchLabel || `Search ${ariaLabel || "accounts"}`} helper={null}>
-            <div className="gk-acombo-list" role="listbox" aria-label="Matching accounts">
-              {noneLabel && !normSearch(q) && <button type="button" role="option" aria-selected={!value} className="gk-acombo-none" onClick={() => pick(null)}>{noneLabel}</button>}
-              {shown.map((a) => <AccountResultCard key={a.id} a={a} kind={kind} term={q} selected={a.id === value} onClick={() => pick(a)} />)}
-              {shown.length === 0 && <div className="gk-acombo-empty">{normSearch(q) ? "No matching accounts found." : "No accounts available."}</div>}
-            </div>
-          </AccountSearchPanel>
+        <div className={`gk-acombo-panel${up ? " is-up" : ""}`} onKeyDown={onKey}>
+          <div className="gk-acombo-search">
+            <NavIcon name="search" size={16} className="gk-asearch-icon" />
+            <input className="gk-asearch-input" type="search" autoComplete="off" spellCheck={false} autoFocus role="combobox" aria-expanded="true" aria-controls={listId}
+              aria-activedescendant={options.length && id ? `${id}-opt-${active}` : undefined}
+              aria-label={searchLabel || `Search ${ariaLabel || "accounts"}`} placeholder="Type a name, account number, or phone…" value={q} onChange={(e) => setQ(e.target.value)} />
+            {q && <button type="button" className="gk-asearch-clear" aria-label="Clear search" title="Clear search" onClick={() => setQ("")}><NavIcon name="x" size={14} /></button>}
+          </div>
+          <div className="gk-acombo-list" role="listbox" id={listId} aria-label="Matching accounts" ref={listRef}>
+            {isLoading ? <div className="gk-acombo-empty is-loading"><NavIcon name="loaderCircle" size={16} className="gk-spin" />Loading accounts…</div> : (
+              <>
+                {options.map((a, i) => (a === null
+                  ? <button key="none" type="button" role="option" id={id ? `${id}-opt-${i}` : undefined} data-opt-index={i} aria-selected={!value} className={`gk-acombo-none${active === i ? " is-active" : ""}`} onMouseEnter={() => setActive(i)} onClick={() => pick(null)}>{noneLabel}</button>
+                  : <div key={a.id} id={id ? `${id}-opt-${i}` : undefined} data-opt-index={i} className={`gk-acombo-opt${active === i ? " is-active" : ""}`} onMouseEnter={() => setActive(i)}><AccountResultCard a={a} kind={kind} term={q} selected={false} onClick={() => pick(a)} /></div>))}
+                {mustType && !term && <div className="gk-acombo-empty is-hint"><NavIcon name="search" size={16} />Type a name, account number, or phone number to find an account.</div>}
+                {(!mustType || term) && shown.length === 0 && <div className="gk-acombo-empty is-none"><NavIcon name="searchX" size={16} />{term ? "No matching accounts found" : "No accounts available."}</div>}
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -12605,17 +12659,17 @@ function TransferModal({ currency, call, onClose, onSubmit, presetFromAccount, e
   }, []);
 
   useEffect(() => {
-    if (fromAccount) { setFromResults([]); return; }
+    if (fromAccount || !normSearch(fromQuery)) { setFromResults([]); return; }
     const t = setTimeout(() => {
-      call("/api/accounts" + qs({ currency, search: fromQuery })).then((d) => setFromResults(d.accounts.slice(0, 8))).catch(() => {});
+      call("/api/accounts" + qs({ currency, search: fromQuery })).then((d) => setFromResults(d.accounts.filter((a) => !a.currency || a.currency === currency).slice(0, 8))).catch(() => {});
     }, 250);
     return () => clearTimeout(t);
   }, [fromQuery, fromAccount, call, currency]);
 
   useEffect(() => {
-    if (toAccount) { setToResults([]); return; }
+    if (toAccount || !normSearch(toQuery)) { setToResults([]); return; }
     const t = setTimeout(() => {
-      call("/api/accounts" + qs({ currency, search: toQuery })).then((d) => setToResults(d.accounts.filter((a) => a.id !== fromAccount?.id).slice(0, 8))).catch(() => {});
+      call("/api/accounts" + qs({ currency, search: toQuery })).then((d) => setToResults(d.accounts.filter((a) => a.id !== fromAccount?.id && (!a.currency || a.currency === currency)).slice(0, 8))).catch(() => {});
     }, 250);
     return () => clearTimeout(t);
   }, [toQuery, toAccount, call, currency, fromAccount]);
@@ -12645,7 +12699,7 @@ function TransferModal({ currency, call, onClose, onSubmit, presetFromAccount, e
             <AccountSearchPanel compact ariaLabel={`Search ${currency} account — ${label}`} value={query} onChange={setQuery} autoFocus={autoFocus}>
               <div className="gk-acard-list" role="listbox" aria-label="Matching accounts" style={{ marginTop: 4, maxHeight: 240, overflowY: "auto" }}>
                 {results.filter((a) => accountMatchesSearch(a, query)).map((a) => <AccountResultCard key={a.id} a={{ ...a, currency: a.currency || currency }} term={query} onClick={() => setSelected(a)} />)}
-                {results.filter((a) => accountMatchesSearch(a, query)).length === 0 && <div className="gk-acombo-empty">{normSearch(query) ? "No matching accounts found." : `No ${currency} accounts found.`}</div>}
+                {results.filter((a) => accountMatchesSearch(a, query)).length === 0 && <div className="gk-acombo-empty">{normSearch(query) ? <><NavIcon name="searchX" size={16} />No matching accounts found</> : <><NavIcon name="search" size={16} />Type a name, account number, or phone number to find an account.</>}</div>}
               </div>
             </AccountSearchPanel>
           </>
@@ -16290,7 +16344,6 @@ const DO_TX_TYPES = [
   ["debit", "Debit", "circleMinus", "debit", "Money paid out of an account"],
   ["exchange", "Exchange", "arrowLeftRight", "exchange", "USD ↔ SLSH at the exchange rate"],
   ["transfer", "Transfer", "arrowRightLeft", "transfer", "Between two accounts of one currency"],
-  ["quotation", "Quotation", "fileText", "other", "A priced quotation for a client"],
   ["expense", "Expense", "receipt", "debit", "A company expense paid from cash"],
 ];
 const DO_CASH_TYPES = [
@@ -16478,7 +16531,7 @@ function QuickEntryPanel({ call, notify, perm, hasRaw, curs, rate, today, onPost
   const [tab, setTab] = useState("transaction");
   const [cur, setCur] = useState(curs.length === 1 ? curs[0] : "");
   const [type, setType] = useState("");
-  const txTypes = DO_TX_TYPES.map((t) => [...t, { credit: perm("accountsManage"), debit: perm("accountsManage"), exchange: perm("exchangeCreate") && curs.length === 2, transfer: perm("accountsManage"), quotation: perm("quotationsManage"), expense: hasRaw("expenses.create") }[t[0]]]);
+  const txTypes = DO_TX_TYPES.map((t) => [...t, { credit: perm("accountsManage"), debit: perm("accountsManage"), exchange: perm("exchangeCreate") && curs.length === 2, transfer: perm("accountsManage"), expense: hasRaw("expenses.create") }[t[0]]]);
   const cashTypes = DO_CASH_TYPES.map((t) => [...t, { cashIn: hasRaw("cash.deposit"), cashOut: hasRaw("cash.withdraw"), cashTransfer: hasRaw("cash.transfer"), cashExchange: hasRaw("cash.exchange") && curs.length === 2 }[t[0]]]);
   const types = tab === "cash" ? cashTypes : txTypes;
   useEffect(() => { setType(""); }, [tab]);
@@ -16526,10 +16579,10 @@ function QuickEntryForm({ call, notify, cur, type, rate, today, onPosted, onCanc
   const [reqId, setReqId] = useState(() => newRequestId());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [accounts, setAccounts] = useState([]);
-  const [otherAccounts, setOtherAccounts] = useState([]);
-  const [cashAccounts, setCashAccounts] = useState([]);
-  const [otherCash, setOtherCash] = useState([]);
+  const [accounts, setAccounts] = useState(null);
+  const [otherAccounts, setOtherAccounts] = useState(null);
+  const [cashAccounts, setCashAccounts] = useState(null);
+  const [otherCash, setOtherCash] = useState(null);
   const [categories, setCategories] = useState([]);
   useEffect(() => {
     if (!isCash) call("/api/accounts" + qs({ currency: cur })).then((d) => setAccounts((d.accounts || []).filter((a) => a.currency === cur && a.status !== "inactive"))).catch(() => setAccounts([]));
@@ -16545,7 +16598,7 @@ function QuickEntryForm({ call, notify, cur, type, rate, today, onPosted, onCanc
   const isEx = type === "exchange" || type === "cashExchange";
   const received = isEx && amount > 0 && effRate > 0 ? convert(amount, cur, other, effRate) : 0;
   const margin = type === "exchange" && amount > 0 && effRate > 0 ? computeMargin({ currencyGiven: cur, amountGiven: amount, amountReceived: received, rate: effRate, costRate: ratesCtx.costRate ?? null }) : null;
-  const cashRequired = ["credit", "debit"].includes(type) && cashAccounts.length > 0;
+  const cashRequired = ["credit", "debit"].includes(type) && (cashAccounts || []).length > 0;
   function validate() {
     if (!(amount > 0)) return "Enter an amount greater than zero.";
     if (["credit", "debit"].includes(type) && !f.accountId) return `Choose the ${cur} account.`;
@@ -16553,8 +16606,6 @@ function QuickEntryForm({ call, notify, cur, type, rate, today, onPosted, onCanc
     if (type === "transfer" && (!f.accountId || !f.toAccountId)) return "Choose both accounts.";
     if (type === "transfer" && f.accountId === f.toAccountId) return "The two accounts must be different.";
     if (type === "exchange" && !(effRate > 0)) return "Enter the exchange rate.";
-    if (type === "quotation" && !f.description.trim()) return "Describe the quoted item.";
-    if (type === "quotation" && !f.accountId && !f.clientName.trim()) return "Choose the account or type the client name.";
     if (type === "expense" && (!f.categoryId || !f.description.trim() || !f.cashAccountId)) return "Choose the category and Cash Account and describe the expense.";
     if (["cashIn", "cashOut"].includes(type) && !f.cashAccountId) return "Choose the Cash Account.";
     if (type === "cashTransfer" && (!f.cashAccountId || !f.toCashAccountId || f.cashAccountId === f.toCashAccountId)) return "Choose two different Cash Accounts.";
@@ -16565,7 +16616,7 @@ function QuickEntryForm({ call, notify, cur, type, rate, today, onPosted, onCanc
   function request() {
     const when = f.when ? new Date(f.when).toISOString() : undefined;
     const notes = f.notes.trim() || undefined;
-    const acc = accounts.find((a) => a.id === f.accountId);
+    const acc = (accounts || []).find((a) => a.id === f.accountId);
     switch (type) {
       case "credit": case "debit":
         return [`/api/accounts/${f.accountId}/${type === "credit" ? "deposit" : "withdraw"}`, { amount, currency: cur, paymentDate: when, cashAccountId: f.cashAccountId || null, reference: f.reference.trim() || undefined, notes: f.description.trim() || notes }];
@@ -16573,8 +16624,6 @@ function QuickEntryForm({ call, notify, cur, type, rate, today, onPosted, onCanc
         return ["/api/transfers", { fromAccountId: f.accountId, toAccountId: f.toAccountId, amount, currency: cur, date: when, notes: f.description.trim() || notes }];
       case "exchange":
         return ["/api/transactions", { clientName: acc ? acc.name : (f.clientName.trim() || "Walk-in"), clientAccountId: f.accountId || undefined, receivingAccountId: f.toAccountId || undefined, amountGiven: amount, currencyGiven: cur, rateUsed: f.rate !== "" ? Number(f.rate) : undefined, date: when, notes: f.description.trim() || notes }];
-      case "quotation":
-        return ["/api/quotations", { clientName: acc ? acc.name : f.clientName.trim(), accountId: f.accountId || undefined, currency: cur, currencyMode: cur, issueDate: today, notes, items: [{ description: f.description.trim(), qty: Number(f.qty) || 1, unitPrice: amount, currency: cur }] }];
       case "expense":
         return ["/api/expenses", { date: today, categoryId: f.categoryId, description: f.description.trim(), amount, currency: cur, cashAccountId: f.cashAccountId, externalReference: f.reference.trim(), notes: f.notes.trim(), clientRequestId: reqId }];
       case "cashIn": case "cashOut":
@@ -16602,7 +16651,7 @@ function QuickEntryForm({ call, notify, cur, type, rate, today, onPosted, onCanc
     finally { setBusy(false); }
   }
   const amtIcon = DO_CUR_ICON[cur];
-  const amountLabel = type === "quotation" ? `Unit Price (${cur}) *` : isEx ? `Amount Given (${cur}) *` : `Amount (${cur}) *`;
+  const amountLabel = isEx ? `Amount Given (${cur}) *` : `Amount (${cur}) *`;
   return (
     <form className="gk-do-form" data-form={type} aria-label={`${meta[1]} details`} onSubmit={(e) => { e.preventDefault(); submit(false); }}>
       <div className="gk-do-step-title"><span className="gk-do-step-no">3</span><DoIcon name={meta[2]} tone={tone} size={15} />{meta[1]} details <Pill tone={cur === "USD" ? "green" : "cyan"}>{cur}</Pill></div>
@@ -16610,39 +16659,37 @@ function QuickEntryForm({ call, notify, cur, type, rate, today, onPosted, onCanc
         {["credit", "debit"].includes(type) && <AccountSelector id="do-account" label="Account" cur={cur} tone={tone} accounts={accounts} value={f.accountId} onChange={(v) => set("accountId", v)} disabled={busy} />}
         {["credit", "debit"].includes(type) && <CashAccountSelector id="do-cash" label={type === "credit" ? "Cash In To" : "Cash Out From"} icon={type === "credit" ? "arrowDownToLine" : "arrowUpFromLine"} tone={tone} cur={cur} accounts={cashAccounts} value={f.cashAccountId} onChange={(v) => set("cashAccountId", v)} optional={!cashRequired} disabled={busy} />}
         {type === "transfer" && <AccountSelector id="do-from" label="From Account" icon="arrowUpFromLine" tone="debit" cur={cur} accounts={accounts} value={f.accountId} onChange={(v) => set("accountId", v)} disabled={busy} />}
-        {type === "transfer" && <AccountSelector id="do-to" label="To Account" icon="arrowDownToLine" tone="credit" cur={cur} accounts={accounts.filter((a) => a.id !== f.accountId)} value={f.toAccountId} onChange={(v) => set("toAccountId", v)} disabled={busy} />}
+        {type === "transfer" && <AccountSelector id="do-to" label="To Account" icon="arrowDownToLine" tone="credit" cur={cur} accounts={accounts && accounts.filter((a) => a.id !== f.accountId)} value={f.toAccountId} onChange={(v) => set("toAccountId", v)} disabled={busy} />}
         {type === "exchange" && <AccountSelector id="do-from" label="Source Account" icon="userRound" tone="exchange" cur={cur} accounts={accounts} value={f.accountId} onChange={(v) => set("accountId", v)} optional disabled={busy} />}
         {type === "exchange" && <AccountSelector id="do-to" label="Receiving Account" icon="building2" tone="exchange" cur={other} accounts={otherAccounts} value={f.toAccountId} onChange={(v) => set("toAccountId", v)} optional disabled={busy} />}
-        {(type === "exchange" || type === "quotation") && !f.accountId && (
-          <DoField icon="userRound" label={type === "exchange" ? "Client Name (walk-in)" : "Client Name *"}><input style={inputStyle} aria-label="Client Name" value={f.clientName} onChange={(e) => set("clientName", e.target.value)} placeholder="Walk-in" disabled={busy} /></DoField>
+        {type === "exchange" && !f.accountId && (
+          <DoField icon="userRound" label="Client Name (walk-in)"><input style={inputStyle} aria-label="Client Name" value={f.clientName} onChange={(e) => set("clientName", e.target.value)} placeholder="Walk-in" disabled={busy} /></DoField>
         )}
-        {type === "quotation" && <AccountSelector id="do-account" label="Account" cur={cur} tone={tone} accounts={accounts} value={f.accountId} onChange={(v) => set("accountId", v)} optional disabled={busy} />}
         {type === "expense" && (
           <DoField icon="receiptText" tone={tone} label="Category *"><select style={inputStyle} aria-label="Category" value={f.categoryId} onChange={(e) => set("categoryId", e.target.value)} disabled={busy}><option value="">Select a category…</option>{categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></DoField>
         )}
         {type === "expense" && <CashAccountSelector id="do-cash" label="Paid From" icon="arrowUpFromLine" tone="debit" cur={cur} accounts={cashAccounts} value={f.cashAccountId} onChange={(v) => set("cashAccountId", v)} disabled={busy} />}
         {["cashIn", "cashOut"].includes(type) && <CashAccountSelector id="do-cash" label="Cash Account" icon={type === "cashIn" ? "arrowDownToLine" : "arrowUpFromLine"} tone={tone} cur={cur} accounts={cashAccounts} value={f.cashAccountId} onChange={(v) => set("cashAccountId", v)} disabled={busy} />}
         {type === "cashTransfer" && <CashAccountSelector id="do-cash" label="From Cash Account" icon="arrowUpFromLine" tone="debit" cur={cur} accounts={cashAccounts} value={f.cashAccountId} onChange={(v) => set("cashAccountId", v)} disabled={busy} />}
-        {type === "cashTransfer" && <CashAccountSelector id="do-cash-to" label="To Cash Account" icon="arrowDownToLine" tone="credit" cur={cur} accounts={cashAccounts.filter((a) => a.id !== f.cashAccountId)} value={f.toCashAccountId} onChange={(v) => set("toCashAccountId", v)} disabled={busy} />}
+        {type === "cashTransfer" && <CashAccountSelector id="do-cash-to" label="To Cash Account" icon="arrowDownToLine" tone="credit" cur={cur} accounts={cashAccounts && cashAccounts.filter((a) => a.id !== f.cashAccountId)} value={f.toCashAccountId} onChange={(v) => set("toCashAccountId", v)} disabled={busy} />}
         {type === "cashExchange" && <CashAccountSelector id="do-cash" label="From Cash Account" icon="arrowUpFromLine" tone="exchange" cur={cur} accounts={cashAccounts} value={f.cashAccountId} onChange={(v) => set("cashAccountId", v)} disabled={busy} />}
         {type === "cashExchange" && <CashAccountSelector id="do-cash-to" label="To Cash Account" icon="arrowDownToLine" tone="exchange" cur={other} accounts={otherCash} value={f.toCashAccountId} onChange={(v) => set("toCashAccountId", v)} disabled={busy} />}
         <DoField icon={amtIcon} tone={tone} label={amountLabel}>
           <div className="gk-do-amount"><span>{cur === "USD" ? "$" : "SLSH"}</span><input inputMode="decimal" aria-label={amountLabel.replace(" *", "")} value={f.amount} onChange={(e) => set("amount", e.target.value.replace(/[^0-9.]/g, ""))} placeholder="0.00" disabled={busy} /></div>
         </DoField>
-        {type === "quotation" && <DoField icon="hash" label="Quantity"><input style={inputStyle} inputMode="decimal" aria-label="Quantity" value={f.qty} onChange={(e) => set("qty", e.target.value.replace(/[^0-9.]/g, ""))} disabled={busy} /></DoField>}
         {isEx && (
           <DoField icon="calculator" tone="exchange" label={`Exchange Rate (SLSH per $1)${type === "cashExchange" ? " *" : ""}`} hint={directionRate && f.rate === "" ? `Current rate: ${fmtNum(directionRate)}` : null}>
             <input style={inputStyle} inputMode="decimal" aria-label="Exchange Rate" value={f.rate} onChange={(e) => set("rate", e.target.value.replace(/[^0-9.]/g, ""))} placeholder={directionRate ? String(directionRate) : "Rate"} disabled={busy} />
           </DoField>
         )}
-        {!["quotation", "expense"].includes(type) && (
+        {type !== "expense" && (
           <DoField icon="calendarDays" label="Date & Time"><input style={inputStyle} type="datetime-local" aria-label="Transaction Date & Time" value={f.when} max={`${today}T23:59`} onChange={(e) => set("when", e.target.value)} disabled={busy} /></DoField>
         )}
         {["credit", "debit", "expense", "cashIn", "cashOut"].includes(type) && <DoField icon="hash" label="Reference"><input style={inputStyle} aria-label="Reference" value={f.reference} onChange={(e) => set("reference", e.target.value)} placeholder="Optional" disabled={busy} /></DoField>}
-        <DoField icon="alignLeft" label={type === "quotation" || type === "expense" ? "Description *" : "Description / Notes"} wide>
-          <input style={inputStyle} aria-label="Description" value={f.description} onChange={(e) => set("description", e.target.value)} placeholder={type === "quotation" ? "Item or service quoted" : "What is this for?"} disabled={busy} />
+        <DoField icon="alignLeft" label={type === "expense" ? "Description *" : "Description / Notes"} wide>
+          <input style={inputStyle} aria-label="Description" value={f.description} onChange={(e) => set("description", e.target.value)} placeholder="What is this for?" disabled={busy} />
         </DoField>
-        {["quotation", "expense"].includes(type) && <DoField icon="notebookPen" label="Notes" wide><input style={inputStyle} aria-label="Notes" value={f.notes} onChange={(e) => set("notes", e.target.value)} placeholder="Optional" disabled={busy} /></DoField>}
+        {type === "expense" && <DoField icon="notebookPen" label="Notes" wide><input style={inputStyle} aria-label="Notes" value={f.notes} onChange={(e) => set("notes", e.target.value)} placeholder="Optional" disabled={busy} /></DoField>}
       </div>
       {isEx && (
         <div className="gk-do-exsum" data-exchange-summary>
@@ -16653,7 +16700,6 @@ function QuickEntryForm({ call, notify, cur, type, rate, today, onPosted, onCanc
           {type === "exchange" && <span><NavIcon name={margin && margin.usd < 0 ? "trendingDown" : "trendingUp"} size={14} />{margin ? margin.label : "Profit / difference"} <b>{margin ? `${fmtMoney(margin.usd, "USD")}${margin.slsh != null ? ` · ${fmtMoney(margin.slsh, "SLSH")}` : ""}` : "—"}</b></span>}
         </div>
       )}
-      {type === "quotation" && amount > 0 && <div className="gk-do-exsum"><span><NavIcon name="fileText" size={14} />Quotation total <b>{fmtMoney(amount * (Number(f.qty) || 1), cur)}</b></span></div>}
       {error && <div className="gk-do-error" role="alert"><NavIcon name="triangleAlert" size={15} />{error}</div>}
       <div className="gk-do-actions">
         <Btn tone="ghost" size="sm" icon="x" onClick={onCancel} disabled={busy}>Cancel</Btn>
