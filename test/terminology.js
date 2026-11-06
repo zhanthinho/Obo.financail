@@ -210,7 +210,7 @@ async function browserChecks() {
       });
       await check("recording a credit from the Cash in Hand screen still works", async () => {
         const c0 = await cash();
-        await p.locator("button", { hasText: /^Credit$/ }).first().click(); await p.waitForTimeout(400);
+        await p.getByRole("button", { name: "Credit", exact: true }).first().click(); await p.waitForTimeout(400); // icon action (GLOBAL FINANCIAL TABLE DESIGN round)
         const dlg = p.locator('[role="dialog"]').last();
         assert(/Credit to/.test(await dlg.innerText()), "dialog title");
         await dlg.locator("input:not([disabled])").first().fill("5");
