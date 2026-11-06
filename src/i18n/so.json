@@ -2664,5 +2664,18 @@
  "Type a name, account number, or phone number to find an account.": "Qor magac, lambarka akoonka, ama lambarka taleefanka si aad u hesho akoon.",
  "Type a name, account number, or phone…": "Qor magac, lambarka akoonka, ama taleefan…",
  "Type a name, account number, or phone number to search.": "Qor magac, lambarka akoonka, ama lambarka taleefanka si aad u raadiso.",
- "No matching accounts found": "Akoon u dhigma lama helin"
+ "No matching accounts found": "Akoon u dhigma lama helin",
+ "Sort:": "Kala-saar:",
+ "Oldest First": "Kuwa ugu Horreeya Marka Hore",
+ "Newest First": "Kuwa ugu Dambeeya Marka Hore",
+ "Highest Amount First": "Qadarka ugu Badan Marka Hore",
+ "Lowest Amount First": "Qadarka ugu Yar Marka Hore",
+ "Reference (A–Z)": "Tixraac (A–Z)",
+ "Sort the transactions": "Kala saar dhaqdhaqaaqa",
+ "Sort transactions": "Kala saar dhaqdhaqaaqa",
+ "Earliest date & time first": "Taariikhda iyo waqtiga ugu horreeya marka hore",
+ "Latest date & time first": "Taariikhda iyo waqtiga ugu dambeeya marka hore",
+ "Largest amount first (within each currency)": "Qadarka ugu badan marka hore (lacag kasta gudaheeda)",
+ "Smallest amount first (within each currency)": "Qadarka ugu yar marka hore (lacag kasta gudaheeda)",
+ "References in alphabetical and number order": "Tixraacyada oo loo kala horreysiiyay xarfaha iyo tirooyinka"
 }

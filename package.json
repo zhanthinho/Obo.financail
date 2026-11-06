@@ -63,7 +63,8 @@
     "test:account-view-order": "node test/account-view-order.js",
     "test:account-search": "node test/account-search.js",
     "test:daily-history": "node test/daily-history.js",
-    "test:daily-ops": "node test/daily-ops.js"
+    "test:daily-ops": "node test/daily-ops.js",
+    "test:tx-sort": "node test/tx-sort.js"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",

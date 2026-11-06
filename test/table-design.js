@@ -308,8 +308,12 @@ async function run() {
       const foot = await t.locator('tfoot tr[data-currency="USD"]').innerText();
       assert(foot.includes(`+$${money(cr)}`) && foot.includes(`-$${money(db)}`), `${foot} vs +${cr} -${db}`);
       assert(new RegExp(`Total — ${real.length + 1} transactions`).test(foot), `${foot} (expected ${real.length + 1})`);
+      // UNIFIED SORTING round: Page 1 holds the newest group (oldest → newest
+      // inside); the very oldest movement is the first row of the LAST page.
+      for (let k = 0; k < 20; k++) { const nx = p.getByRole("button", { name: "Next" }).first(); if (!(await nx.count()) || await nx.isDisabled()) break; await nx.click(); await p.waitForTimeout(250); }
       const first = await t.locator("tbody tr").first().innerText();
       assert(/Opening balance/i.test(first) || /CSHDEP-.*-0001/.test(first), `oldest first: ${first}`);
+      for (let k = 0; k < 20; k++) { const pv = p.getByRole("button", { name: "Previous" }).first(); if (!(await pv.count()) || await pv.isDisabled()) break; await pv.click(); await p.waitForTimeout(200); }
       const tr = t.locator('tbody tr[data-source="cash_transfer"]');
       if (await tr.count()) { const x = await tr.first().innerText(); assert(/Td Till Usd/i.test(x) && /Td Bank Usd/i.test(x), x); }
     });

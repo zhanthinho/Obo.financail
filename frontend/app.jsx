@@ -374,6 +374,16 @@ const THEME_CSS = `
   .gk-acombo-opt.is-active > .gk-acard, .gk-acombo-none.is-active { border-color: #10B981; background: #F0FDF8; }
   .gk-acombo-none { text-align: left; padding: 9px 12px; background: #fff; border: 1px dashed #CBD5D8; border-radius: 10px; cursor: pointer; font: inherit; font-size: 12.5px; color: var(--c-slate); }
   .gk-acombo-empty { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 12px; text-align: center; font-size: 12.5px; color: var(--c-slate); background: #F8FBFA; border: 1px dashed #CBD5D8; border-radius: 10px; }
+  .gk-txsort { position: relative; display: inline-flex; flex: 0 0 auto; align-self: flex-end; margin-left: auto; }
+  .gk-txsort-btn { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 10px 0 11px; border: 1.5px solid #10B981; border-radius: 9px; background: #fff; color: #065F46; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background .12s, box-shadow .12s; }
+  .gk-txsort-btn:hover { background: #F0FDF8; } .gk-txsort-btn:focus-visible, .gk-txsort-btn.is-open { outline: none; background: #ECFDF5; box-shadow: 0 0 0 3px rgba(16,185,129,.18); }
+  .gk-txsort-k { font-weight: 500; color: #047857; } .gk-txsort-chev { color: #047857; }
+  .gk-txsort-menu { position: absolute; top: calc(100% + 4px); right: 0; z-index: 60; min-width: 230px; background: #fff; border: 1px solid #CDE3DC; border-radius: 11px; box-shadow: 0 12px 28px rgba(6,78,59,.16); padding: 5px; display: flex; flex-direction: column; gap: 2px; }
+  .gk-txsort-opt { display: flex; align-items: center; gap: 9px; border: 0; background: transparent; border-radius: 8px; padding: 8px 10px; font: inherit; font-size: 12.5px; color: #0B1F33; cursor: pointer; text-align: left; }
+  .gk-txsort-opt svg { color: #047857; } .gk-txsort-opt span { flex: 1; } .gk-txsort-opt:hover { background: #F0FDF8; }
+  .gk-txsort-opt.is-selected { background: #ECFDF5; color: #065F46; font-weight: 700; } .gk-txsort-check { color: #10B981 !important; }
+  @media (max-width: 640px) { .gk-txsort, .gk-txsort-btn { width: 100%; } .gk-txsort-btn { justify-content: flex-start; } .gk-txsort-chev { margin-left: auto; } .gk-txsort-menu { left: 0; right: 0; } }
+  :root[data-theme="dark"] .gk-txsort-btn, :root[data-theme="dark"] .gk-txsort-menu { background: var(--c-card); color: var(--c-ink); }
   .gk-acombo-sel { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 9px; padding: 3px 4px; }
   .gk-acombo-sel .gk-acard-avatar { flex-basis: 32px; width: 32px; height: 32px; font-size: 11.5px; }
   .gk-acombo-sel-main { min-width: 0; flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; }
@@ -2010,6 +2020,10 @@ Object.assign(NAV_ICON_PATHS, {
   lockKeyhole: <><circle cx="12" cy="16" r="1" /><rect x="3" y="10" width="18" height="12" rx="2" /><path d="M7 10V7a5 5 0 0 1 10 0v3" /></>,
   lockOpen: <><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 9.9-1" /></>,
   repeat2: <><path d="m2 9 3-3 3 3" /><path d="M13 18H7a2 2 0 0 1-2-2V6" /><path d="m22 15-3 3-3-3" /><path d="M11 6h6a2 2 0 0 1 2 2v10" /></>,
+  arrowDownWideNarrow: <><path d="m3 16 4 4 4-4" /><path d="M7 20V4" /><path d="M11 4h10M11 8h7M11 12h4" /></>,
+  calendarArrowDown: <><path d="m14 18 4 4 4-4" /><path d="M16 2v4M8 2v4" /><path d="M18 14v8" /><path d="M21 11.354V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7.343" /><path d="M3 10h18" /></>,
+  calendarArrowUp: <><path d="m14 18 4-4 4 4" /><path d="M16 2v4M8 2v4" /><path d="M18 22v-8" /><path d="M21 11.343V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9" /><path d="M3 10h18" /></>,
+  arrowDownAZ: <><path d="m3 16 4 4 4-4" /><path d="M7 20V4" /><path d="M20 8h-5" /><path d="M15 10V6.5a2.5 2.5 0 0 1 5 0V10" /><path d="M15 14h5l-5 6h5" /></>,
   searchX: <><path d="m13.5 8.5-5 5M8.5 8.5l5 5" /><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></>,
   loaderCircle: <path d="M21 12a9 9 0 1 1-6.219-8.56" />,
   calendarDays: <><path d="M8 2v4M16 2v4" /><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" /></>,
@@ -3141,6 +3155,114 @@ function chronoSortValue(row, key) {
   const created = row.createdAt ? String(row.createdAt) : "";
   if (s.length === 10 && created.length > 10) return s + created.slice(10);
   return s;
+}
+// UNIFIED TRANSACTION SORTING round — one sort control and one ordering
+// rule for the Cash Account, Cash Transfer, Cash Exchange and Account View
+// tables. Filtering comes first; the matching rows are then put in fixed
+// page groups, newest first (Page 1 = the newest transactions, Page 2 the
+// next older ones…, stable: date & time, then the record's own id), and the
+// chosen sort orders the rows INSIDE the page. Amount sorts compare within
+// one currency only (a mixed USD + SLSH page is grouped by currency first).
+// The choice is remembered per user and per table. Nothing here changes a
+// row — every row keeps its own amounts and recorded running balance.
+const TX_SORT_OPTIONS = [
+  ["oldest", "Oldest First", "calendarArrowDown", "Earliest date & time first"],
+  ["newest", "Newest First", "calendarArrowUp", "Latest date & time first"],
+  ["highest", "Highest Amount First", "trendingUp", "Largest amount first (within each currency)"],
+  ["lowest", "Lowest Amount First", "trendingDown", "Smallest amount first (within each currency)"],
+  ["reference", "Reference (A–Z)", "arrowDownAZ", "References in alphabetical and number order"],
+];
+const TX_SORT_IDS = new Set(TX_SORT_OPTIONS.map((o) => o[0]));
+const txRefCollator = typeof Intl !== "undefined" && Intl.Collator ? new Intl.Collator("en", { numeric: true, sensitivity: "base" }) : null;
+function txChronoCmp(a, b) {
+  const av = chronoSortValue(a, "date"), bv = chronoSortValue(b, "date");
+  if (av < bv) return -1; if (av > bv) return 1;
+  const ia = String(a.id || ""), ib = String(b.id || "");
+  return ia < ib ? -1 : ia > ib ? 1 : 0;
+}
+function useTxSort(rows, { module, amountOf, refOf, currencyOf, initialPageSize = 10 }) {
+  const storeKey = `gk_txsort_${currentUserIdForPrefs() || "anon"}_${module}`;
+  const [mode, setModeState] = useState(() => { try { const v = localStorage.getItem(storeKey); if (TX_SORT_IDS.has(v)) return v; } catch (e) { /* storage unavailable */ } return "oldest"; });
+  const [col, setCol] = useState(null); // a column-header sort inside the page: { key, dir }
+  const loadedKey = useRef(storeKey);
+  useEffect(() => {
+    if (loadedKey.current === storeKey) return;
+    loadedKey.current = storeKey;
+    try { const v = localStorage.getItem(storeKey); setModeState(TX_SORT_IDS.has(v) ? v : "oldest"); } catch (e) { /* storage unavailable */ }
+  }, [storeKey]);
+  // Fixed page groups: newest first, deterministic.
+  const groups = useMemo(() => [...rows].sort((a, b) => -txChronoCmp(a, b)), [rows]);
+  const pg = usePagination(groups, { initialPageSize });
+  // Back to Page 1 when the set changes (a filter, or a new transaction saved).
+  const sig = `${groups.length}|${groups[0] ? groups[0].id || chronoSortValue(groups[0], "date") : ""}`;
+  const firstSig = useRef(sig);
+  useEffect(() => { if (firstSig.current === sig) return; firstSig.current = sig; pg.setPage(1); }, [sig]); // eslint-disable-line react-hooks/exhaustive-deps
+  const amt = amountOf || ((r) => r.amount);
+  const ref = refOf || ((r) => r.referenceNumber || r.reference || "");
+  const curOf = currencyOf || ((r) => r.currency || "");
+  const pageRows = useMemo(() => {
+    const list = [...pg.pageRows];
+    if (col) {
+      const dir = col.dir === "asc" ? 1 : -1;
+      return list.sort((a, b) => {
+        let av = a[col.key], bv = b[col.key];
+        if (typeof av === "string") av = av.toLowerCase(); if (typeof bv === "string") bv = bv.toLowerCase();
+        if (av == null) av = ""; if (bv == null) bv = "";
+        if (av < bv) return -dir; if (av > bv) return dir;
+        return txChronoCmp(a, b);
+      });
+    }
+    const byCur = (a, b) => { const ca = String(curOf(a)), cb = String(curOf(b)); return ca === cb ? 0 : ca === "USD" ? -1 : cb === "USD" ? 1 : ca < cb ? -1 : 1; };
+    switch (mode) {
+      case "newest": return list.sort((a, b) => -txChronoCmp(a, b));
+      case "highest": case "lowest": {
+        const d = mode === "highest" ? -1 : 1;
+        return list.sort((a, b) => byCur(a, b) || (Math.abs(Number(amt(a)) || 0) - Math.abs(Number(amt(b)) || 0)) * d || txChronoCmp(a, b));
+      }
+      case "reference": return list.sort((a, b) => { const ra = String(ref(a) || ""), rb = String(ref(b) || ""); if (!ra !== !rb) return ra ? -1 : 1; return (txRefCollator ? txRefCollator.compare(ra, rb) : ra.localeCompare(rb)) || txChronoCmp(a, b); });
+      default: return list.sort(txChronoCmp);
+    }
+  }, [pg.pageRows, mode, col]); // eslint-disable-line react-hooks/exhaustive-deps
+  const setMode = useCallback((m) => { if (!TX_SORT_IDS.has(m)) return; setModeState(m); setCol(null); try { localStorage.setItem(storeKey, m); } catch (e) { /* storage unavailable */ } }, [storeKey]);
+  // Column headers keep working: Date toggles Oldest / Newest; any other
+  // column sorts the rows of the page by that column.
+  const toggleSort = useCallback((key) => {
+    if (key === "date") { setMode(!col && mode === "oldest" ? "newest" : "oldest"); return; }
+    setCol((c) => (c && c.key === key ? { key, dir: c.dir === "asc" ? "desc" : "asc" } : { key, dir: "desc" }));
+  }, [col, mode, setMode]);
+  const sortKey = col ? col.key : (mode === "oldest" || mode === "newest") ? "date" : null;
+  const sortDir = col ? col.dir : mode === "newest" ? "desc" : "asc";
+  return { ...pg, pageRows, sorted: pageRows, mode, setMode, sortKey, sortDir, toggleSort };
+}
+function TxSortControl({ mode, onChange, id }) {
+  const [open, setOpen] = useState(false);
+  const root = useRef(null);
+  const cur = TX_SORT_OPTIONS.find((o) => o[0] === mode) || TX_SORT_OPTIONS[0];
+  useEffect(() => {
+    if (!open) return undefined;
+    const away = (e) => { if (root.current && !root.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", away);
+    return () => document.removeEventListener("mousedown", away);
+  }, [open]);
+  const choose = (k) => { onChange(k); setOpen(false); };
+  return (
+    <div className="gk-txsort" ref={root} data-sort={mode} onKeyDown={(e) => { if (e.key === "Escape" && open) { e.stopPropagation(); setOpen(false); } }}>
+      <button type="button" id={id} className={`gk-txsort-btn${open ? " is-open" : ""}`} aria-haspopup="listbox" aria-expanded={open} aria-label={`Sort: ${cur[1]}`} title="Sort the transactions" onClick={() => setOpen((o) => !o)}>
+        <NavIcon name="arrowDownWideNarrow" size={16} />
+        <span className="gk-txsort-text"><span className="gk-txsort-k">Sort:</span> {cur[1]}</span>
+        <NavIcon name="chevronDown" size={16} className="gk-txsort-chev" />
+      </button>
+      {open && (
+        <div className="gk-txsort-menu" role="listbox" aria-label="Sort transactions">
+          {TX_SORT_OPTIONS.map(([k, l, ic, tip]) => (
+            <button key={k} type="button" role="option" aria-selected={mode === k} data-sort-option={k} className={`gk-txsort-opt${mode === k ? " is-selected" : ""}`} title={tip} onClick={() => choose(k)}>
+              <NavIcon name={ic} size={16} /><span>{l}</span>{mode === k && <NavIcon name="circleCheck" size={16} className="gk-txsort-check" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 function useSortableRows(rows, defaultKey, defaultDir) {
   const [sortKey, setSortKey] = useState(defaultKey || null);
@@ -10762,12 +10884,13 @@ function AccountDetailModal({ call, dl, preview, print, notify, perm, accountId,
   // ACCOUNT VIEW OLDEST-FIRST round: like Cash Account — Date & Time
   // ascending by default (oldest #1 at the top, newest at the bottom next to
   // the footer). Any column header still sorts.
-  const activitySort = useSortableRows(filteredActivity, "date", "asc");
+  const activitySort = useTxSort(filteredActivity, { module: `accountView.${(data && data.account && data.account.currency) || "any"}`,
+    amountOf: (r) => r.depositAmt || r.withdrawalAmt || r.amount || 0, refOf: (r) => r.referenceNumber || r.reference || "", currencyOf: () => "" });
   const txLayout = useTableLayout(ACCOUNT_TX_TABLE_KEY, call);
   const txResize = useResizableColumns(ACCOUNT_TX_WIDTH_KEY);
   const txColumns = resolveColumns(ACCOUNT_TX_COLUMNS, txLayout.effective);
   const txDensity = resolveDensity(txLayout.effective);
-  const activityPg = usePagination(activitySort.sorted, { initialPageSize: 10 });
+  const activityPg = activitySort;
   const activityFooterTotals = useMemo(() => ({
     deposit: filteredActivity.reduce((s, r) => s + r.depositAmt, 0),
     withdrawal: filteredActivity.reduce((s, r) => s + r.withdrawalAmt, 0),
@@ -11073,6 +11196,7 @@ function AccountDetailModal({ call, dl, preview, print, notify, perm, accountId,
           {(activityType !== "all" || activityStatus !== "all" || activitySearch || activityFrom || activityTo || customDates) && (
             <Btn size="sm" tone="ghost" onClick={() => { setActivityType("all"); setActivityStatus("all"); setActivitySearch(""); setActivityFrom(""); setActivityTo(""); setCustomDates(false); }}>Clear Filters</Btn>
           )}
+          <TxSortControl id="account-view-sort" mode={activitySort.mode} onChange={activitySort.setMode} />
         </div>
         {/* TABLE SCROLL RESTORE round: this wrap now fills all remaining
             height in the tab (flex:1/minHeight:0) and TableScrollShell below
@@ -19438,8 +19562,8 @@ function CashInHandModule({ call, dl, notify, perm, hasRaw, onOpenCashAccountVie
   }), [movements, legsBySource]);
   // CASH TRANSACTIONS STANDARDIZATION round: oldest first (by the real
   // transaction Date & Time); clicking a header still sorts.
-  const moveSort = useSortableRows(sortableMoves, "date", "asc");
-  const movePg = usePagination(moveSort.sorted, { initialPageSize: 10 });
+  const moveSort = useTxSort(sortableMoves, { module: "cash.movements" });
+  const movePg = moveSort;
   const [detailMovement, setDetailMovement] = useState(null);
   // Totals of every matching movement (all pages), one row per currency;
   // Current Balance = the active Cash Accounts of that currency now. A
@@ -19475,8 +19599,8 @@ function CashInHandModule({ call, dl, notify, perm, hasRaw, onOpenCashAccountVie
     .filter((t) => (recCurrency === "all" || t.currency === recCurrency) && inDates(t.date) && textHit(t.referenceNumber, t.notes, t.fromCashAccount?.name, t.toCashAccount?.name, t.staffName))
     .map((t) => { const legs = legsOf("cash_transfer", t.id); return { ...t, outLeg: legs.find((l) => l.type === "withdrawal") || null, inLeg: legs.find((l) => l.type === "deposit") || null, fromName: t.fromCashAccount?.name || "", toName: t.toCashAccount?.name || "", debitAmt: t.amount, creditAmt: t.amount }; }),
   [transfers, legsBySource, recCurrency, recFrom, recTo, recSearch]);
-  const transferSort = useSortableRows(transferRows, "date", "asc");
-  const transferPg = usePagination(transferSort.sorted, { initialPageSize: 10 });
+  const transferSort = useTxSort(transferRows, { module: "cash.transfers" });
+  const transferPg = transferSort;
   // One transfer moves the same amount out of one Cash Account and into
   // another: Debit and Credit both show it, and the company's total stays the same.
   const transferTotals = useMemo(() => {
@@ -19493,8 +19617,11 @@ function CashInHandModule({ call, dl, notify, perm, hasRaw, onOpenCashAccountVie
     .filter((x) => (recCurrency === "all" || x.currencyGiven === recCurrency || x.currencyReceived === recCurrency) && inDates(x.date) && textHit(x.referenceNumber, x.notes, x.fromCashAccount?.name, x.toCashAccount?.name, x.staffName))
     .map((x) => { const legs = legsOf("cash_exchange", x.id); return { ...x, outLeg: legs.find((l) => l.type === "withdrawal") || null, inLeg: legs.find((l) => l.type === "deposit") || null, fromName: x.fromCashAccount?.name || "", toName: x.toCashAccount?.name || "", debitAmt: x.amountGiven, creditAmt: x.amountReceived }; }),
   [exchanges, legsBySource, recCurrency, recFrom, recTo, recSearch]);
-  const exchangeSort = useSortableRows(exchangeRows, "date", "asc");
-  const exchangePg = usePagination(exchangeSort.sorted, { initialPageSize: 10 });
+  // Amount sorts compare the side in the chosen currency (the given side when "All").
+  const exchangeSort = useTxSort(exchangeRows, { module: "cash.exchanges",
+    currencyOf: (x) => (recCurrency !== "all" ? recCurrency : x.currencyGiven),
+    amountOf: (x) => ((recCurrency !== "all" ? recCurrency : x.currencyGiven) === x.currencyGiven ? x.amountGiven : x.amountReceived) });
+  const exchangePg = exchangeSort;
   // Per currency: what was given out (Debit) and received (Credit) in it —
   // each exchange once, at its own recorded rate.
   const exchangeTotals = useMemo(() => {
@@ -19641,6 +19768,7 @@ function CashInHandModule({ call, dl, notify, perm, hasRaw, onOpenCashAccountVie
             <Field label="Search" width={220}><SearchInput placeholder="Description, reference…" value={moveSearch} onChange={(e) => setMoveSearch(e.target.value)} /></Field>
             <Field label="Currency" width={130}><Select value={moveCurrency} onChange={(e) => setMoveCurrency(e.target.value)}><option value="all">All</option><option value="USD">USD</option><option value="SLSH">SLSH</option></Select></Field>
             <Field label="Type" width={150}><Select value={moveType} onChange={(e) => setMoveType(e.target.value)}><option value="all">All</option><option value="deposit">Credit</option><option value="withdrawal">Debit</option></Select></Field>
+            <TxSortControl id="cash-movements-sort" mode={moveSort.mode} onChange={moveSort.setMode} />
           </div>
           <div className="gk-table-wrap" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, display: "flex", flexDirection: "column" }}>
             {movementsLoading ? <Spinner /> : movePg.total === 0 ? (<><Empty text="No Cash Movements Found" /><TableFooter firstIdx={movePg.firstIdx} lastIdx={movePg.lastIdx} total={movePg.total} page={movePg.page} totalPages={movePg.totalPages} onPageChange={movePg.setPage} pageSize={movePg.pageSize} onPageSizeChange={movePg.setPageSize} /></>) : (
@@ -19706,6 +19834,8 @@ function CashInHandModule({ call, dl, notify, perm, hasRaw, onOpenCashAccountVie
           <Field label="From" width={140}><Input type="date" aria-label="From" value={recFrom} max={recTo || undefined} onChange={(e) => setRecFrom(e.target.value)} /></Field>
           <Field label="To" width={140}><Input type="date" aria-label="To" value={recTo} min={recFrom || undefined} onChange={(e) => setRecTo(e.target.value)} /></Field>
           {(recSearch || recCurrency !== "all" || recFrom || recTo) && <Btn size="sm" tone="ghost" onClick={() => { setRecSearch(""); setRecCurrency("all"); setRecFrom(""); setRecTo(""); }}>Clear Filters</Btn>}
+          {tab === "transfers" && <TxSortControl id="cash-transfers-sort" mode={transferSort.mode} onChange={transferSort.setMode} />}
+          {tab === "exchanges" && <TxSortControl id="cash-exchanges-sort" mode={exchangeSort.mode} onChange={exchangeSort.setMode} />}
         </div>
       )}
 
@@ -20023,8 +20153,8 @@ function CashAccountDetailPage({ call, dl, notify, perm, hasRaw, cashAccountId, 
   // entries with the same time keep their recorded order. Any header still
   // sorts. Credit / Debit sort by amount.
   const sortableMovements = useMemo(() => [...filteredMovements].reverse().map((e) => ({ ...e, creditAmt: e.type === "deposit" ? e.amount : null, debitAmt: e.type === "withdrawal" ? e.amount : null })), [filteredMovements]);
-  const moveSort = useSortableRows(sortableMovements, "date", "asc");
-  const movePg = usePagination(moveSort.sorted, { initialPageSize: 10 });
+  const moveSort = useTxSort(sortableMovements, { module: "cash.accountView" });
+  const movePg = moveSort;
   const [detailMovement, setDetailMovement] = useState(null);
   const cur = account ? account.currency : (movements[0] && movements[0].currency) || "USD";
   // Footer totals over every movement matching the filters (all pages).
@@ -20165,6 +20295,7 @@ function CashAccountDetailPage({ call, dl, notify, perm, hasRaw, cashAccountId, 
           {hasFilters && (
             <Btn size="sm" tone="ghost" onClick={() => { setSearch(""); setMoveType("all"); setFrom(""); setTo(""); setStaffId(""); setReference(""); }}>Clear Filters</Btn>
           )}
+          <TxSortControl id="cash-account-view-sort" mode={moveSort.mode} onChange={moveSort.setMode} />
         </div>
 
         <div className="gk-table-wrap" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, display: "flex", flexDirection: "column" }}>
