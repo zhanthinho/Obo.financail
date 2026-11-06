@@ -58,7 +58,8 @@
     "test:bulk-search": "node test/bulk-search.js",
     "test:transaction-history": "node test/transaction-history-unified.js",
     "test:table-design": "node test/table-design.js",
-    "test:import-negative": "node test/import-negative.js"
+    "test:import-negative": "node test/import-negative.js",
+    "test:account-fields": "node test/account-fields.js"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",

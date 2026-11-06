@@ -156,6 +156,18 @@ const THEME_CSS = `
   .gk-amt-debit { color: var(--c-debit); font-weight: 600; white-space: nowrap; }
   .gk-bal { font-weight: 700; white-space: nowrap; }
   .gk-bal[data-sign="pos"] { color: var(--c-bal-pos); } .gk-bal[data-sign="neg"] { color: var(--c-bal-neg); } .gk-bal[data-sign="zero"] { color: var(--c-bal-zero); }
+  .gk-acct-group { background: #F0FAF7; border: 1px solid #DCEFE8; border-radius: 11px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0; box-sizing: border-box; }
+  .gk-acct-group .gk-acct-label { font-size: 12px; font-weight: 700; color: var(--c-ink, #0B1F33); display: flex; align-items: center; gap: 7px; margin: 0; }
+  .gk-acct-group .gk-acct-icon, .gk-acct-group .gk-acct-label > svg { color: #0F5B50 !important; opacity: 1 !important; flex: 0 0 auto; }
+  .gk-acct-group select, .gk-acct-group input:not([type="checkbox"]):not([type="radio"]) { background: #fff !important; border: 1px solid #CBD5D8 !important; color: var(--c-ink, #0B1F33) !important; border-radius: 8px !important; }
+  .gk-acct-group select:focus, .gk-acct-group input:focus { border-color: #0F5B50 !important; box-shadow: 0 0 0 3px rgba(15,91,80,.14) !important; outline: none; }
+  .gk-acct-group .gk-acct-hint { font-size: 11px; color: var(--c-slate, #64748B); }
+  .gk-acct-group[data-acct-role="from"] { border-left: 3px solid #0F5B50; }
+  .gk-acct-group[data-acct-role="to"], .gk-acct-group[data-acct-role="receive"] { border-left: 3px solid #2BA58A; }
+  .gk-acct-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: stretch; }
+  @media (max-width: 640px) { .gk-acct-pair { grid-template-columns: minmax(0, 1fr); } }
+  :root[data-theme="dark"] .gk-acct-group { background: rgba(43,165,138,.10); border-color: rgba(43,165,138,.25); }
+  :root[data-theme="dark"] .gk-acct-group select, :root[data-theme="dark"] .gk-acct-group input { background: var(--c-card) !important; color: var(--c-ink) !important; }
   .gk-table tfoot .gk-cash-current { color: var(--c-tfoot-mint-fg); font-weight: 800; }
   .gk-table tfoot .gk-amt-credit { color: var(--c-credit); } .gk-table tfoot .gk-amt-debit { color: var(--c-debit); }
   .gk-cash-ref-link:hover { color: var(--c-navy-light) !important; }
@@ -751,7 +763,8 @@ const THEME_CSS = `
   @media (max-width: 980px) { .gk-exw-grid { grid-template-columns: 1fr; } }
   .gk-exw-pair { display: grid; grid-template-columns: 1fr auto 1fr; gap: 14px; align-items: center; }
   @media (max-width: 640px) { .gk-exw-pair { grid-template-columns: 1fr; } .gk-exw-pair-arrow { transform: rotate(90deg); margin: 0 auto; } }
-  .gk-exw-cashpair { display: grid; grid-template-columns: 1fr auto 1fr; gap: 14px; align-items: center; }
+  .gk-exw-cashpair { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 14px; align-items: stretch; }
+  .gk-exw-cashpair > .gk-exw-cashpair-arrow { align-self: center; }
   @media (max-width: 640px) { .gk-exw-cashpair { grid-template-columns: 1fr; } .gk-exw-cashpair-arrow { transform: rotate(90deg); margin: 0 auto; } }
   @media (max-width: 640px) { .gk-exw-profitdate { grid-template-columns: 1fr !important; } }
   /* QUICK EXCHANGE round */
@@ -1636,6 +1649,7 @@ const NAV_ICON_PATHS = {
   landmark: <><path d="M3 22h18M6 18v-7M10 18v-7M14 18v-7M18 18v-7" /><path d="m12 2 8 5H4z" /></>,
   helpCircle: <><circle cx="12" cy="12" r="9" /><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></>,
   dollar: <><path d="M12 2v20" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></>,
+  building2: <><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" /><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" /><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2" /><path d="M10 6h4M10 10h4M10 14h4M10 18h4" /></>,
   coins: <><circle cx="8" cy="8" r="6" /><path d="M18.1 10.4A6 6 0 1 1 10.3 18" /><path d="M7 6h1v4" /><path d="m16.7 13.9.7.7-2.8 2.8" /></>,
   banknote: <><rect x="2" y="6" width="20" height="12" rx="2" /><circle cx="12" cy="12" r="2" /><path d="M6 12h.01M18 12h.01" /></>,
   chartCombined: <><path d="M12 16v5M16 14v7M20 10v11" /><path d="m22 3-8.6 8.6a2 2 0 0 1-2.8 0l-1.2-1.2a2 2 0 0 0-2.8 0L2 16" /><path d="M4 18v3M8 14v7" /></>,
@@ -2072,7 +2086,24 @@ function DetailRow({ icon, label, value }) {
     </div>
   );
 }
-function Field({ label, children, hint, width }) {
+// OPTION 1 LIGHT SECTION BACKGROUND round — every source / destination
+// account field (From, To, From Account, Receiving Account, Cash Out From,
+// Cash In To, …) sits in its own light-mint section (#F0FAF7) with a bold
+// navy label and a dark-emerald icon: source = Wallet, destination =
+// Building2, receiving = Landmark. One rule, applied by Field itself (and
+// the class .gk-acct-group for the few hand-built pickers), so current and
+// future forms look the same. Filter bars (a fixed width) and date fields
+// are left as they are. Visual only.
+const ACCT_FIELD_RE = /^(from|to)\b|\b(from|to|receiving|sending|source|destination|credit to|debit from) (cash )?account|cash (out from|in to)|source of funds|transfer (from|to)|paid from|received into/i;
+function acctFieldRole(label) {
+  const l = String(label || "");
+  if (!ACCT_FIELD_RE.test(l)) return null;
+  if (/receiving|received into/i.test(l)) return "receive";
+  if (/^to\b|\bto\b.*account|destination|cash in to|credit to/i.test(l)) return "to";
+  return "from";
+}
+const ACCT_ROLE_ICON = { from: "wallet", to: "building2", receive: "landmark" };
+function Field({ label, children, hint, width, acct }) {
   // COMPACT DENSITY round 2 (explicit user request, "ka yaree font-ka guud"):
   // label/hint shrunk one notch (12.5->11.5, 11.5->11) and the gap between
   // label and control tightened (5->4) — matches the smaller, denser filter
@@ -2082,6 +2113,17 @@ function Field({ label, children, hint, width }) {
   // Date pickers labelled just "From"/"To" are recognised by their input type.
   const childType = children && children.props && children.props.type;
   const fieldIcon = iconFor(FIELD_ICON_RULES, label) || (childType === "date" || childType === "datetime-local" ? "calendar" : undefined);
+  const isDate = childType === "date" || childType === "datetime-local";
+  const role = acct === false || isDate || (width && acct !== true) ? null : (typeof acct === "string" ? acct : acctFieldRole(label) || (acct === true ? "from" : null));
+  if (role) {
+    return (
+      <div className="gk-acct-group" data-acct-role={role} style={{ width: width || "100%" }}>
+        <label className="gk-acct-label"><NavIcon name={ACCT_ROLE_ICON[role]} size={15} className="gk-acct-icon" />{label}</label>
+        {children}
+        {hint && <div className="gk-acct-hint">{hint}</div>}
+      </div>
+    );
+  }
   return <div style={{ width: width || "100%", display: "flex", flexDirection: "column", gap: 4 }}><label style={{ fontSize: 11.5, fontWeight: 600, color: C.ink, display: "flex", alignItems: "center", gap: 6 }}>{fieldIcon && <NavIcon name={fieldIcon} size={14} style={{ color: "var(--c-navy)", opacity: 0.85 }} />}{label}</label>{children}{hint && <div style={{ fontSize: 11, color: C.slate }}>{hint}</div>}</div>;
 }
 // COMPACT DENSITY round 2: input padding/font shrunk (8px 10px/13.5 ->
@@ -7519,8 +7561,8 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
               <div style={{ fontSize: 11.5, color: C.slate, marginTop: 10 }}>Walk-in exchange — no account balance is changed.</div>
             ) : (
               <div className="gk-exw-cashpair" style={{ marginTop: 12 }}>
-                <div style={{ minWidth: 0 }}>
-                  <label htmlFor="qx-from" style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: C.ink, marginBottom: 5 }}><NavIcon name="usersRound" size={13} style={{ color: EX.primary }} /><span>From Account ({currencyGiven})</span></label>
+                <div className="gk-acct-group" data-acct-role="from">
+                  <label htmlFor="qx-from" className="gk-acct-label"><NavIcon name="wallet" size={15} className="gk-acct-icon" /><span>From Account ({currencyGiven})</span></label>
                   {fromAccountOptions.length === 0 ? (
                     <div style={{ fontSize: 11.5, color: C.slate, border: `1px dashed ${C.line}`, borderRadius: 8, padding: "10px 10px" }}>No active {currencyGiven} accounts.</div>
                   ) : (
@@ -7542,9 +7584,9 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
                     </div>
                   )}
                 </div>
-                <div className="gk-exw-cashpair-arrow" style={{ color: C.slate, display: "flex" }}><NavIcon name="arrowRight" size={16} /></div>
-                <div style={{ minWidth: 0 }}>
-                  <label htmlFor="qx-to" style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: C.ink, marginBottom: 5 }}><NavIcon name="landmark" size={13} style={{ color: EX.primary }} /><span>Receiving Account ({curReceived})</span></label>
+                <div className="gk-exw-cashpair-arrow" style={{ color: "#0F5B50", display: "flex" }} title={`${currencyGiven} → ${curReceived}`}><NavIcon name="arrowLeftRight" size={17} /></div>
+                <div className="gk-acct-group" data-acct-role="receive">
+                  <label htmlFor="qx-to" className="gk-acct-label"><NavIcon name="landmark" size={15} className="gk-acct-icon" /><span>Receiving Account ({curReceived})</span></label>
                   {toAccountOptions.length === 0 ? (
                     <div style={{ fontSize: 11.5, color: C.slate, border: `1px dashed ${C.line}`, borderRadius: 8, padding: "10px 10px" }}>No active {curReceived} accounts.</div>
                   ) : (
@@ -7762,7 +7804,8 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
                   <div className="gk-qx-paid-row"><span>Credit amount</span><b style={{ fontFamily: FONT_MONO }}>{amountNum > 0 ? fmtMoney(amountNum, currencyGiven) : "—"}</b></div>
                   <div className="gk-qx-paid-row"><span>Receiving Account</span><b>{toAccount ? `${toTitleCase(toAccount.name)} · ${fmtMoney(effectiveReceived, curReceived)}` : "— (none)"}</b></div>
                   <div className="gk-qx-paid-note"><span>The customer's {currencyGiven} is recorded as a Credit on the From Account and goes into the Cash Account below; the exchange then pays the {curReceived} into the Receiving Account — nothing is counted twice.</span></div>
-                  <label htmlFor="qx-pay-cash" className="gk-qx-paid-label">Cash In To (Cash Account)</label>
+                  <div className="gk-acct-group" data-acct-role="to" style={{ marginTop: 6 }}>
+                  <label htmlFor="qx-pay-cash" className="gk-acct-label"><NavIcon name="building2" size={15} className="gk-acct-icon" />Cash In To (Cash Account)</label>
                   {payCashAccounts === null ? <div className="gk-qx-paid-hint">Loading…</div>
                     : payCashError ? <div className="gk-qx-paid-err">{payCashError}</div>
                     : payCashAccounts.length === 0 ? <div className="gk-qx-paid-hint">No active {currencyGiven} Cash Accounts — the Credit is recorded without one.</div>
@@ -7773,6 +7816,7 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
                       </Select>
                     )}
                   {payCashMissing && triedSubmit && <div className="gk-qx-paid-err">Choose the Cash Account the money went into.</div>}
+                  </div>
                   <div className="gk-qx-paid-grid">
                     <div>
                       <label htmlFor="qx-pay-ref" className="gk-qx-paid-label">Payment Reference</label>
@@ -11645,7 +11689,7 @@ function NewLedgerMoveModal({ currency, call, onClose, onSubmit, presetAccount, 
     <Modal title={`New ${currency} transaction`} subtitle="Record a credit or debit for this account" onClose={onClose} wide>
       {!selected ? (
         <>
-          <Field label={`Search for a ${currency} account`} hint="Name, account number, or phone — leave blank to see all"><Input placeholder="Start typing…" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus /></Field>
+          <Field acct="receive" label={`Search for a ${currency} account`} hint="Name, account number, or phone — leave blank to see all"><Input placeholder="Start typing…" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus /></Field>
           <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6, maxHeight: 260, overflowY: "auto" }}>
             {results.length === 0 && <Empty text={`No ${currency} accounts found.`} />}
             {results.map((a) => (
@@ -11997,7 +12041,7 @@ function BulkTransactionWorkspace({ currency, call, notify, user, onBack }) {
 
           {!selected ? (
             <>
-              <Field label={`Search for a ${currency} account`} hint="Name, account number, or phone — leave blank to see all">
+              <Field acct="receive" label={`Search for a ${currency} account`} hint="Name, account number, or phone — leave blank to see all">
                 <div style={{ position: "relative" }}>
                   <Input className="gk-bulk-mint-input" aria-label={`Search for a ${currency} account`} style={{ border: `1.5px solid ${C.line}`, borderRadius: 7, background: C.card, height: 40, paddingRight: query ? 34 : undefined }} placeholder="Start typing…" value={query} onChange={(e) => setQuery(e.target.value)} />
                   {query && <button type="button" className="gk-bulk-search-clear" aria-label="Clear search" title="Clear search" onClick={() => setQuery("")}><NavIcon name="x" size={14} /></button>}
@@ -12276,14 +12320,15 @@ function TransferModal({ currency, call, onClose, onSubmit, presetFromAccount, e
     const accent = tone === "out" ? C.withdrawRed : C.depositGreen;
     const accentBg = tone === "out" ? C.withdrawRedBg : C.depositGreenBg;
     return (
-      <div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700, fontSize: 12.5, marginBottom: 6, color: C.ink }}>
-          <span style={{ width: 8, height: 8, borderRadius: "50%", background: accent, display: "inline-block", flexShrink: 0 }} />
+      <div className="gk-acct-group" data-acct-role={tone === "out" ? "from" : "to"}>
+        <div className="gk-acct-label">
+          <NavIcon name={tone === "out" ? "wallet" : "building2"} size={15} className="gk-acct-icon" />
           {label}
+          <span style={{ width: 8, height: 8, borderRadius: "50%", background: accent, display: "inline-block", flexShrink: 0, marginLeft: 2 }} title={tone === "out" ? "Debited" : "Credited"} />
         </div>
         {!selected ? (
           <>
-            <Field label={`Search ${currency} account`}><Input placeholder="Start typing…" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus={autoFocus} /></Field>
+            <Field acct={false} label={`Search ${currency} account`}><Input placeholder="Start typing…" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus={autoFocus} /></Field>
             <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6, maxHeight: 200, overflowY: "auto" }}>
               {results.length === 0 && <Empty text={`No ${currency} accounts found.`} />}
               {results.map((a) => (
@@ -12353,7 +12398,7 @@ function TransferModal({ currency, call, onClose, onSubmit, presetFromAccount, e
 
   return (
     <Modal title={editingTransfer ? "Edit transfer" : `Transfer ${currency}`} onClose={onClose} wide>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+      <div className="gk-acct-pair" style={{ gap: 14 }}>
         <AccountPicker label="From Account (debited)" tone="out" query={fromQuery} setQuery={setFromQuery} results={fromResults} selected={fromAccount} setSelected={setFromAccount} autoFocus={!presetFromAccount && !editingTransfer} lockedNoChange={!!presetFromAccount} />
         <AccountPicker label="To Account (credited)" tone="in" query={toQuery} setQuery={setToQuery} results={toResults} selected={toAccount} setSelected={setToAccount} autoFocus={!!presetFromAccount} />
       </div>
@@ -16977,6 +17022,7 @@ function CashTransferFormModal({ accounts, onClose, onSubmit }) {
   return (
     <Modal title="Transfer Between Cash Accounts" onClose={onClose}>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="gk-acct-pair">
         <Field label="From"><Select value={fromId} onChange={(e) => { setFromId(e.target.value); setToId(""); }}>
           <option value="">Select source account…</option>
           {accounts.map((a) => <option key={a.id} value={a.id}>{accountOptionLabel(a)} — {fmtMoney(a.balance, a.currency)}</option>)}
@@ -16985,6 +17031,7 @@ function CashTransferFormModal({ accounts, onClose, onSubmit }) {
           <option value="">Select destination account…</option>
           {sameCurrencyTargets.map((a) => <option key={a.id} value={a.id}>{accountOptionLabel(a)} — {fmtMoney(a.balance, a.currency)}</option>)}
         </Select></Field>
+        </div>
         <Field label={`Amount${fromAcc ? ` (${fromAcc.currency})` : ""}`}><MoneyInput value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
         <Field label="Date"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
         <OptionalNotes value={notes} onChange={(e) => setNotes(e.target.value)} multiline={false} />
@@ -17036,14 +17083,16 @@ function CashExchangeFormModal({ accounts, rate, onClose, onSubmit }) {
             <MoneyInput placeholder={rate ? String(rate) : "—"} value={rateUsed} onChange={(e) => setRateUsed(e.target.value)} aria-label="Rate" style={{ width: 90, textAlign: "center", fontFamily: FONT_MONO, fontSize: 13, padding: "5px 4px", background: C.card }} />
           </div>
         </div>
-        <Field label="From (USD or SLSH account)"><Select value={fromId} onChange={(e) => { setFromId(e.target.value); setToId(""); }}>
+        <div className="gk-acct-pair">
+        <Field label="From (USD or SLSH account)" hint={fromAcc ? `Gives ${fromAcc.currency}` : undefined}><Select value={fromId} onChange={(e) => { setFromId(e.target.value); setToId(""); }}>
           <option value="">Select source account…</option>
           {accounts.map((a) => <option key={a.id} value={a.id}>{accountOptionLabel(a)} — {fmtMoney(a.balance, a.currency)}</option>)}
         </Select></Field>
-        <Field label="To (opposite currency account)"><Select value={toId} onChange={(e) => setToId(e.target.value)} disabled={!fromId}>
+        <Field label="To (opposite currency account)" hint={fromAcc ? `Receives ${fromAcc.currency === "USD" ? "SLSH" : "USD"}` : undefined}><Select value={toId} onChange={(e) => setToId(e.target.value)} disabled={!fromId}>
           <option value="">Select destination account…</option>
           {oppositeTargets.map((a) => <option key={a.id} value={a.id}>{accountOptionLabel(a)} — {fmtMoney(a.balance, a.currency)}</option>)}
         </Select></Field>
+        </div>
         <Field label={`Amount Given${fromAcc ? ` (${fromAcc.currency})` : ""}`}><MoneyInput value={amountGiven} onChange={(e) => setAmountGiven(e.target.value)} /></Field>
         {estimatedReceived != null && <div style={{ fontSize: 12.5, color: C.slate }}>Estimated received at {rateUsed !== "" ? "the rate above" : "current rate"}: <span style={{ fontFamily: FONT_MONO, fontWeight: 700, color: C.ink }}>{fmtMoney(estimatedReceived, toAcc.currency)}</span></div>}
         <Field label="Date"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
