@@ -12147,7 +12147,7 @@ function AccountCombo({ id, accounts, value, onChange, kind, placeholder = "Sele
   const isLoading = loading || accounts == null;
   const selected = (accounts || []).find((a) => a.id === value) || null;
   const term = normSearch(q);
-  const shown = (mustType && !term) ? [] : (accounts || []).filter((a) => a.id !== value && accountMatchesSearch(a, q));
+  const shown = (mustType && !term) ? [] : (accounts || []).filter((a) => (!mustType || a.id !== value) && accountMatchesSearch(a, q));
   const options = [...(noneLabel && !term ? [null] : []), ...shown];
   useEffect(() => { setActive(0); }, [q, open]);
   useEffect(() => {
@@ -12197,7 +12197,7 @@ function AccountCombo({ id, accounts, value, onChange, kind, placeholder = "Sele
               <>
                 {options.map((a, i) => (a === null
                   ? <button key="none" type="button" role="option" id={id ? `${id}-opt-${i}` : undefined} data-opt-index={i} aria-selected={!value} className={`gk-acombo-none${active === i ? " is-active" : ""}`} onMouseEnter={() => setActive(i)} onClick={() => pick(null)}>{noneLabel}</button>
-                  : <div key={a.id} id={id ? `${id}-opt-${i}` : undefined} data-opt-index={i} className={`gk-acombo-opt${active === i ? " is-active" : ""}`} onMouseEnter={() => setActive(i)}><AccountResultCard a={a} kind={kind} term={q} selected={false} onClick={() => pick(a)} /></div>))}
+                  : <div key={a.id} id={id ? `${id}-opt-${i}` : undefined} data-opt-index={i} className={`gk-acombo-opt${active === i ? " is-active" : ""}`} onMouseEnter={() => setActive(i)}><AccountResultCard a={a} kind={kind} term={q} selected={a.id === value} onClick={() => pick(a)} /></div>))}
                 {mustType && !term && <div className="gk-acombo-empty is-hint"><NavIcon name="search" size={16} />Type a name, account number, or phone number to find an account.</div>}
                 {(!mustType || term) && shown.length === 0 && <div className="gk-acombo-empty is-none"><NavIcon name="searchX" size={16} />{term ? "No matching accounts found" : "No accounts available."}</div>}
               </>
