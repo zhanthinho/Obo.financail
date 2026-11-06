@@ -344,7 +344,7 @@ const THEME_CSS = `
   .gk-acard.is-selected { border-color: #10B981; background: #FBFEFD; }
   .gk-acard-avatar { flex: 0 0 36px; width: 36px; height: 36px; border-radius: 50%; background: #D9F2EA; color: #0F5B50; font-weight: 700; font-size: 12.5px; display: flex; align-items: center; justify-content: center; letter-spacing: .02em; }
   .gk-acard-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-  .gk-acard-name { font-weight: 700; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gk-acard-name { font-weight: 700; font-size: 13.5px; overflow: hidden; white-space: normal; overflow-wrap: anywhere; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
   .gk-acard-sub { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 11.5px; color: var(--c-slate); }
   .gk-acard-num { font-family: var(--c-font-num); font-variant-numeric: tabular-nums; }
   .gk-acard-cur { font-weight: 700; color: #0F5B50; }
@@ -362,7 +362,10 @@ const THEME_CSS = `
   .gk-acombo-trigger > .gk-acard { border: none; padding: 4px 6px; background: transparent; box-shadow: none; flex: 1 1 auto; }
   .gk-acombo-ph { flex: 1 1 auto; padding: 0 8px; color: var(--c-slate); font-size: 13px; }
   .gk-acombo-chev { flex: 0 0 auto; color: #0F5B50; }
-  .gk-acombo-panel { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 80; background: #fff; border: 1px solid #CDE3DC; border-radius: 12px; box-shadow: 0 12px 28px rgba(6,78,59,.16); padding: 8px; min-width: 260px; }
+  .gk-acombo-panel { position: absolute; left: 0; width: max(100%, 380px); max-width: calc(100vw - 24px); box-sizing: border-box; top: calc(100% + 4px); z-index: 80; background: #fff; border: 1px solid #CDE3DC; border-radius: 12px; box-shadow: 0 12px 28px rgba(6,78,59,.16); padding: 8px; }
+  .gk-acombo-panel.is-right { left: auto; right: 0; }
+  .gk-acombo-panel .gk-acard { padding: 8px 10px; gap: 9px; }
+  .gk-acombo-panel .gk-acard-avatar { flex-basis: 32px; width: 32px; height: 32px; }
   .gk-acombo-panel.is-up { top: auto; bottom: calc(100% + 4px); }
   .gk-acombo-search { position: relative; }
   .gk-acombo-search .gk-asearch-input { height: 38px; font-size: 13.5px; }
@@ -371,6 +374,12 @@ const THEME_CSS = `
   .gk-acombo-opt.is-active > .gk-acard, .gk-acombo-none.is-active { border-color: #10B981; background: #F0FDF8; }
   .gk-acombo-none { text-align: left; padding: 9px 12px; background: #fff; border: 1px dashed #CBD5D8; border-radius: 10px; cursor: pointer; font: inherit; font-size: 12.5px; color: var(--c-slate); }
   .gk-acombo-empty { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 12px; text-align: center; font-size: 12.5px; color: var(--c-slate); background: #F8FBFA; border: 1px dashed #CBD5D8; border-radius: 10px; }
+  .gk-acombo-sel { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 9px; padding: 3px 4px; }
+  .gk-acombo-sel .gk-acard-avatar { flex-basis: 32px; width: 32px; height: 32px; font-size: 11.5px; }
+  .gk-acombo-sel-main { min-width: 0; flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; }
+  .gk-acombo-sel-name { font-weight: 700; font-size: 13px; line-height: 1.25; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .gk-acombo-sel-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 11.5px; color: var(--c-slate); }
+  .gk-acombo-sel-sub .gk-acard-bal { margin-left: 0; font-size: 12px; display: inline-flex; align-items: center; gap: 3px; }
   .gk-acombo-change { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 700; color: #0F766E; background: #F0FDFA; border: 1px solid #CCEFE6; border-radius: 7px; padding: 3px 7px; }
   .gk-acombo-ph { display: inline-flex; align-items: center; gap: 7px; }
   .gk-acombo-trigger.has-value { min-height: 48px; }
@@ -12141,6 +12150,7 @@ function AccountCombo({ id, accounts, value, onChange, kind, placeholder = "Sele
   const [q, setQ] = useState("");
   const [active, setActive] = useState(0);
   const [up, setUp] = useState(false);
+  const [right, setRight] = useState(false);
   const root = useRef(null);
   const trigger = useRef(null);
   const listRef = useRef(null);
@@ -12157,10 +12167,18 @@ function AccountCombo({ id, accounts, value, onChange, kind, placeholder = "Sele
     if (trigger.current) {
       const r = trigger.current.getBoundingClientRect();
       const below = window.innerHeight - r.bottom, above = r.top;
-      setUp(below < 320 && above > below);
+      // Open directly below (the page scrolls to show it); only at the very bottom of the page, where it cannot, open above.
+      const room = below + Math.max(0, document.documentElement.scrollHeight - (window.scrollY + window.innerHeight));
+      setUp(room < 320 && above > 360);
+      setRight(r.left + Math.max(r.width, 380) > window.innerWidth - 12);
     }
     return () => document.removeEventListener("mousedown", away);
   }, [open]);
+  useEffect(() => {
+    if (!open || !root.current) return undefined;
+    const t = setTimeout(() => { const pnl = root.current && root.current.querySelector(".gk-acombo-panel"); if (pnl && pnl.scrollIntoView) pnl.scrollIntoView({ block: "nearest" }); }, 30);
+    return () => clearTimeout(t);
+  }, [open, q]);
   useEffect(() => {
     if (!open || !listRef.current) return;
     const el = listRef.current.querySelector(`[data-opt-index="${active}"]`);
@@ -12180,11 +12198,22 @@ function AccountCombo({ id, accounts, value, onChange, kind, placeholder = "Sele
       <button type="button" id={id} ref={trigger} className={`gk-acombo-trigger${invalid ? " is-invalid" : ""}${selected ? " has-value" : ""}`} aria-haspopup="listbox" aria-expanded={open} aria-label={ariaLabel}
         aria-invalid={invalid || undefined} disabled={disabled} data-value={value || ""} onClick={() => (open ? close(false) : setOpen(true))}
         onKeyDown={(e) => { if (!open && (e.key === "ArrowDown" || e.key === "Enter")) { e.preventDefault(); setOpen(true); } }}>
-        {selected ? <AccountResultCard a={selected} kind={kind} as="span" role={undefined} /> : <span className="gk-acombo-ph"><NavIcon name={kind === "cash" ? "wallet" : "landmark"} size={15} />{placeholder}</span>}
+        {selected ? (() => { const b = Number(selected.balance || 0); return (
+          <span className="gk-acombo-sel" data-account-id={selected.id}>
+            <span className="gk-acard-avatar" aria-hidden="true">{accountInitials(selected.name)}</span>
+            <span className="gk-acombo-sel-main">
+              <span className="gk-acombo-sel-name">{toTitleCase(selected.name)}</span>
+              <span className="gk-acombo-sel-sub">
+                {selected.accountNumber && <span className="gk-acard-num">{selected.accountNumber}</span>}
+                {selected.currency && <span className="gk-acard-cur">{selected.currency}</span>}
+                {selected.balance != null && <span className={`gk-acard-bal ${b > 0 ? "is-pos" : b < 0 ? "is-neg" : "is-zero"}`}><NavIcon name="wallet" size={12} />{fmtMoney(b, selected.currency)}</span>}
+              </span>
+            </span>
+          </span>); })() : <span className="gk-acombo-ph"><NavIcon name={kind === "cash" ? "wallet" : "landmark"} size={15} />{placeholder}</span>}
         {selected ? <span className="gk-acombo-change" title="Change account"><NavIcon name="arrowLeftRight" size={13} />Change</span> : <NavIcon name="chevronDown" size={16} className="gk-acombo-chev" />}
       </button>
       {open && (
-        <div className={`gk-acombo-panel${up ? " is-up" : ""}`} onKeyDown={onKey}>
+        <div className={`gk-acombo-panel${up ? " is-up" : ""}${right ? " is-right" : ""}`} onKeyDown={onKey}>
           <div className="gk-acombo-search">
             <NavIcon name="search" size={16} className="gk-asearch-icon" />
             <input className="gk-asearch-input" type="search" autoComplete="off" spellCheck={false} autoFocus role="combobox" aria-expanded="true" aria-controls={listId}

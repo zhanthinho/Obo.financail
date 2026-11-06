@@ -306,6 +306,9 @@ async function run() {
       await p.locator("#do-account + .gk-acombo-panel input").fill("Ob Customer"); await p.waitForTimeout(200);
       const ids = await p.locator("#do-account + .gk-acombo-panel [data-account-id]").evaluateAll((els) => els.map((e) => e.getAttribute("data-account-id")));
       assert(ids.includes(cs.id) && !ids.includes(cu.id), `accounts ${ids.join(",")}`);
+      const clipped = await p.locator("#do-account + .gk-acombo-panel .gk-acard-name").evaluateAll((els) => els.filter((e) => e.scrollWidth > e.clientWidth + 1 || e.scrollHeight > e.clientHeight + 1).map((e) => e.textContent));
+      assert(!clipped.length, `names cut off: ${clipped.join(" | ")}`);
+      if (process.env.DO_SHOTS) await p.screenshot({ path: path.join(process.env.DO_SHOTS, "daily-ops-combo-list.png") });
       assert(await p.locator("#do-account + .gk-acombo-panel").count() === 1, "panel closed");
       assert(/SLSH/.test(await qe.locator(".gk-do-amount span").first().innerText()), "amount currency");
     });
@@ -349,10 +352,16 @@ async function run() {
       await p.keyboard.press("Enter"); await p.waitForTimeout(250);
       assert(await p.locator("#do-from + .gk-acombo-panel").count() === 0, "dropdown still open");
       const t = await p.locator("#do-from").innerText();
+      if (process.env.DO_SHOTS) await p.screenshot({ path: path.join(process.env.DO_SHOTS, "daily-ops-combo-selected.png") });
+      assert(await p.locator("#do-from .gk-acombo-sel-name").evaluate((e) => e.scrollHeight <= e.clientHeight + 1 && e.scrollWidth <= e.clientWidth + 1), "selected name cut off");
       assert(/Ob Customer Uniform/i.test(t) && t.includes(cu.accountNumber) && /USD/.test(t) && /\$/.test(t) && /Change/.test(t), t);
       await p.click("#do-from"); await p.waitForTimeout(200);
       await panel.locator("input").fill("Ob Customer"); await p.waitForTimeout(200);
       assert(await panel.locator(`[data-account-id="${cu.id}"]`).count() === 0, "selected account duplicated in the list");
+      const clipped = await panel.locator(".gk-acard-name").evaluateAll((els) => els.filter((e) => e.scrollWidth > e.clientWidth + 1 || e.scrollHeight > e.clientHeight + 1).map((e) => e.textContent));
+      assert(!clipped.length, `names cut off: ${clipped.join(" | ")}`);
+      assert((await panel.boundingBox()).width >= 370, `panel too narrow ${(await panel.boundingBox()).width}`);
+      if (process.env.DO_SHOTS) await p.screenshot({ path: path.join(process.env.DO_SHOTS, "daily-ops-combo.png") });
       await panel.locator("input").fill("zz-nothing"); await p.waitForTimeout(150);
       assert(/No matching accounts found/.test(await panel.innerText()), "no-match");
       await p.keyboard.press("Escape"); await p.waitForTimeout(200);
