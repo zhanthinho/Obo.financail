@@ -89,6 +89,10 @@ async function run() {
     ok(await api("/api/cash/transfers", { method: "POST", token: B, body: { fromCashAccountId: tillU.id, toCashAccountId: safeU.id, amount: (i + 1) * 3, date: day(n + 1, 15), notes: `Ts tr ${i}` } }), "transfer");
     ok(await api("/api/cash/exchanges", { method: "POST", token: B, body: { fromCashAccountId: tillU.id, toCashAccountId: tillS.id, amountGiven: (13 - i) * 2, rateUsed: 8500, date: day(n + 1, 16), notes: `Ts ex ${i}` } }), "exchange");
   }
+  for (const [i, n] of order.slice(0, 12).entries()) {
+    ok(await api("/api/transactions", { method: "POST", token: B, body: { clientName: `Ts Walkin ${i}`, amountGiven: (i % 2 ? 1 : 1000) * (20 + ((i * 37) % 90)), currencyGiven: i % 2 ? "USD" : "SLSH", rateUsed: 8500, date: day(n + 1, 11), notes: `Ts mx ${i}` } }), "money exchange");
+    ok(await api("/api/quotations", { method: "POST", token: B, body: { clientName: "Ts Usd Customer", accountId: au.id, currency: "USD", issueDate: addDays(today, -(n + 1)), items: [{ description: `Ts item ${i}`, qty: 1, unitPrice: 10 + ((i * 53) % 400), currency: "USD" }] } }), "quotation");
+  }
   const before = {
     usd: ok(await api(`/api/accounts/${au.id}`, { token: B }), "au").account.balance,
     cash: JSON.stringify(ok(await api("/api/cash/accounts", { token: B }), "cash").accounts.map((a) => [a.id, a.balance]).sort()),
@@ -120,7 +124,7 @@ async function run() {
     const read = async (table) => table.evaluate((t) => {
       const heads = [...t.querySelectorAll("thead th")].map((th) => th.innerText.trim().toLowerCase());
       const ix = (re) => heads.findIndex((h) => re.test(h));
-      const iRef = ix(/^reference/), iDate = ix(/^date/), iCr = ix(/^credit/), iDr = ix(/^debit/);
+      const iRef = ix(/^(reference|quotation$)/), iDate = ix(/^date/), iCr = ix(/^(credit|given|total)/), iDr = ix(/^debit/);
       const num = (s) => { const m = String(s || "").replace(/,/g, "").match(/-?\d+(\.\d+)?/); return m ? Number(m[0]) : null; };
       return [...t.querySelectorAll("tbody tr")].filter((tr) => tr.querySelectorAll("td").length > 3).map((tr) => {
         const td = [...tr.querySelectorAll("td")];
@@ -245,7 +249,7 @@ async function run() {
       console.log(`\n${cur} Account View`);
       await go(`${cur} Accounts`);
       await p.locator("table.gk-table tbody").getByText(new RegExp(`^Ts ${cur === "USD" ? "Usd" : "Slsh"} Customer`, "i")).first().click(); await p.waitForTimeout(1800);
-      const avTable = () => p.locator("table.gk-table").filter({ hasText: /Ts (usd|slsh) \d/i }).first();
+      const avTable = () => p.locator("table.gk-table").filter({ has: p.locator("thead th", { hasText: /^Balance/i }) }).filter({ has: p.locator("thead th", { hasText: /^Status/i }) }).first();
       await fiveOptions(`${cur} Account View`, { id: "account-view-sort", table: avTable, nextBtn: nextOf(() => p.locator(".gk-table-wrap, .gk-av-table, section").filter({ has: avTable() }).last()) });
       await check(`${cur} Account View: running balances are the stored ones, footer covers every page`, async () => {
         const d = ok(await api(`/api/accounts/${a.id}`, { token: B }), "acct");
@@ -258,6 +262,26 @@ async function run() {
         assert(bal.length === 10 && stored.length === 13, `${bal.length} ${stored.length}`);
       });
     }
+
+    // ---------- Payments, Money Exchange, Quotations, Transaction History
+    console.log("\nUSD Payment");
+    await go("USD Payment");
+    const tableWith = (re) => () => p.locator("table.gk-table").filter({ has: p.locator("thead th", { hasText: re }) }).first();
+    const wrapOf = (tf) => () => p.locator(".gk-table-wrap").filter({ has: tf() }).first();
+    const payT = tableWith(/^Origin|^Cash Account/i);
+    await fiveOptions("USD Payment", { id: "payments-sort", table: payT, nextBtn: nextOf(wrapOf(payT)) });
+    console.log("\nMoney Exchange");
+    await go("Money Exchange");
+    const exT = tableWith(/^Given/i);
+    await fiveOptions("Money Exchange", { id: "exchange-sort", table: exT, nextBtn: nextOf(wrapOf(exT)) });
+    console.log("\nQuotations");
+    await go("Pending");
+    const qT = tableWith(/^Valid until/i);
+    await fiveOptions("Quotations", { id: "quotations-sort", table: qT, nextBtn: nextOf(wrapOf(qT)) });
+    console.log("\nUSD Transaction History");
+    await go("USD Transactions");
+    const hT = () => p.locator("table.gk-th-table").first();
+    await fiveOptions("USD Transaction History", { id: "history-sort", table: hT, nextBtn: nextOf(() => p.locator(".gk-th-table-wrap").first()) });
 
     await check("nothing changed: balances and records exactly as before", async () => {
       const usd = ok(await api(`/api/accounts/${au.id}`, { token: B }), "au").account.balance;

@@ -3174,13 +3174,13 @@ const TX_SORT_OPTIONS = [
 ];
 const TX_SORT_IDS = new Set(TX_SORT_OPTIONS.map((o) => o[0]));
 const txRefCollator = typeof Intl !== "undefined" && Intl.Collator ? new Intl.Collator("en", { numeric: true, sensitivity: "base" }) : null;
-function txChronoCmp(a, b) {
-  const av = chronoSortValue(a, "date"), bv = chronoSortValue(b, "date");
+function txChronoCmp(a, b, key = "date") {
+  const av = chronoSortValue(a, key), bv = chronoSortValue(b, key);
   if (av < bv) return -1; if (av > bv) return 1;
   const ia = String(a.id || ""), ib = String(b.id || "");
   return ia < ib ? -1 : ia > ib ? 1 : 0;
 }
-function useTxSort(rows, { module, amountOf, refOf, currencyOf, initialPageSize = 10 }) {
+function useTxSort(rows, { module, amountOf, refOf, currencyOf, initialPageSize = 10, dateKey = "date" }) {
   const storeKey = `gk_txsort_${currentUserIdForPrefs() || "anon"}_${module}`;
   const [mode, setModeState] = useState(() => { try { const v = localStorage.getItem(storeKey); if (TX_SORT_IDS.has(v)) return v; } catch (e) { /* storage unavailable */ } return "oldest"; });
   const [col, setCol] = useState(null); // a column-header sort inside the page: { key, dir }
@@ -3191,10 +3191,10 @@ function useTxSort(rows, { module, amountOf, refOf, currencyOf, initialPageSize 
     try { const v = localStorage.getItem(storeKey); setModeState(TX_SORT_IDS.has(v) ? v : "oldest"); } catch (e) { /* storage unavailable */ }
   }, [storeKey]);
   // Fixed page groups: newest first, deterministic.
-  const groups = useMemo(() => [...rows].sort((a, b) => -txChronoCmp(a, b)), [rows]);
+  const groups = useMemo(() => [...rows].sort((a, b) => -txChronoCmp(a, b, dateKey)), [rows]);
   const pg = usePagination(groups, { initialPageSize });
   // Back to Page 1 when the set changes (a filter, or a new transaction saved).
-  const sig = `${groups.length}|${groups[0] ? groups[0].id || chronoSortValue(groups[0], "date") : ""}`;
+  const sig = `${groups.length}|${groups[0] ? groups[0].id || chronoSortValue(groups[0], dateKey) : ""}`;
   const firstSig = useRef(sig);
   useEffect(() => { if (firstSig.current === sig) return; firstSig.current = sig; pg.setPage(1); }, [sig]); // eslint-disable-line react-hooks/exhaustive-deps
   const amt = amountOf || ((r) => r.amount);
@@ -3209,17 +3209,17 @@ function useTxSort(rows, { module, amountOf, refOf, currencyOf, initialPageSize 
         if (typeof av === "string") av = av.toLowerCase(); if (typeof bv === "string") bv = bv.toLowerCase();
         if (av == null) av = ""; if (bv == null) bv = "";
         if (av < bv) return -dir; if (av > bv) return dir;
-        return txChronoCmp(a, b);
+        return txChronoCmp(a, b, dateKey);
       });
     }
     const byCur = (a, b) => { const ca = String(curOf(a)), cb = String(curOf(b)); return ca === cb ? 0 : ca === "USD" ? -1 : cb === "USD" ? 1 : ca < cb ? -1 : 1; };
     switch (mode) {
-      case "newest": return list.sort((a, b) => -txChronoCmp(a, b));
+      case "newest": return list.sort((a, b) => -txChronoCmp(a, b, dateKey));
       case "highest": case "lowest": {
         const d = mode === "highest" ? -1 : 1;
-        return list.sort((a, b) => byCur(a, b) || (Math.abs(Number(amt(a)) || 0) - Math.abs(Number(amt(b)) || 0)) * d || txChronoCmp(a, b));
+        return list.sort((a, b) => byCur(a, b) || (Math.abs(Number(amt(a)) || 0) - Math.abs(Number(amt(b)) || 0)) * d || txChronoCmp(a, b, dateKey));
       }
-      case "reference": return list.sort((a, b) => { const ra = String(ref(a) || ""), rb = String(ref(b) || ""); if (!ra !== !rb) return ra ? -1 : 1; return (txRefCollator ? txRefCollator.compare(ra, rb) : ra.localeCompare(rb)) || txChronoCmp(a, b); });
+      case "reference": return list.sort((a, b) => { const ra = String(ref(a) || ""), rb = String(ref(b) || ""); if (!ra !== !rb) return ra ? -1 : 1; return (txRefCollator ? txRefCollator.compare(ra, rb) : ra.localeCompare(rb)) || txChronoCmp(a, b, dateKey); });
       default: return list.sort(txChronoCmp);
     }
   }, [pg.pageRows, mode, col]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -3227,10 +3227,10 @@ function useTxSort(rows, { module, amountOf, refOf, currencyOf, initialPageSize 
   // Column headers keep working: Date toggles Oldest / Newest; any other
   // column sorts the rows of the page by that column.
   const toggleSort = useCallback((key) => {
-    if (key === "date") { setMode(!col && mode === "oldest" ? "newest" : "oldest"); return; }
+    if (key === dateKey || key === "date") { setMode(!col && mode === "oldest" ? "newest" : "oldest"); return; }
     setCol((c) => (c && c.key === key ? { key, dir: c.dir === "asc" ? "desc" : "asc" } : { key, dir: "desc" }));
   }, [col, mode, setMode]);
-  const sortKey = col ? col.key : (mode === "oldest" || mode === "newest") ? "date" : null;
+  const sortKey = col ? col.key : (mode === "oldest" || mode === "newest") ? dateKey : null;
   const sortDir = col ? col.dir : mode === "newest" ? "desc" : "asc";
   return { ...pg, pageRows, sorted: pageRows, mode, setMode, sortKey, sortDir, toggleSort };
 }
@@ -7016,8 +7016,11 @@ function ExchangeModule({ call, dl, preview, print, notify, perm, user, rate, sa
       .then((d) => setRows(d.transactions)).catch((e) => notify(e.message, true)).finally(() => setLoading(false));
   }, [call, from, to, staffFilter, clientFilter, statusFilter, currencyFilter, notify]);
   useEffect(() => { if (tab === "ledger") reload(); }, [tab, reload]);
-  const exchangeSort = useSortableRows(rows, "date", "desc");
-  const exchangePg = usePagination(exchangeSort.sorted, { initialPageSize: 10 });
+  // UNIFIED TRANSACTION SORTING round: the "Sort:" control (amounts by the side in the chosen currency).
+  const exchangeSort = useTxSort(rows, { module: "exchange.ledger",
+    currencyOf: (t) => (currencyFilter !== "all" ? currencyFilter : t.currencyGiven),
+    amountOf: (t) => ((currencyFilter !== "all" ? currencyFilter : t.currencyGiven) === t.currencyGiven ? t.amountGiven : t.amountReceived) });
+  const exchangePg = exchangeSort;
   // TABLE CUSTOMIZATION round 2: the ledger's own leading "#" display-order
   // column and its trailing Actions column stay fixed (outside the
   // customizable set), same precedent as the 5 Round-1 tables — only the
@@ -7250,7 +7253,8 @@ function ExchangeModule({ call, dl, preview, print, notify, perm, user, rate, sa
             <StatCard label="Profit — Sell" value={fmtSignedUsd(marginTotals.sell.usd)} sub={fmtSignedSlsh(marginTotals.sell.slsh)} accent={C.green} />
             <StatCard label="Cost Rate Difference — Buy" value={fmtSignedUsd(marginTotals.buy.usd)} sub={fmtSignedSlsh(marginTotals.buy.slsh)} accent={C.cyan} />
           </div>
-          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+          <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+            <TxSortControl id="exchange-sort" mode={exchangeSort.mode} onChange={exchangeSort.setMode} />
             <TableCustomizeButton tableKey={tableKey} columnDefs={EXCHANGE_COLUMNS} layoutState={layoutState} canSetSystemDefault={hasRaw && hasRaw("settings.manageTableDefaults")} notify={notify} />
           </div>
           <div className="gk-table-wrap" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, display: "flex", flexDirection: "column" }}>
@@ -8331,8 +8335,9 @@ function QuotationsModule({ call, dl, preview, print, notify, perm, user, rate, 
   const [refundFor, setRefundFor] = useState(null);
   const [deleteFor, setDeleteFor] = useState(null);
   const [viewing, setViewing] = useState(null);
-  const quoteSort = useSortableRows(rows, "createdAt", "desc");
-  const quotePg = usePagination(quoteSort.sorted, { initialPageSize: 10 });
+  const quoteSort = useTxSort(rows, { module: "quotations", dateKey: "issueDate", refOf: (q) => q.number,
+    amountOf: (q) => q.originalAmount ?? q.chargedAmount, currencyOf: (q) => q.chargedCurrency });
+  const quotePg = quoteSort;
   const filterParams = { status, search, account, currency, dateFrom, dateTo, validFrom, validTo, amountMin, amountMax };
   // TABLE CUSTOMIZATION round 2: one shared layout across all three
   // Pending/Paid/Refunded submenus — they're filtered views of the same
@@ -8569,7 +8574,8 @@ function QuotationsModule({ call, dl, preview, print, notify, perm, user, rate, 
         <StatCard label="Total (USD)" value={fmtMoney(quoteTotals.usd, "USD")} accent={C.cyan} />
         <StatCard label="Total (SLSH)" value={fmtMoney(quoteTotals.slsh, "SLSH")} accent={C.amber} />
       </div>
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+        <TxSortControl id="quotations-sort" mode={quoteSort.mode} onChange={quoteSort.setMode} />
         <TableCustomizeButton tableKey={tableKey} columnDefs={QUOTATIONS_COLUMNS} layoutState={layoutState} canSetSystemDefault={hasRaw && hasRaw("settings.manageTableDefaults")} notify={notify} />
       </div>
       <div className="gk-table-wrap" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, display: "flex", flexDirection: "column" }}>
@@ -11594,11 +11600,11 @@ function DepositsWithdrawalsModule({ currency, call, dl, preview, notify, perm, 
   // link already does that correctly, as its own separate affordance).
   const [viewingEntry, setViewingEntry] = useState(null);
   const [day, setDay] = useState(todayStr()); const [daily, setDaily] = useState(null); const [dayLoading, setDayLoading] = useState(false);
-  const dwSort = useSortableRows(rows, "date", "desc");
-  const dwPg = usePagination(dwSort.sorted, { initialPageSize: 10 });
+  const dwSort = useTxSort(rows, { module: `payments.${currency}` });
+  const dwPg = dwSort;
   const dailyFilteredEntries = useMemo(() => (daily?.entries || []).filter((e) => e.currency === currency), [daily, currency]);
-  const dailySort = useSortableRows(dailyFilteredEntries, "date", "desc");
-  const dailyPg = usePagination(dailySort.sorted, { initialPageSize: 10 });
+  const dailySort = useTxSort(dailyFilteredEntries, { module: `payments.daily.${currency}` });
+  const dailyPg = dailySort;
   // TABLE CUSTOMIZATION round 2: applies to the main "Transactions" tab
   // table only (its own leading "#" and trailing Actions columns stay
   // fixed) — the secondary "Daily Transactions" drill-down keeps its
@@ -11752,7 +11758,8 @@ function DepositsWithdrawalsModule({ currency, call, dl, preview, notify, perm, 
             ]}
             onClearAll={() => { setType("all"); setOrigin("payment"); setSearch(""); setFrom(""); setTo(""); }}
           />
-          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+          <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+            <TxSortControl id="payments-sort" mode={dwSort.mode} onChange={dwSort.setMode} />
             <TableCustomizeButton tableKey={tableKey} columnDefs={PAYMENTS_COLUMNS} layoutState={layoutState} canSetSystemDefault={hasRaw && hasRaw("settings.manageTableDefaults")} notify={notify} />
           </div>
           <div className="gk-table-wrap" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, display: "flex", flexDirection: "column" }}>
@@ -11824,7 +11831,10 @@ function DepositsWithdrawalsModule({ currency, call, dl, preview, notify, perm, 
 
       {tab === "daily" && (
         <div>
-          <Field label="Date" width={180}><Input type="date" value={day} onChange={(e) => setDay(e.target.value)} /></Field>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 10, flexWrap: "wrap" }}>
+            <Field label="Date" width={180}><Input type="date" value={day} onChange={(e) => setDay(e.target.value)} /></Field>
+            <TxSortControl id="payments-daily-sort" mode={dailySort.mode} onChange={dailySort.setMode} />
+          </div>
           {dayLoading || !daily ? <Spinner /> : (
             <>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, margin: "16px 0" }}>
@@ -13109,12 +13119,22 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
   // PROFESSIONAL TRANSACTION MANAGEMENT round: sorting and paging happen on
   // the server (page / pageSize / sort / dir) — the browser only ever holds
   // one page of rows, however many transactions the company has.
-  const [sortKey, setSortKey] = useState("date");
-  const [sortDir, setSortDir] = useState("desc");
+  // UNIFIED TRANSACTION SORTING round: the "Sort:" control (sortMode — page
+  // groups newest first, the chosen order inside the page, remembered per
+  // user and currency); clicking a column header still sorts every row by
+  // that column on the server.
+  const sortStore = `gk_txsort_${currentUserIdForPrefs() || "anon"}_history.${currency}`;
+  const readMode = () => { try { const v = localStorage.getItem(sortStore); return TX_SORT_IDS.has(v) ? v : "oldest"; } catch (e) { return "oldest"; } };
+  const [sortMode, setSortModeState] = useState(readMode);
+  useEffect(() => { setSortModeState(readMode()); }, [sortStore]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [colSort, setColSort] = useState(null);
+  const setSortMode = useCallback((m) => { setSortModeState(m); setColSort(null); try { localStorage.setItem(sortStore, m); } catch (e) { /* storage unavailable */ } }, [sortStore]);
   const toggleSort = useCallback((key) => {
-    if (key === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    else { setSortKey(key); setSortDir(key === "date" ? "desc" : "asc"); }
-  }, [sortKey]);
+    if (key === "date") { setSortMode(!colSort && sortMode === "oldest" ? "newest" : "oldest"); return; }
+    setColSort((c) => (c && c.key === key ? { key, dir: c.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }));
+  }, [colSort, sortMode, setSortMode]);
+  const sortKey = colSort ? colSort.key : (sortMode === "oldest" || sortMode === "newest") ? "date" : null;
+  const sortDir = colSort ? colSort.dir : sortMode === "newest" ? "desc" : "asc";
   const historySort = { sortKey, sortDir, toggleSort };
   const [page, setPage] = useState(1);
   const [pageSize, setPageSizeRaw] = useState(10);
@@ -13211,7 +13231,7 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
   const reload = useCallback((isRefresh) => {
     const seq = ++reqSeq.current;
     if (isRefresh === true) setRefreshing(true);
-    return call("/api/history" + qs({ ...queryParams, withSummary: "1", page, pageSize, sort: sortKey, dir: sortDir }))
+    return call("/api/history" + qs({ ...queryParams, withSummary: "1", page, pageSize, ...(colSort ? { sort: colSort.key, dir: colSort.dir } : { sortMode }) }))
       .then((d) => {
         if (seq !== reqSeq.current) return;
         setRows(d.entries); setSummary(d.summary || null); setLoadError("");
@@ -13221,7 +13241,7 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
       })
       .catch((e) => { if (seq !== reqSeq.current) return; setLoadError(e.message); notify(e.message, true); })
       .finally(() => { if (seq !== reqSeq.current) return; setLoading(false); setRefreshing(false); });
-  }, [currency, type, accountType, status, staffId, accountFilter, from, to, search, page, pageSize, sortKey, sortDir, call, notify]);
+  }, [currency, type, accountType, status, staffId, accountFilter, from, to, search, page, pageSize, sortMode, colSort, call, notify]);
   const staffSeen = useRef(new Map());
   const [pendingFocus, setPendingFocus] = useState(null);
   // Current balance of the selected account (footer), from the server.
@@ -13397,6 +13417,7 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
           </span>
         </label>
         <div className="gk-acc-toolbar-actions">
+          <TxSortControl id="history-sort" mode={sortMode} onChange={setSortMode} />
           {filtersActive && <button type="button" className="gk-acc-btn" onClick={clearFilters}><NavIcon name="undo" size={15} /><span>Clear filters</span></button>}
           <TableCustomizeButton tableKey={tableKey} columnDefs={HISTORY_COLUMNS} layoutState={layoutState} canSetSystemDefault={hasRaw && hasRaw("settings.manageTableDefaults")} notify={notify} />
           <button type="button" className="gk-acc-btn" title="Export the matching transactions to Excel" onClick={() => dl("/api/history/statement.xlsx" + qs(queryParams), `obo-transaction-statement-${currency}.xlsx`)}><NavIcon name="download" size={15} /><span>Export</span></button>

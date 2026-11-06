@@ -529,6 +529,24 @@ function sortEntries(entries, field, dir) {
   return entries.map((e, i) => [e, i]).sort(([a, i], [b, j]) => { const x = get(a), y = get(b); return x < y ? -d : x > y ? d : i - j; }).map(([e]) => e);
 }
 
+// UNIFIED TRANSACTION SORTING round: `sortMode` — the matching entries are
+// put in fixed page groups newest first (Page 1 = the newest), and the
+// chosen order applies inside the page: oldest | newest | highest | lowest
+// (amounts compared within one currency) | reference (A–Z, numbers in order).
+const SORT_MODES = new Set(["oldest", "newest", "highest", "lowest", "reference"]);
+const refCollator = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
+const entryAmount = (e) => Math.abs(Number(e.credit != null ? e.credit : e.debit != null ? e.debit : ((e.raw || {}).amount ?? (e.raw || {}).amountGiven ?? 0)) || 0);
+function sortWithinPage(rows, mode) {
+  const chrono = (a, b) => (String(a.sortKey) < String(b.sortKey) ? -1 : String(a.sortKey) > String(b.sortKey) ? 1 : 0);
+  const cur = (e) => e.entryCurrency || e.accountCurrency || "";
+  const byCur = (a, b) => (cur(a) === cur(b) ? 0 : cur(a) === "USD" ? -1 : cur(b) === "USD" ? 1 : cur(a) < cur(b) ? -1 : 1);
+  const list = [...rows];
+  if (mode === "oldest") return list.sort(chrono);
+  if (mode === "newest") return list.sort((a, b) => -chrono(a, b));
+  if (mode === "highest" || mode === "lowest") { const d = mode === "highest" ? -1 : 1; return list.sort((a, b) => byCur(a, b) || (entryAmount(a) - entryAmount(b)) * d || chrono(a, b)); }
+  return list.sort((a, b) => { const x = String(a.reference || ""), y = String(b.reference || ""); if (!x !== !y) return x ? -1 : 1; return refCollator.compare(x, y) || chrono(a, b); });
+}
+
 function register(router) {
   router.get("/api/history", (req, res, params, query) => {
     const user = requireAuth(req, res); if (!user) return;
@@ -553,13 +571,15 @@ function register(router) {
     // sorting and paging (page / pageSize / sort / dir) so the browser never
     // has to load every record; without `page` the full list is returned as
     // before (exports, other screens).
-    const sorted = sortEntries(entries, query.sort, query.dir);
+    const mode = SORT_MODES.has(query.sortMode) ? query.sortMode : null;
+    const sorted = mode ? sortEntries(entries, "date", "desc") : sortEntries(entries, query.sort, query.dir);
     if (query.page !== undefined) {
       const pageSize = Math.min(Math.max(parseInt(query.pageSize, 10) || 25, 1), 500);
       const total = sorted.length;
       const totalPages = Math.max(1, Math.ceil(total / pageSize));
       const page = Math.min(Math.max(parseInt(query.page, 10) || 1, 1), totalPages);
       out.entries = sorted.slice((page - 1) * pageSize, page * pageSize);
+      if (mode) out.entries = sortWithinPage(out.entries, mode);
       out.page = page; out.pageSize = pageSize; out.total = total; out.totalPages = totalPages;
     } else out.entries = sorted;
     sendJSON(res, 200, out);
