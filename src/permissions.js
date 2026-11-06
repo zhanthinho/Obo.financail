@@ -19,6 +19,8 @@ const ACTION_LABELS = {
   deactivate: "Deactivate", activate: "Activate", export: "Export", print: "Print",
   manageRate: "Set Exchange Rate", settle: "Settle (Pay/Refund)", duplicate: "Duplicate",
   resetPassword: "Reset Password", assignRole: "Assign Role", managePermissions: "Manage Permissions",
+  viewReconciliation: "View Daily Reconciliation", reconcile: "Perform Reconciliation", snapshot: "Save Daily Snapshot",
+  updateHistory: "Update Historical Snapshot", close: "Close Daily Operations", reopen: "Reopen Closed Day",
   // TABLE CUSTOMIZATION round: a brand-new, granular-only capability (no
   // legacy equivalent, same precedent as users.managePermissions) — sets
   // the SYSTEM-WIDE default column layout/density for a list table, which
@@ -159,6 +161,13 @@ const MODULES = {
   // (see routes/customers.js); "link" (manual link / unlink / review
   // decisions) is sensitive and only Super Admin has it until granted.
   customers: { label: "Customer Profiles", actions: ["view", "link"] },
+  // DAILY OPERATIONS CENTER round: the everyday workspace (src/routes/
+  // dailyOps.js). Granted to NO role by default (it shows company-wide
+  // cash, like dailyReports.*); Super Admin has all of it through
+  // ALL_ACCESS. Entering a transaction there still needs that
+  // transaction's own permission (payments.create, exchange.create, …),
+  // and USD / SLSH stay behind currency.usd / currency.slsh.
+  dailyOps: { label: "Daily Operations", actions: ["view", "create", "viewReconciliation", "reconcile", "snapshot", "updateHistory", "close", "reopen", "print", "export"] },
 };
 
 function permKey(moduleKey, action) {
@@ -182,6 +191,7 @@ const CRITICAL = new Set([
   "users.delete", "users.resetPassword", "users.assignRole", "users.managePermissions",
   "roles.create", "roles.update", "roles.delete", "roles.managePermissions",
   "rates.delete", "cash.delete", "loans.writeOff", "loans.delete", "expenses.cancel",
+  "dailyOps.reopen", "dailyOps.updateHistory",
 ]);
 const SENSITIVE = new Set([
   "accounts.deactivate", "accounts.activate", "accounts.export", "accounts.import",
@@ -199,6 +209,7 @@ const SENSITIVE = new Set([
   "expenses.create", "expenses.update", "expenses.manageCategories", "expenses.export",
   "dailyReports.view", "dailyReports.export", "dailyReports.manage",
   "customers.link",
+  "dailyOps.view", "dailyOps.create", "dailyOps.viewReconciliation", "dailyOps.reconcile", "dailyOps.snapshot", "dailyOps.close", "dailyOps.print", "dailyOps.export",
 ]);
 function permissionLevel(key) {
   return CRITICAL.has(key) ? "critical" : SENSITIVE.has(key) ? "sensitive" : "standard";

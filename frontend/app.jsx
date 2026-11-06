@@ -156,6 +156,111 @@ const THEME_CSS = `
   .gk-amt-debit { color: var(--c-debit); font-weight: 600; white-space: nowrap; }
   .gk-bal { font-weight: 700; white-space: nowrap; }
   .gk-bal[data-sign="pos"] { color: var(--c-bal-pos); } .gk-bal[data-sign="neg"] { color: var(--c-bal-neg); } .gk-bal[data-sign="zero"] { color: var(--c-bal-zero); }
+  /* DAILY OPERATIONS CENTER round — Emerald/Teal, Inter with tabular figures. */
+  .gk-do { display: flex; flex-direction: column; gap: 14px; font-family: "Inter", var(--c-font-family); }
+  .gk-do-num, .gk-do-card-value, .gk-do-table td.num, .gk-do-amount input { font-family: var(--c-font-num); font-variant-numeric: tabular-nums; }
+  .gk-do-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; background: linear-gradient(135deg, #064E3B, #0F766E); color: #fff; border-radius: 14px; padding: 14px 16px; }
+  .gk-do-title { display: flex; gap: 12px; align-items: center; min-width: 0; }
+  .gk-do-title h2 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -.01em; }
+  .gk-do-title-icon { width: 40px; height: 40px; border-radius: 11px; background: rgba(255,255,255,.14); display: inline-flex; align-items: center; justify-content: center; }
+  .gk-do-sub { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; font-size: 12px; opacity: .95; margin-top: 3px; }
+  .gk-do-sub > span { display: inline-flex; gap: 5px; align-items: center; }
+  .gk-do-pill { display: inline-flex; align-items: center; gap: 4px; }
+  .gk-do-head-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .gk-do-head-actions button { background: #fff !important; color: #064E3B !important; border-color: #fff !important; }
+  .gk-do-date { display: inline-flex; align-items: center; gap: 6px; background: #fff; color: #064E3B; border-radius: 8px; padding: 4px 8px; }
+  .gk-do-date input { border: 0; outline: none; font: inherit; font-size: 13px; color: #0B1F33; background: transparent; }
+  .gk-do-cur-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 12px; }
+  .gk-do-cur, .gk-do-panel { background: var(--c-card); border: 1px solid #D5E5E1; border-radius: 14px; padding: 14px; box-shadow: 0 1px 3px rgba(6,78,59,.06); min-width: 0; }
+  .gk-do-cur-head, .gk-do-panel-head { display: flex; align-items: center; gap: 8px; justify-content: space-between; flex-wrap: wrap; margin-bottom: 10px; }
+  .gk-do-cur-head h3, .gk-do-panel-head h3 { margin: 0; font-size: 14.5px; font-weight: 800; color: #064E3B; display: flex; align-items: center; gap: 8px; flex: 1; }
+  .gk-do-cur-count, .gk-do-count { font-size: 11.5px; color: var(--c-slate); font-weight: 600; }
+  .gk-do-count { background: #E6F6F1; color: #065F46; border-radius: 20px; padding: 1px 8px; margin-left: 4px; }
+  .gk-do-ic { width: 30px; height: 30px; border-radius: 8px; background: #ECFDF5; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .gk-do-ic[data-tone="debit"] { background: #FEF2F2; } .gk-do-ic[data-tone="exchange"], .gk-do-ic[data-tone="transfer"] { background: #F0FDFA; }
+  .gk-do-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .gk-do-card { display: flex; gap: 9px; align-items: flex-start; border: 1px solid #E3EEEB; border-radius: 11px; padding: 10px; background: #FBFDFC; }
+  .gk-do-card-body { min-width: 0; }
+  .gk-do-card-label { font-size: 11.5px; font-weight: 700; color: #334155; }
+  .gk-do-card-value { font-size: 17px; font-weight: 800; color: #064E3B; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gk-do-card-sub { font-size: 10.5px; color: var(--c-slate); margin-top: 1px; }
+  .gk-do-note { display: flex; align-items: center; gap: 8px; background: #F0FDFA; border: 1px solid #CCEFE6; color: #065F46; border-radius: 10px; padding: 9px 12px; font-size: 12.5px; }
+  .gk-do-error { display: flex; align-items: center; gap: 7px; background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; border-radius: 9px; padding: 8px 11px; font-size: 12.5px; }
+  .gk-do-hint { font-size: 11.5px; color: var(--c-slate); display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+  .gk-do-tabs { display: flex; gap: 4px; background: #EEF6F4; padding: 3px; border-radius: 10px; flex-wrap: wrap; }
+  .gk-do-tab { display: inline-flex; align-items: center; gap: 6px; border: 0; background: transparent; padding: 6px 11px; border-radius: 8px; font: inherit; font-size: 12.5px; font-weight: 600; color: #335; cursor: pointer; }
+  .gk-do-tab.is-active { background: #fff; color: #064E3B; box-shadow: 0 1px 3px rgba(6,78,59,.15); }
+  .gk-do-step { margin-bottom: 12px; }
+  .gk-do-step-title { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; color: #0B1F33; margin-bottom: 8px; }
+  .gk-do-step-no { width: 20px; height: 20px; border-radius: 50%; background: #065F46; color: #fff; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; }
+  .gk-do-curpick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .gk-do-curbtn { position: relative; display: flex; align-items: center; gap: 12px; text-align: left; border: 1.5px solid #D5E5E1; background: #fff; border-radius: 12px; padding: 12px 14px; cursor: pointer; font: inherit; color: #064E3B; }
+  .gk-do-curbtn span { display: flex; flex-direction: column; } .gk-do-curbtn b { font-size: 16px; } .gk-do-curbtn small { font-size: 11px; color: var(--c-slate); }
+  .gk-do-curbtn.is-active { border-color: #0F766E; background: #F0FDFA; box-shadow: 0 0 0 3px rgba(15,118,110,.12); }
+  .gk-do-curbtn:disabled { opacity: .45; cursor: not-allowed; }
+  .gk-do-check { position: absolute; right: 10px; top: 10px; color: #0F766E; }
+  .gk-do-types { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+  .gk-do-typebtn { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; border: 1.5px solid #E3EEEB; background: #fff; border-radius: 11px; padding: 10px; cursor: pointer; font: inherit; text-align: left; color: #0B1F33; }
+  .gk-do-typebtn b { font-size: 13px; } .gk-do-typebtn small { font-size: 10.5px; color: var(--c-slate); line-height: 1.3; }
+  .gk-do-typebtn.is-active { border-color: currentColor; background: #F7FCFA; box-shadow: 0 0 0 3px rgba(6,95,70,.10); }
+  .gk-do-typebtn.is-active[data-tone="credit"] { border-color: #15803D; } .gk-do-typebtn.is-active[data-tone="debit"] { border-color: #B91C1C; } .gk-do-typebtn.is-active[data-tone="exchange"], .gk-do-typebtn.is-active[data-tone="transfer"] { border-color: #0F766E; }
+  .gk-do-typebtn:disabled { opacity: .45; cursor: not-allowed; }
+  .gk-do-typeic { width: 32px; height: 32px; border-radius: 9px; background: #F4FAF8; display: inline-flex; align-items: center; justify-content: center; }
+  .gk-do-qe-wait { padding: 6px 0; }
+  .gk-do-form { border-top: 1px dashed #D5E5E1; padding-top: 12px; }
+  .gk-do-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px 12px; }
+  .gk-do-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; } .gk-do-field.is-wide { grid-column: 1 / -1; }
+  .gk-do-label { font-size: 11.5px; font-weight: 700; color: #0B1F33; display: flex; align-items: center; gap: 6px; }
+  .gk-do-amount { display: flex; align-items: center; border: 1px solid var(--c-line); border-radius: 6px; background: var(--c-card); overflow: hidden; }
+  .gk-do-amount span { padding: 6px 9px; background: #F0FDFA; color: #065F46; font-weight: 700; font-size: 12px; border-right: 1px solid var(--c-line); }
+  .gk-do-amount input { border: 0; outline: none; padding: 6px 9px; font-size: 14px; font-weight: 700; width: 100%; min-width: 0; background: transparent; color: var(--c-ink); }
+  .gk-do-exsum { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-top: 10px; padding: 9px 12px; background: #F0FDFA; border: 1px solid #CCEFE6; border-radius: 10px; font-size: 12.5px; color: #134E4A; }
+  .gk-do-exsum span { display: inline-flex; gap: 5px; align-items: center; } .gk-do-exsum b { font-family: var(--c-font-num); font-variant-numeric: tabular-nums; }
+  .gk-do-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; flex-wrap: wrap; } .gk-do-actions.is-wrap { justify-content: flex-start; }
+  .gk-do-bulk { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border: 1px dashed #CCEFE6; border-radius: 11px; padding: 12px; } .gk-do-bulk > div { flex: 1; min-width: 200px; }
+  .gk-do-seg { display: inline-flex; border: 1px solid #D5E5E1; border-radius: 9px; overflow: hidden; }
+  .gk-do-seg button { border: 0; background: #fff; padding: 5px 11px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; gap: 5px; align-items: center; color: #334155; }
+  .gk-do-seg button.is-active { background: #065F46; color: #fff; }
+  .gk-do-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; align-items: center; }
+  .gk-do-filters label { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--c-line); border-radius: 7px; padding: 0 8px; background: var(--c-card); color: #065F46; }
+  .gk-do-filters label.is-search { flex: 1; min-width: 200px; }
+  .gk-do-filters select, .gk-do-filters input { border: 0; outline: none; font: inherit; font-size: 12.5px; padding: 6px 0; background: transparent; color: var(--c-ink); width: 100%; }
+  .gk-do-tablewrap { overflow-x: auto; border: 1px solid #E3EEEB; border-radius: 10px; }
+  .gk-do-table { width: 100%; border-collapse: collapse; font-size: 12.5px; font-family: var(--c-table-font); }
+  .gk-do-table thead th { background: #0F3D38; color: #fff; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; padding: 8px 10px; white-space: nowrap; }
+  .gk-do-table th.num, .gk-do-table td.num { text-align: right; white-space: nowrap; }
+  .gk-do-table td { padding: 8px 10px; border-top: 1px solid #EEF3F2; vertical-align: top; }
+  .gk-do-table tbody tr:nth-child(even) td { background: #FAFCFB; } .gk-do-table tbody tr:hover td { background: #F0FDFA; }
+  .gk-do-table td.muted, .gk-do-table .muted { color: var(--c-slate); } .gk-do-table .small { font-size: 10.5px; } .gk-do-table .strong { font-weight: 700; }
+  .gk-do-table td.desc { max-width: 260px; overflow: hidden; text-overflow: ellipsis; } .gk-do-table td.mono { white-space: nowrap; font-family: var(--c-font-num); }
+  .gk-do-table tfoot td { background: #F0FDFA; border-top: 2px solid #CCEFE6; font-size: 12px; }
+  .gk-do-type { display: inline-flex; gap: 5px; align-items: center; font-weight: 700; white-space: nowrap; }
+  .gk-do-iconbtn { border: 1px solid #D5E5E1; background: #fff; color: #065F46; border-radius: 7px; width: 30px; height: 28px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+  .gk-do-detail { display: flex; flex-direction: column; gap: 8px; padding: 16px 20px; } .gk-do-detail > div { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; border-bottom: 1px solid #EEF3F2; padding-bottom: 6px; } .gk-do-detail span { display: inline-flex; gap: 6px; align-items: center; color: var(--c-slate); }
+  .gk-do-sum dl, .gk-do-recon-figs { margin: 0; display: flex; flex-direction: column; }
+  .gk-do-sum dl > div, .gk-do-recon-figs > div { display: flex; justify-content: space-between; gap: 10px; padding: 6px 2px; border-bottom: 1px solid #EEF3F2; font-size: 12.5px; }
+  .gk-do-sum dt, .gk-do-recon-figs dt { display: inline-flex; gap: 7px; align-items: center; color: #334155; } .gk-do-sum dd, .gk-do-recon-figs dd { margin: 0; font-weight: 700; }
+  .gk-do-sum .is-total, .gk-do-recon-figs .is-total { border-bottom: 0; border-top: 2px solid #065F46; margin-top: 2px; font-weight: 800; color: #064E3B; font-size: 13.5px; }
+  .gk-do-recon { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+  .gk-do-recon-entry { display: flex; flex-direction: column; gap: 10px; }
+  .gk-do-diff { display: flex; justify-content: space-between; align-items: center; border-radius: 9px; padding: 9px 12px; background: #F8FAFC; font-weight: 700; }
+  .gk-do-diff span { display: inline-flex; gap: 6px; align-items: center; } .gk-do-diff[data-diff="zero"] { background: #ECFDF5; color: #15803D; } .gk-do-diff[data-diff="nonzero"] { background: #FEF2F2; color: #B91C1C; }
+  .gk-do-recon-status { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .gk-do-close { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px; }
+  .gk-do-checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .gk-do-checks li label, .gk-do-checks li > span { display: flex; gap: 8px; align-items: center; font-size: 12.5px; padding: 6px 9px; border-radius: 8px; background: #FAFCFB; border: 1px solid #EEF3F2; }
+  .gk-do-checks li[data-ok="1"] label, .gk-do-checks li[data-ok="1"] > span { background: #ECFDF5; border-color: #CCEFE6; }
+  .gk-do-close-figs { display: flex; flex-direction: column; gap: 8px; } .gk-do-close-figs > div[data-close-cur] { display: flex; align-items: center; justify-content: space-between; gap: 8px; border: 1px solid #E3EEEB; border-radius: 10px; padding: 9px 12px; }
+  .gk-do-close-figs span { display: inline-flex; gap: 6px; align-items: center; font-size: 12.5px; color: #334155; } .gk-do-close-figs b { font-size: 15px; color: #064E3B; }
+  .gk-do-confirm { padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; } .gk-do-confirm p { margin: 0; display: flex; gap: 8px; align-items: flex-start; }
+  .gk-do-confirm-row { display: flex; justify-content: space-between; border: 1px solid #E3EEEB; border-radius: 9px; padding: 8px 12px; } .gk-do-confirm-row span { display: inline-flex; gap: 6px; align-items: center; }
+  @media (max-width: 760px) {
+    .gk-do-cur-grid { grid-template-columns: minmax(0, 1fr); } .gk-do-recon, .gk-do-close { grid-template-columns: minmax(0, 1fr); }
+    .gk-do-head { padding: 12px; } .gk-do-types { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 420px) { .gk-do-cards, .gk-do-curpick { grid-template-columns: minmax(0, 1fr); } }
+  :root[data-theme="dark"] .gk-do-card, :root[data-theme="dark"] .gk-do-curbtn, :root[data-theme="dark"] .gk-do-typebtn, :root[data-theme="dark"] .gk-do-seg button:not(.is-active), :root[data-theme="dark"] .gk-do-iconbtn { background: var(--c-card); color: var(--c-ink); }
+  :root[data-theme="dark"] .gk-do-table tbody tr:nth-child(even) td, :root[data-theme="dark"] .gk-do-table tfoot td { background: rgba(255,255,255,.03); }
   .gk-dh { display: flex; flex-direction: column; gap: 12px; }
   .gk-dh-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; background: var(--c-card); border: 1px solid var(--c-line); border-radius: 12px; padding: 12px 14px; }
   .gk-dh-title { display: flex; gap: 10px; align-items: center; min-width: 0; }
@@ -1863,6 +1968,32 @@ const NAV_ICON_PATHS = {
   arrowRight: <><path d="M4 12h16" /><path d="M14 6l6 6-6 6" /></>,
   handCoins: <><circle cx="8" cy="8" r="2.5" /><path d="M2.5 19c0-3.3 2.5-5.8 5.5-5.8s5.5 2.5 5.5 5.8" /><path d="M14 13.5h5a1.8 1.8 0 0 1 0 3.6h-3M14 17.1h4.2a1.8 1.8 0 0 1 0 3.6H13" /></>,
 };
+
+// DAILY OPERATIONS CENTER round: the Quick Entry icon set (Lucide shapes,
+// same 24px / 1.8 stroke style). Aliases reuse existing drawings.
+Object.assign(NAV_ICON_PATHS, {
+  dollarSign: NAV_ICON_PATHS.dollar, printer: NAV_ICON_PATHS.print, pencil: NAV_ICON_PATHS.edit, trash2: NAV_ICON_PATHS.trash,
+  refreshCw: NAV_ICON_PATHS.refresh, slidersHorizontal: NAV_ICON_PATHS.sliders, trendingUp: NAV_ICON_PATHS.trendUp, trendingDown: NAV_ICON_PATHS.trendDown,
+  circlePlus: <><circle cx="12" cy="12" r="10" /><path d="M8 12h8M12 8v8" /></>,
+  circleMinus: <><circle cx="12" cy="12" r="10" /><path d="M8 12h8" /></>,
+  circleX: <><circle cx="12" cy="12" r="10" /><path d="m15 9-6 6M9 9l6 6" /></>,
+  arrowDownToLine: <><path d="M12 17V3" /><path d="m6 11 6 6 6-6" /><path d="M19 21H5" /></>,
+  arrowUpFromLine: <><path d="m18 9-6-6-6 6" /><path d="M12 3v14" /><path d="M5 21h14" /></>,
+  arrowRightLeft: <><path d="m16 3 4 4-4 4" /><path d="M20 7H4" /><path d="m8 21-4-4 4-4" /><path d="M4 17h16" /></>,
+  alignLeft: <><path d="M15 12H3M17 18H3M21 6H3" /></>,
+  notebookPen: <><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4" /><path d="M2 6h4M2 10h4M2 14h4M2 18h4" /><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z" /></>,
+  receiptText: <><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" /><path d="M14 8H8M16 12H8M13 16H8" /></>,
+  layers: <><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z" /><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65" /><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65" /></>,
+  saveAll: <><path d="M10 2v3a1 1 0 0 0 1 1h5" /><path d="M18 18v-6a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6" /><path d="M18 22H4a2 2 0 0 1-2-2V6" /><path d="M8 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9.172a2 2 0 0 1 1.414.586l2.828 2.828A2 2 0 0 1 22 6.828V16a2 2 0 0 1-2 2z" /></>,
+  eraser: <><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21" /><path d="M22 21H7" /><path d="m5 11 9 9" /></>,
+  zap: <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" />,
+  list: <><path d="M3 12h.01M3 18h.01M3 6h.01M8 12h13M8 18h13M8 6h13" /></>,
+  calculator: <><rect x="4" y="2" width="16" height="20" rx="2" /><path d="M8 6h8M16 14v4M16 10h.01M12 10h.01M8 10h.01M12 14h.01M8 14h.01M12 18h.01M8 18h.01" /></>,
+  lockKeyhole: <><circle cx="12" cy="16" r="1" /><rect x="3" y="10" width="18" height="12" rx="2" /><path d="M7 10V7a5 5 0 0 1 10 0v3" /></>,
+  lockOpen: <><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 9.9-1" /></>,
+  repeat2: <><path d="m2 9 3-3 3 3" /><path d="M13 18H7a2 2 0 0 1-2-2V6" /><path d="m22 15-3 3-3-3" /><path d="M11 6h6a2 2 0 0 1 2 2v10" /></>,
+  calendarDays: <><path d="M8 2v4M16 2v4" /><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" /></>,
+});
 const NAV_ICON_WARNED = new Set();
 // SYSTEM-WIDE ICON REDESIGN round: one keyword-rule matcher shared by table
 // headers, form labels, summary cards, page titles and panel titles, so the
@@ -5066,6 +5197,8 @@ function App() {
     // every company-bound token).
     { type: "item", key: "companies", label: "Companies", icon: "companies", show: !!user.isPlatformAdmin },
     { type: "item", key: "dashboard", label: "Dashboard", icon: "dashboard", show: true },
+    // DAILY OPERATIONS CENTER round: the day workspace, its own module next to the Dashboard.
+    { type: "item", key: "daily-ops", label: "Daily Operations", icon: "calendarDays", show: hasRaw("dailyOps.view") },
     // CURRENCY / RATE / PROFIT PERMISSIONS round: these were `show: true`
     // (or gated only by the pre-existing module permission) with no
     // currency check at all — a role stripped of currency.usd/currency.slsh
@@ -5440,6 +5573,7 @@ function App() {
             {view === "history-slsh" && perm("reports") && hasRaw("currency.slsh") && <TransactionHistoryModule currency="SLSH" call={call} dl={dl} preview={preview} print={print} notify={notify} perm={perm} rate={rate} saleRate={saleRate} onOpenQuotations={(qStatus, quotationId) => { setView(quotationStatusView(qStatus)); if (quotationId) setQuotationFocusId(quotationId); }} focusEntryId={historyFocusEntryId} onConsumeFocusEntry={() => setHistoryFocusEntryId(null)} hasRaw={hasRaw} onOpenAccountView={openAccountView} />}
             {view === "expenses" && hasRaw("expenses.view") && <ExpensesModule call={call} dl={dl} notify={notify} hasRaw={hasRaw} token={token} />}
             {view === "reports" && <ReportsModule call={call} dl={dl} notify={notify} perm={perm} hasRaw={hasRaw} />}
+            {view === "daily-ops" && hasRaw("dailyOps.view") && <DailyOperationsModule call={call} dl={dl} preview={preview} notify={notify} perm={perm} hasRaw={hasRaw} rate={rate} onOpenBulk={(c) => setView(c === "SLSH" ? "bulk-tx-slsh" : "bulk-tx-usd")} />}
             {view.startsWith("daily-reports") && hasRaw("dailyReports.view") && <DailyReportsModule call={call} dl={dl} preview={preview} notify={notify} initialTab={{ "daily-reports-balance": "balance", "daily-reports-cash": "cash" }[view] || "history"} />}
             {view === "users" && perm("users") && <UsersModule call={call} notify={notify} currentUser={user} hasRaw={hasRaw} />}
             {view === "roles" && hasRaw("roles.view") && <RolesModule call={call} notify={notify} currentUser={user} hasRaw={hasRaw} />}
@@ -16137,6 +16271,657 @@ function CustomerProfileView({ id, call, notify, perm, onBack, onOpenAccountView
         </>
       )}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// DAILY OPERATIONS CENTER round — one business day of one company: USD and
+// SLSH figures side by side (never added together), Quick Entry (currency
+// first, then the transaction type, then only the fields that type needs —
+// every posting goes through the existing endpoints with a one-per-form
+// Idempotency-Key), the day's transactions, the per-currency summary,
+// reconciliation and closing. A past date shows that day's own figures; live
+// balances are only ever shown for today.
+// ---------------------------------------------------------------------------
+const DO_TONE = { credit: "#15803D", debit: "#B91C1C", exchange: "#0F766E", transfer: "#0F766E", other: "#065F46" };
+const DO_CUR_ICON = { USD: "dollarSign", SLSH: "coins" };
+const DO_TX_TYPES = [
+  ["credit", "Credit", "circlePlus", "credit", "Money received into an account"],
+  ["debit", "Debit", "circleMinus", "debit", "Money paid out of an account"],
+  ["exchange", "Exchange", "arrowLeftRight", "exchange", "USD ↔ SLSH at the exchange rate"],
+  ["transfer", "Transfer", "arrowRightLeft", "transfer", "Between two accounts of one currency"],
+  ["quotation", "Quotation", "fileText", "other", "A priced quotation for a client"],
+  ["expense", "Expense", "receipt", "debit", "A company expense paid from cash"],
+];
+const DO_CASH_TYPES = [
+  ["cashIn", "Cash In", "arrowDownToLine", "credit", "Money into a Cash Account"],
+  ["cashOut", "Cash Out", "arrowUpFromLine", "debit", "Money out of a Cash Account"],
+  ["cashTransfer", "Cash Transfer", "repeat2", "transfer", "Between two Cash Accounts"],
+  ["cashExchange", "Cash Exchange", "arrowLeftRight", "exchange", "USD ↔ SLSH between Cash Accounts"],
+];
+const DO_RECON = { balanced: ["green", "circleCheck", "Balanced"], difference: ["red", "triangleAlert", "Difference Found"], approved: ["amber", "checkCircle2", "Difference Approved"], pending: ["slate", "clock", "Pending Review"] };
+const doOther = (c) => (c === "USD" ? "SLSH" : "USD");
+const doLocalNow = () => { const d = new Date(); d.setSeconds(0, 0); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); };
+function doTypeTone(e) {
+  const t = String(e.typeLabel || e.recordType || "").toLowerCase();
+  if (/exchange/.test(t)) return "exchange";
+  if (/transfer/.test(t)) return "transfer";
+  if (e.credit != null) return "credit";
+  if (e.debit != null) return "debit";
+  return "other";
+}
+function DoIcon({ name, tone = "other", size = 16 }) {
+  return <span className="gk-do-ic" data-tone={tone} style={{ color: DO_TONE[tone] || DO_TONE.other }}><NavIcon name={name} size={size} /></span>;
+}
+function DoField({ icon, label, tone, children, hint, wide }) {
+  return (
+    <div className={`gk-do-field${wide ? " is-wide" : ""}`}>
+      <label className="gk-do-label"><NavIcon name={icon} size={14} style={{ color: DO_TONE[tone] || DO_TONE.other }} />{label}</label>
+      {children}
+      {hint && <div className="gk-do-hint">{hint}</div>}
+    </div>
+  );
+}
+
+function DailyOperationsModule({ call, dl, preview, notify, perm, hasRaw, rate, onOpenBulk }) {
+  const [date, setDate] = useState("");
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [reload, setReload] = useState(0);
+  const refresh = useCallback(() => setReload((k) => k + 1), []);
+  useEffect(() => {
+    let live = true;
+    setLoading(true);
+    call("/api/daily-ops" + qs({ date: date || undefined }))
+      .then((d) => { if (!live) return; setData(d); setErr(""); if (!date) setDate(d.date); })
+      .catch((e) => { if (live) setErr(e.message); })
+      .finally(() => { if (live) setLoading(false); });
+    return () => { live = false; };
+  }, [call, date, reload]); // eslint-disable-line react-hooks/exhaustive-deps
+  const curs = data ? data.currencies : [];
+  return (
+    <div className="gk-do" data-mode={data ? data.mode : "loading"}>
+      <DailyOperationsHeader data={data} date={date} setDate={setDate} loading={loading} onRefresh={refresh} />
+      {err && <div className="gk-do-error" role="alert"><NavIcon name="circleX" size={15} />{err}</div>}
+      {data && (
+        <>
+          <div className="gk-do-cur-grid">
+            {curs.map((c) => <CurrencySummaryCard key={c} cur={c} s={data.summaries[c]} historical={data.mode === "historical"} />)}
+          </div>
+          {data.isToday && data.can.create && (!data.closing || data.closing.status !== "closed") && (
+            <QuickEntryPanel call={call} notify={notify} perm={perm} hasRaw={hasRaw} curs={curs} rate={rate} today={data.today} onPosted={refresh} onOpenBulk={onOpenBulk} />
+          )}
+          {data.isToday && data.closing && data.closing.status === "closed" && (
+            <div className="gk-do-note"><NavIcon name="lockKeyhole" size={15} />This day is closed — Quick Entry is locked. Reopen the day to record more transactions.</div>
+          )}
+          {!data.isToday && <div className="gk-do-note"><NavIcon name="history" size={15} />Showing {data.date} — that day's own figures, not today's live balances. Quick Entry is available for today only.</div>}
+          <DailyTransactionTable data={data} />
+          <div className="gk-do-cur-grid">
+            {curs.map((c) => <DailyCurrencySummary key={c} cur={c} s={data.summaries[c]} />)}
+          </div>
+          {data.reconciliation && <DailyReconciliation call={call} notify={notify} data={data} onSaved={refresh} />}
+          <DailyClosingPanel call={call} notify={notify} dl={dl} preview={preview} data={data} onChanged={refresh} />
+        </>
+      )}
+    </div>
+  );
+}
+
+function DailyOperationsHeader({ data, date, setDate, loading, onRefresh }) {
+  const closed = data && data.closing && data.closing.status === "closed";
+  const st = !data ? null : closed ? ["navy", "lockKeyhole", "Closed"] : data.closing && data.closing.status === "reopened" ? ["amber", "lockOpen", "Reopened"] : data.isToday ? ["green", "zap", "Open — Live"] : ["cyan", "history", "Historical"];
+  return (
+    <div className="gk-do-head">
+      <div className="gk-do-title">
+        <span className="gk-do-title-icon"><NavIcon name="calendarDays" size={20} /></span>
+        <div>
+          <h2>Daily Operations</h2>
+          <div className="gk-do-sub">
+            <span><NavIcon name="building2" size={13} />{data ? data.company : "…"}</span>
+            {data && <span><NavIcon name="globe" size={13} />{data.timezone}</span>}
+            {st && <span data-day-status={closed ? "closed" : data.mode}><Pill tone={st[0]}><span className="gk-do-pill"><NavIcon name={st[1]} size={12} />{st[2]}</span></Pill></span>}
+          </div>
+        </div>
+      </div>
+      <div className="gk-do-head-actions">
+        <label className="gk-do-date"><NavIcon name="calendarDays" size={15} /><span className="gk-sr-only">Business date</span>
+          <input type="date" aria-label="Business date" value={date} max={data ? data.today : undefined} onChange={(e) => e.target.value && setDate(e.target.value)} />
+        </label>
+        {data && !data.isToday && <Btn tone="subtle" size="sm" icon="calendarClock" onClick={() => setDate(data.today)}>Today</Btn>}
+        <Btn tone="ghost" size="sm" icon="refresh" onClick={onRefresh} disabled={loading}>{loading ? "Loading…" : "Refresh"}</Btn>
+      </div>
+    </div>
+  );
+}
+
+function CurrencySummaryCard({ cur, s, historical }) {
+  const cards = [
+    ["moneyIn", "Money In", "trendingUp", "credit", s.moneyIn, "Cash In + Exchange In"],
+    ["moneyOut", "Money Out", "trendingDown", "debit", s.moneyOut, "Cash Out + Exchange Out"],
+    ["exchanges", "Exchanges", "arrowLeftRight", "exchange", s.exchanges.amount, `${s.exchanges.count} exchange(s) · ${cur} side`],
+    ["closing", historical ? "Closing Cash" : "Closing Cash (live)", "wallet", "other", s.closingCash, `Opening ${fmtMoney(s.openingCash, cur)}`],
+  ];
+  return (
+    <section className="gk-do-cur" data-currency={cur} aria-label={`${cur} today`}>
+      <div className="gk-do-cur-head"><DoIcon name={DO_CUR_ICON[cur]} size={17} /><h3>{cur} {historical ? "— Day" : "Today"}</h3><span className="gk-do-cur-count">{s.transactions} transaction(s)</span></div>
+      <div className="gk-do-cards">
+        {cards.map(([k, l, ic, tone, v, sub]) => (
+          <div key={k} className="gk-do-card" data-card={k} data-tone={tone}>
+            <DoIcon name={ic} tone={tone} size={16} />
+            <div className="gk-do-card-body">
+              <div className="gk-do-card-label">{l}</div>
+              <div className="gk-do-card-value" style={{ color: tone === "other" ? undefined : DO_TONE[tone] }}>{fmtMoney(v, cur)}</div>
+              <div className="gk-do-card-sub">{sub}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CurrencySelector({ curs, value, onChange }) {
+  return (
+    <div className="gk-do-step" role="radiogroup" aria-label="Choose currency">
+      <div className="gk-do-step-title"><span className="gk-do-step-no">1</span>Choose Currency</div>
+      <div className="gk-do-curpick">
+        {["USD", "SLSH"].map((c) => {
+          const allowed = curs.includes(c);
+          return (
+            <button key={c} type="button" role="radio" aria-checked={value === c} disabled={!allowed} data-currency={c} className={`gk-do-curbtn${value === c ? " is-active" : ""}`} onClick={() => onChange(c)} title={allowed ? `Enter a ${c} transaction` : `You don't have access to ${c}`}>
+              <NavIcon name={DO_CUR_ICON[c]} size={22} />
+              <span><b>{c}</b><small>{c === "USD" ? "US Dollar accounts" : "Somaliland Shilling accounts"}</small></span>
+              {value === c && <NavIcon name="circleCheck" size={16} className="gk-do-check" />}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function TransactionTypeSelector({ types, value, onChange, cur }) {
+  return (
+    <div className="gk-do-step" role="radiogroup" aria-label="Choose transaction type">
+      <div className="gk-do-step-title"><span className="gk-do-step-no">2</span>Choose Transaction Type</div>
+      <div className="gk-do-types">
+        {types.map(([k, l, ic, tone, sub, allowed]) => (
+          <button key={k} type="button" role="radio" aria-checked={value === k} disabled={!cur || !allowed} data-type={k} data-tone={tone} className={`gk-do-typebtn${value === k ? " is-active" : ""}`} onClick={() => onChange(k)} title={!allowed ? "You don't have permission for this transaction type" : sub}>
+            <span className="gk-do-typeic" style={{ color: DO_TONE[tone] }}><NavIcon name={ic} size={20} /></span>
+            <b>{l}</b><small>{sub}</small>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AccountSelector({ id, label, icon = "userRound", tone, cur, accounts, value, onChange, optional, disabled }) {
+  const a = (accounts || []).find((x) => x.id === value);
+  return (
+    <DoField icon={icon} tone={tone} label={`${label} (${cur})${optional ? "" : " *"}`} hint={a ? <>Balance: <b className="gk-do-num">{fmtMoney(a.balance, a.currency || cur)}</b></> : null}>
+      <AccountCombo id={id} ariaLabel={`${label} (${cur})`} accounts={accounts} value={value} onChange={onChange} disabled={disabled} noneLabel={optional ? "— None —" : undefined} placeholder={`Search ${cur} accounts…`} searchLabel={`Search ${cur} accounts`} />
+    </DoField>
+  );
+}
+function CashAccountSelector({ id, label, cur, accounts, value, onChange, optional, tone, disabled, icon = "wallet" }) {
+  const a = (accounts || []).find((x) => x.id === value);
+  return (
+    <DoField icon={icon} tone={tone} label={`${label} (${cur})${optional ? "" : " *"}`} hint={a ? <>Balance: <b className="gk-do-num">{fmtMoney(a.balance, a.currency || cur)}</b></> : null}>
+      <AccountCombo id={id} kind="cash" ariaLabel={`${label} (${cur})`} accounts={accounts} value={value} onChange={onChange} disabled={disabled} noneLabel={optional ? "— None —" : undefined} placeholder={`Select a ${cur} Cash Account…`} />
+    </DoField>
+  );
+}
+
+function QuickEntryPanel({ call, notify, perm, hasRaw, curs, rate, today, onPosted, onOpenBulk }) {
+  const [tab, setTab] = useState("transaction");
+  const [cur, setCur] = useState(curs.length === 1 ? curs[0] : "");
+  const [type, setType] = useState("");
+  const txTypes = DO_TX_TYPES.map((t) => [...t, { credit: perm("accountsManage"), debit: perm("accountsManage"), exchange: perm("exchangeCreate") && curs.length === 2, transfer: perm("accountsManage"), quotation: perm("quotationsManage"), expense: hasRaw("expenses.create") }[t[0]]]);
+  const cashTypes = DO_CASH_TYPES.map((t) => [...t, { cashIn: hasRaw("cash.deposit"), cashOut: hasRaw("cash.withdraw"), cashTransfer: hasRaw("cash.transfer"), cashExchange: hasRaw("cash.exchange") && curs.length === 2 }[t[0]]]);
+  const types = tab === "cash" ? cashTypes : txTypes;
+  useEffect(() => { setType(""); }, [tab]);
+  const bulkOk = perm("accountsManage");
+  return (
+    <section className="gk-do-panel gk-do-qe" aria-label="Quick Entry">
+      <div className="gk-do-panel-head">
+        <h3><DoIcon name="zap" size={17} />Quick Entry</h3>
+        <div className="gk-do-tabs" role="tablist" aria-label="Quick Entry">
+          {[["transaction", "Transaction", "list"], ["cash", "Cash Account", "wallet"], ["bulk", "Bulk Entry", "layers"]].map(([k, l, ic]) => (
+            (k !== "bulk" || bulkOk) && <button key={k} type="button" role="tab" aria-selected={tab === k} className={`gk-do-tab${tab === k ? " is-active" : ""}`} onClick={() => setTab(k)}><NavIcon name={ic} size={15} />{l}</button>
+          ))}
+        </div>
+      </div>
+      <CurrencySelector curs={curs} value={cur} onChange={(c) => setCur(c)} />
+      {tab === "bulk" ? (
+        <div className="gk-do-bulk">
+          <DoIcon name="layers" size={20} />
+          <div><b>Bulk Entry</b><div className="gk-do-hint">Enter many {cur || "USD / SLSH"} credits and debits at once in the existing Bulk Transaction workspace — same checks, references and audit.</div></div>
+          <Btn tone="primary" size="sm" icon="layers" disabled={!cur} onClick={() => onOpenBulk(cur)}>Open Bulk Entry{cur ? ` (${cur})` : ""}</Btn>
+        </div>
+      ) : (
+        <>
+          <TransactionTypeSelector types={types} value={type} onChange={setType} cur={cur} />
+          {cur && type ? (
+            <QuickEntryForm key={`${tab}-${type}-${cur}`} call={call} notify={notify} cur={cur} type={type} rate={rate} today={today} onPosted={onPosted} onCancel={() => setType("")} />
+          ) : (
+            <div className="gk-do-hint gk-do-qe-wait"><NavIcon name="info" size={14} />{!cur ? "Choose USD or SLSH first — only that currency's accounts are shown." : "Choose the transaction type."}</div>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
+function QuickEntryForm({ call, notify, cur, type, rate, today, onPosted, onCancel }) {
+  const ratesCtx = useContext(RatesContext);
+  const other = doOther(cur);
+  const meta = [...DO_TX_TYPES, ...DO_CASH_TYPES].find((t) => t[0] === type);
+  const tone = meta[3];
+  const isCash = type.startsWith("cash");
+  const blank = { accountId: "", toAccountId: "", cashAccountId: "", toCashAccountId: "", amount: "", when: doLocalNow(), reference: "", description: "", notes: "", rate: "", clientName: "", qty: "1", categoryId: "" };
+  const [f, setF] = useState(blank);
+  const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
+  const [reqId, setReqId] = useState(() => newRequestId());
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [accounts, setAccounts] = useState([]);
+  const [otherAccounts, setOtherAccounts] = useState([]);
+  const [cashAccounts, setCashAccounts] = useState([]);
+  const [otherCash, setOtherCash] = useState([]);
+  const [categories, setCategories] = useState([]);
+  useEffect(() => {
+    if (!isCash) call("/api/accounts" + qs({ currency: cur })).then((d) => setAccounts((d.accounts || []).filter((a) => a.currency === cur && a.status !== "inactive"))).catch(() => setAccounts([]));
+    if (type === "exchange") call("/api/accounts" + qs({ currency: other })).then((d) => setOtherAccounts((d.accounts || []).filter((a) => a.currency === other))).catch(() => setOtherAccounts([]));
+    if (isCash) call("/api/cash/accounts" + qs({ currency: cur, status: "active" })).then((d) => setCashAccounts((d.accounts || []).filter((a) => a.currency === cur))).catch(() => setCashAccounts([]));
+    else if (["credit", "debit", "expense"].includes(type)) call("/api/cash/accounts/for-payment" + qs({ currency: cur })).then((d) => setCashAccounts((d.accounts || []).filter((a) => a.currency === cur))).catch(() => setCashAccounts([]));
+    if (type === "cashExchange") call("/api/cash/accounts" + qs({ currency: other, status: "active" })).then((d) => setOtherCash((d.accounts || []).filter((a) => a.currency === other))).catch(() => setOtherCash([]));
+    if (type === "expense") call("/api/expense-categories").then((d) => setCategories((d.categories || []).filter((c) => c.active !== false && c.status !== "inactive"))).catch(() => setCategories([]));
+  }, [call, cur, type]); // eslint-disable-line react-hooks/exhaustive-deps
+  const amount = Number(f.amount);
+  const directionRate = defaultRateFor(cur, { buyRate: ratesCtx.buyRate, sellRate: ratesCtx.sellRate, dailyRate: rate });
+  const effRate = f.rate !== "" ? Number(f.rate) : directionRate;
+  const isEx = type === "exchange" || type === "cashExchange";
+  const received = isEx && amount > 0 && effRate > 0 ? convert(amount, cur, other, effRate) : 0;
+  const margin = type === "exchange" && amount > 0 && effRate > 0 ? computeMargin({ currencyGiven: cur, amountGiven: amount, amountReceived: received, rate: effRate, costRate: ratesCtx.costRate ?? null }) : null;
+  const cashRequired = ["credit", "debit"].includes(type) && cashAccounts.length > 0;
+  function validate() {
+    if (!(amount > 0)) return "Enter an amount greater than zero.";
+    if (["credit", "debit"].includes(type) && !f.accountId) return `Choose the ${cur} account.`;
+    if (cashRequired && !f.cashAccountId) return "Choose the Cash Account.";
+    if (type === "transfer" && (!f.accountId || !f.toAccountId)) return "Choose both accounts.";
+    if (type === "transfer" && f.accountId === f.toAccountId) return "The two accounts must be different.";
+    if (type === "exchange" && !(effRate > 0)) return "Enter the exchange rate.";
+    if (type === "quotation" && !f.description.trim()) return "Describe the quoted item.";
+    if (type === "quotation" && !f.accountId && !f.clientName.trim()) return "Choose the account or type the client name.";
+    if (type === "expense" && (!f.categoryId || !f.description.trim() || !f.cashAccountId)) return "Choose the category and Cash Account and describe the expense.";
+    if (["cashIn", "cashOut"].includes(type) && !f.cashAccountId) return "Choose the Cash Account.";
+    if (type === "cashTransfer" && (!f.cashAccountId || !f.toCashAccountId || f.cashAccountId === f.toCashAccountId)) return "Choose two different Cash Accounts.";
+    if (type === "cashExchange" && (!f.cashAccountId || !f.toCashAccountId)) return `Choose the ${cur} and ${other} Cash Accounts.`;
+    if (type === "cashExchange" && !(effRate > 0)) return "Enter the exchange rate.";
+    return "";
+  }
+  function request() {
+    const when = f.when ? new Date(f.when).toISOString() : undefined;
+    const notes = f.notes.trim() || undefined;
+    const acc = accounts.find((a) => a.id === f.accountId);
+    switch (type) {
+      case "credit": case "debit":
+        return [`/api/accounts/${f.accountId}/${type === "credit" ? "deposit" : "withdraw"}`, { amount, currency: cur, paymentDate: when, cashAccountId: f.cashAccountId || null, reference: f.reference.trim() || undefined, notes: f.description.trim() || notes }];
+      case "transfer":
+        return ["/api/transfers", { fromAccountId: f.accountId, toAccountId: f.toAccountId, amount, currency: cur, date: when, notes: f.description.trim() || notes }];
+      case "exchange":
+        return ["/api/transactions", { clientName: acc ? acc.name : (f.clientName.trim() || "Walk-in"), clientAccountId: f.accountId || undefined, receivingAccountId: f.toAccountId || undefined, amountGiven: amount, currencyGiven: cur, rateUsed: f.rate !== "" ? Number(f.rate) : undefined, date: when, notes: f.description.trim() || notes }];
+      case "quotation":
+        return ["/api/quotations", { clientName: acc ? acc.name : f.clientName.trim(), accountId: f.accountId || undefined, currency: cur, currencyMode: cur, issueDate: today, notes, items: [{ description: f.description.trim(), qty: Number(f.qty) || 1, unitPrice: amount, currency: cur }] }];
+      case "expense":
+        return ["/api/expenses", { date: today, categoryId: f.categoryId, description: f.description.trim(), amount, currency: cur, cashAccountId: f.cashAccountId, externalReference: f.reference.trim(), notes: f.notes.trim(), clientRequestId: reqId }];
+      case "cashIn": case "cashOut":
+        return [`/api/cash/accounts/${f.cashAccountId}/${type === "cashIn" ? "deposit" : "withdraw"}`, { amount, date: when, description: f.description.trim() || notes || (type === "cashIn" ? "Cash in" : "Cash out"), reference: f.reference.trim() || undefined }];
+      case "cashTransfer":
+        return ["/api/cash/transfers", { fromCashAccountId: f.cashAccountId, toCashAccountId: f.toCashAccountId, amount, date: when, notes: f.description.trim() || notes }];
+      case "cashExchange":
+        return ["/api/cash/exchanges", { fromCashAccountId: f.cashAccountId, toCashAccountId: f.toCashAccountId, amountGiven: amount, rateUsed: effRate, date: when, notes: f.description.trim() || notes }];
+      default: return null;
+    }
+  }
+  async function submit(again) {
+    if (busy) return; // a second click while saving does nothing
+    const v = validate(); setError(v); if (v) return;
+    const [url, body] = request();
+    setBusy(true);
+    try {
+      await call(url, { method: "POST", body: { ...body, _requestId: reqId } });
+      notify(`${meta[1]} recorded (${cur}).`);
+      setReqId(newRequestId());
+      if (again) setF({ ...blank, accountId: f.accountId, cashAccountId: f.cashAccountId });
+      else { setF(blank); onCancel(); }
+      onPosted();
+    } catch (e) { setError(e.message); }
+    finally { setBusy(false); }
+  }
+  const amtIcon = DO_CUR_ICON[cur];
+  const amountLabel = type === "quotation" ? `Unit Price (${cur}) *` : isEx ? `Amount Given (${cur}) *` : `Amount (${cur}) *`;
+  return (
+    <form className="gk-do-form" data-form={type} aria-label={`${meta[1]} details`} onSubmit={(e) => { e.preventDefault(); submit(false); }}>
+      <div className="gk-do-step-title"><span className="gk-do-step-no">3</span><DoIcon name={meta[2]} tone={tone} size={15} />{meta[1]} details <Pill tone={cur === "USD" ? "green" : "cyan"}>{cur}</Pill></div>
+      <div className="gk-do-grid">
+        {["credit", "debit"].includes(type) && <AccountSelector id="do-account" label="Account" cur={cur} tone={tone} accounts={accounts} value={f.accountId} onChange={(v) => set("accountId", v)} disabled={busy} />}
+        {["credit", "debit"].includes(type) && <CashAccountSelector id="do-cash" label={type === "credit" ? "Cash In To" : "Cash Out From"} icon={type === "credit" ? "arrowDownToLine" : "arrowUpFromLine"} tone={tone} cur={cur} accounts={cashAccounts} value={f.cashAccountId} onChange={(v) => set("cashAccountId", v)} optional={!cashRequired} disabled={busy} />}
+        {type === "transfer" && <AccountSelector id="do-from" label="From Account" icon="arrowUpFromLine" tone="debit" cur={cur} accounts={accounts} value={f.accountId} onChange={(v) => set("accountId", v)} disabled={busy} />}
+        {type === "transfer" && <AccountSelector id="do-to" label="To Account" icon="arrowDownToLine" tone="credit" cur={cur} accounts={accounts.filter((a) => a.id !== f.accountId)} value={f.toAccountId} onChange={(v) => set("toAccountId", v)} disabled={busy} />}
+        {type === "exchange" && <AccountSelector id="do-from" label="Source Account" icon="userRound" tone="exchange" cur={cur} accounts={accounts} value={f.accountId} onChange={(v) => set("accountId", v)} optional disabled={busy} />}
+        {type === "exchange" && <AccountSelector id="do-to" label="Receiving Account" icon="building2" tone="exchange" cur={other} accounts={otherAccounts} value={f.toAccountId} onChange={(v) => set("toAccountId", v)} optional disabled={busy} />}
+        {(type === "exchange" || type === "quotation") && !f.accountId && (
+          <DoField icon="userRound" label={type === "exchange" ? "Client Name (walk-in)" : "Client Name *"}><input style={inputStyle} aria-label="Client Name" value={f.clientName} onChange={(e) => set("clientName", e.target.value)} placeholder="Walk-in" disabled={busy} /></DoField>
+        )}
+        {type === "quotation" && <AccountSelector id="do-account" label="Account" cur={cur} tone={tone} accounts={accounts} value={f.accountId} onChange={(v) => set("accountId", v)} optional disabled={busy} />}
+        {type === "expense" && (
+          <DoField icon="receiptText" tone={tone} label="Category *"><select style={inputStyle} aria-label="Category" value={f.categoryId} onChange={(e) => set("categoryId", e.target.value)} disabled={busy}><option value="">Select a category…</option>{categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></DoField>
+        )}
+        {type === "expense" && <CashAccountSelector id="do-cash" label="Paid From" icon="arrowUpFromLine" tone="debit" cur={cur} accounts={cashAccounts} value={f.cashAccountId} onChange={(v) => set("cashAccountId", v)} disabled={busy} />}
+        {["cashIn", "cashOut"].includes(type) && <CashAccountSelector id="do-cash" label="Cash Account" icon={type === "cashIn" ? "arrowDownToLine" : "arrowUpFromLine"} tone={tone} cur={cur} accounts={cashAccounts} value={f.cashAccountId} onChange={(v) => set("cashAccountId", v)} disabled={busy} />}
+        {type === "cashTransfer" && <CashAccountSelector id="do-cash" label="From Cash Account" icon="arrowUpFromLine" tone="debit" cur={cur} accounts={cashAccounts} value={f.cashAccountId} onChange={(v) => set("cashAccountId", v)} disabled={busy} />}
+        {type === "cashTransfer" && <CashAccountSelector id="do-cash-to" label="To Cash Account" icon="arrowDownToLine" tone="credit" cur={cur} accounts={cashAccounts.filter((a) => a.id !== f.cashAccountId)} value={f.toCashAccountId} onChange={(v) => set("toCashAccountId", v)} disabled={busy} />}
+        {type === "cashExchange" && <CashAccountSelector id="do-cash" label="From Cash Account" icon="arrowUpFromLine" tone="exchange" cur={cur} accounts={cashAccounts} value={f.cashAccountId} onChange={(v) => set("cashAccountId", v)} disabled={busy} />}
+        {type === "cashExchange" && <CashAccountSelector id="do-cash-to" label="To Cash Account" icon="arrowDownToLine" tone="exchange" cur={other} accounts={otherCash} value={f.toCashAccountId} onChange={(v) => set("toCashAccountId", v)} disabled={busy} />}
+        <DoField icon={amtIcon} tone={tone} label={amountLabel}>
+          <div className="gk-do-amount"><span>{cur === "USD" ? "$" : "SLSH"}</span><input inputMode="decimal" aria-label={amountLabel.replace(" *", "")} value={f.amount} onChange={(e) => set("amount", e.target.value.replace(/[^0-9.]/g, ""))} placeholder="0.00" disabled={busy} /></div>
+        </DoField>
+        {type === "quotation" && <DoField icon="hash" label="Quantity"><input style={inputStyle} inputMode="decimal" aria-label="Quantity" value={f.qty} onChange={(e) => set("qty", e.target.value.replace(/[^0-9.]/g, ""))} disabled={busy} /></DoField>}
+        {isEx && (
+          <DoField icon="calculator" tone="exchange" label={`Exchange Rate (SLSH per $1)${type === "cashExchange" ? " *" : ""}`} hint={directionRate && f.rate === "" ? `Current rate: ${fmtNum(directionRate)}` : null}>
+            <input style={inputStyle} inputMode="decimal" aria-label="Exchange Rate" value={f.rate} onChange={(e) => set("rate", e.target.value.replace(/[^0-9.]/g, ""))} placeholder={directionRate ? String(directionRate) : "Rate"} disabled={busy} />
+          </DoField>
+        )}
+        {!["quotation", "expense"].includes(type) && (
+          <DoField icon="calendarDays" label="Date & Time"><input style={inputStyle} type="datetime-local" aria-label="Transaction Date & Time" value={f.when} max={`${today}T23:59`} onChange={(e) => set("when", e.target.value)} disabled={busy} /></DoField>
+        )}
+        {["credit", "debit", "expense", "cashIn", "cashOut"].includes(type) && <DoField icon="hash" label="Reference"><input style={inputStyle} aria-label="Reference" value={f.reference} onChange={(e) => set("reference", e.target.value)} placeholder="Optional" disabled={busy} /></DoField>}
+        <DoField icon="alignLeft" label={type === "quotation" || type === "expense" ? "Description *" : "Description / Notes"} wide>
+          <input style={inputStyle} aria-label="Description" value={f.description} onChange={(e) => set("description", e.target.value)} placeholder={type === "quotation" ? "Item or service quoted" : "What is this for?"} disabled={busy} />
+        </DoField>
+        {["quotation", "expense"].includes(type) && <DoField icon="notebookPen" label="Notes" wide><input style={inputStyle} aria-label="Notes" value={f.notes} onChange={(e) => set("notes", e.target.value)} placeholder="Optional" disabled={busy} /></DoField>}
+      </div>
+      {isEx && (
+        <div className="gk-do-exsum" data-exchange-summary>
+          <span><NavIcon name={DO_CUR_ICON[cur]} size={14} />Given <b>{fmtMoney(amount || 0, cur)}</b></span>
+          <NavIcon name="arrowRight" size={14} />
+          <span><NavIcon name="handCoins" size={14} />Received <b data-received>{fmtMoney(received, other)}</b></span>
+          <span><NavIcon name="calculator" size={14} />Rate <b>{effRate ? fmtNum(effRate) : "—"}</b></span>
+          {type === "exchange" && <span><NavIcon name={margin && margin.usd < 0 ? "trendingDown" : "trendingUp"} size={14} />{margin ? margin.label : "Profit / difference"} <b>{margin ? `${fmtMoney(margin.usd, "USD")}${margin.slsh != null ? ` · ${fmtMoney(margin.slsh, "SLSH")}` : ""}` : "—"}</b></span>}
+        </div>
+      )}
+      {type === "quotation" && amount > 0 && <div className="gk-do-exsum"><span><NavIcon name="fileText" size={14} />Quotation total <b>{fmtMoney(amount * (Number(f.qty) || 1), cur)}</b></span></div>}
+      {error && <div className="gk-do-error" role="alert"><NavIcon name="triangleAlert" size={15} />{error}</div>}
+      <div className="gk-do-actions">
+        <Btn tone="ghost" size="sm" icon="x" onClick={onCancel} disabled={busy}>Cancel</Btn>
+        <Btn tone="subtle" size="sm" icon="eraser" onClick={() => { setF(blank); setError(""); }} disabled={busy}>Clear</Btn>
+        <Btn tone="subtle" size="sm" icon="saveAll" onClick={() => submit(true)} disabled={busy}>Save & New</Btn>
+        <Btn tone={tone === "credit" ? "deposit" : tone === "debit" ? "withdraw" : tone === "other" ? "primary" : "transfer"} size="sm" icon="save" type="submit" disabled={busy}>{busy ? "Saving…" : `Save ${meta[1]}`}</Btn>
+      </div>
+    </form>
+  );
+}
+
+function DailyTransactionTable({ data }) {
+  const [cur, setCur] = useState("all");
+  const [type, setType] = useState("");
+  const [account, setAccount] = useState("");
+  const [staff, setStaff] = useState("");
+  const [search, setSearch] = useState("");
+  const [detail, setDetail] = useState(null);
+  const all = data.transactions;
+  const opts = (k) => [...new Set(all.map((e) => e[k]).filter(Boolean))].sort();
+  const q = normSearch(search);
+  const rows = all.filter((e) => (cur === "all" || e.currency === cur) && (!type || e.typeLabel === type) && (!account || e.accountName === account) && (!staff || e.staffOrCreator === staff)
+    && (!q || normSearch([e.reference, e.accountName, e.notes, e.typeLabel, e.staffOrCreator, e.amountSummary].join(" ")).includes(q)));
+  const pg = usePagination(rows, { initialPageSize: 25 });
+  const tot = (c, k) => rows.filter((e) => e.currency === c).reduce((n, e) => n + (Number(e[k]) || 0), 0);
+  const showCurs = cur === "all" ? data.currencies : [cur];
+  return (
+    <section className="gk-do-panel" aria-label="Today's Transactions">
+      <div className="gk-do-panel-head">
+        <h3><DoIcon name="list" size={17} />{data.isToday ? "Today's Transactions" : `Transactions — ${data.date}`}<span className="gk-do-count">{rows.length}</span></h3>
+        <div className="gk-do-seg" role="group" aria-label="Currency filter">
+          {["all", ...data.currencies].map((c) => <button key={c} type="button" aria-pressed={cur === c} className={cur === c ? "is-active" : ""} onClick={() => setCur(c)}>{c !== "all" && <NavIcon name={DO_CUR_ICON[c]} size={13} />}{c === "all" ? "All" : c}</button>)}
+        </div>
+      </div>
+      <div className="gk-do-filters">
+        <label><NavIcon name="slidersHorizontal" size={14} /><select aria-label="Type" value={type} onChange={(e) => setType(e.target.value)}><option value="">All types</option>{opts("typeLabel").map((t) => <option key={t}>{t}</option>)}</select></label>
+        <label><NavIcon name="userRound" size={14} /><select aria-label="Account" value={account} onChange={(e) => setAccount(e.target.value)}><option value="">All accounts</option>{opts("accountName").map((t) => <option key={t}>{t}</option>)}</select></label>
+        <label><NavIcon name="usersRound" size={14} /><select aria-label="Staff" value={staff} onChange={(e) => setStaff(e.target.value)}><option value="">All staff</option>{opts("staffOrCreator").map((t) => <option key={t}>{t}</option>)}</select></label>
+        <label className="is-search"><NavIcon name="search" size={14} /><input aria-label="Search transactions" placeholder="Search reference, account, notes…" value={search} onChange={(e) => setSearch(e.target.value)} /></label>
+        {(type || account || staff || search || cur !== "all") && <Btn tone="ghost" size="sm" icon="eraser" onClick={() => { setType(""); setAccount(""); setStaff(""); setSearch(""); setCur("all"); }}>Clear filters</Btn>}
+      </div>
+      <div className="gk-do-tablewrap">
+        <table className="gk-do-table">
+          <thead><tr><th>#</th><th>Time</th><th>Type</th><th>Currency</th><th>Account</th><th>Description</th><th className="num">Amount</th><th className="num">Balance</th><th>Action</th></tr></thead>
+          <tbody>
+            {pg.pageRows.map((e, i) => {
+              const tone = doTypeTone(e);
+              const amt = e.credit != null ? e.credit : e.debit != null ? -e.debit : null;
+              return (
+                <tr key={`${e.recordType}-${e.id || e.reference}-${i}`} data-currency={e.currency} data-tone={tone}>
+                  <td className="muted">{pg.firstIdx + i}</td>
+                  <td className="mono"><NavIcon name="clock" size={12} style={{ opacity: 0.6 }} /> {String(e.date || "").length > 10 ? new Date(e.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}</td>
+                  <td><span className="gk-do-type" style={{ color: DO_TONE[tone] }}><NavIcon name={{ credit: "circlePlus", debit: "circleMinus", exchange: "arrowLeftRight", transfer: "arrowRightLeft", other: "fileText" }[tone]} size={14} />{e.typeLabel}</span></td>
+                  <td><Pill tone={e.currency === "USD" ? "green" : "cyan"}>{e.currency}</Pill></td>
+                  <td className="strong">{e.accountName || "—"}<div className="muted small">{e.reference}</div></td>
+                  <td className="desc">{e.notes || e.amountSummary || "—"}</td>
+                  <td className="num" style={{ color: amt == null ? undefined : amt >= 0 ? DO_TONE.credit : DO_TONE.debit }}>{amt == null ? (e.amountSummary || "—") : `${amt >= 0 ? "+" : "−"}${fmtMoney(Math.abs(amt), e.currency)}`}</td>
+                  <td className="num">{e.balanceAfter == null ? "—" : fmtMoney(e.balanceAfter, e.currency)}</td>
+                  <td><button type="button" className="gk-do-iconbtn" aria-label={`View ${e.reference || "transaction"}`} title="View details" onClick={() => setDetail(e)}><NavIcon name="eye" size={15} /></button></td>
+                </tr>
+              );
+            })}
+            {!rows.length && <tr><td colSpan={9}><Empty text={all.length ? "No transactions match these filters." : "No transactions on this day yet."} /></td></tr>}
+          </tbody>
+          <tfoot>
+            {showCurs.map((c) => (
+              <tr key={c} data-total={c}>
+                <td colSpan={4} className="strong"><NavIcon name={DO_CUR_ICON[c]} size={13} /> {c} totals</td>
+                <td colSpan={2}>Credits <b style={{ color: DO_TONE.credit }}>{fmtMoney(tot(c, "credit"), c)}</b> · Debits <b style={{ color: DO_TONE.debit }}>{fmtMoney(tot(c, "debit"), c)}</b></td>
+                <td className="num" colSpan={3}>{data.isToday ? "Current cash" : "Closing cash"} <b>{fmtMoney(data.summaries[c].closingCash, c)}</b></td>
+              </tr>
+            ))}
+          </tfoot>
+        </table>
+      </div>
+      {rows.length > 0 && <TableFooter firstIdx={pg.firstIdx} lastIdx={pg.lastIdx} total={pg.total} page={pg.page} totalPages={pg.totalPages} onPageChange={pg.setPage} pageSize={pg.pageSize} onPageSizeChange={pg.setPageSize} />}
+      {detail && (
+        <Modal title={`${detail.typeLabel} · ${detail.reference || ""}`} onClose={() => setDetail(null)}>
+          <div className="gk-do-detail">
+            {[["calendarDays", "Date & Time", String(detail.date || "").replace("T", " ").slice(0, 19)], ["hash", "Reference", detail.reference], [DO_CUR_ICON[detail.currency], "Currency", detail.currency], ["userRound", "Account", detail.accountName],
+              ["circlePlus", "Credit", detail.credit != null ? fmtMoney(detail.credit, detail.currency) : null], ["circleMinus", "Debit", detail.debit != null ? fmtMoney(detail.debit, detail.currency) : null],
+              ["wallet", "Balance after", detail.balanceAfter != null ? fmtMoney(detail.balanceAfter, detail.currency) : null], ["fileText", "Summary", detail.amountSummary], ["alignLeft", "Notes", detail.notes], ["userRound", "Staff", detail.staffOrCreator]]
+              .filter((r) => r[2]).map(([ic, l, v]) => <div key={l}><span><NavIcon name={ic} size={14} />{l}</span><b>{v}</b></div>)}
+          </div>
+        </Modal>
+      )}
+    </section>
+  );
+}
+
+function DailyCurrencySummary({ cur, s }) {
+  const rows = [["Opening Cash", s.openingCash, "wallet", "other"], ["Cash In", s.cashIn, "arrowDownToLine", "credit"], ["Cash Out", -s.cashOut, "arrowUpFromLine", "debit"], ["Transfers In", s.transferIn, "arrowDownLeft", "transfer"], ["Transfers Out", -s.transferOut, "arrowUpRight", "transfer"], ["Exchange In", s.exchangeIn, "arrowLeftRight", "exchange"], ["Exchange Out", -s.exchangeOut, "arrowRightLeft", "exchange"]];
+  return (
+    <section className="gk-do-panel gk-do-sum" data-summary={cur} aria-label={`${cur} summary`}>
+      <div className="gk-do-panel-head"><h3><DoIcon name={DO_CUR_ICON[cur]} size={17} />{cur} Summary</h3><span className="gk-do-hint">{s.cashAccounts} Cash Account(s)</span></div>
+      <dl>
+        {rows.map(([l, v, ic, tone]) => <div key={l} data-row={l}><dt><NavIcon name={ic} size={14} style={{ color: DO_TONE[tone] }} />{l}</dt><dd className="gk-do-num">{l === "Opening Cash" ? fmtMoney(v, cur) : `${v < 0 ? "−" : "+"}${fmtMoney(Math.abs(v), cur)}`}</dd></div>)}
+        <div className="is-total" data-row="Closing Cash"><dt><NavIcon name="calculator" size={14} />Closing Cash</dt><dd className="gk-do-num">{fmtMoney(s.closingCash, cur)}</dd></div>
+      </dl>
+    </section>
+  );
+}
+
+function DailyReconciliation({ call, notify, data, onSaved }) {
+  const [cur, setCur] = useState(data.currencies[0]);
+  const s = data.summaries[cur];
+  const r = data.reconciliation[cur];
+  const closed = data.closing && data.closing.status === "closed";
+  const [actual, setActual] = useState("");
+  const [notes, setNotes] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  useEffect(() => { setActual(r ? String(r.actual) : ""); setNotes(r && r.notes ? r.notes : ""); setError(""); }, [cur, r && r.version]); // eslint-disable-line react-hooks/exhaustive-deps
+  const expected = s.closingCash;
+  const diff = actual === "" ? null : Math.round((Number(actual) - expected) * 100) / 100;
+  const state = r ? r.status : "pending";
+  const st = DO_RECON[state];
+  async function save(approve) {
+    if (busy) return;
+    if (actual === "" || !Number.isFinite(Number(actual))) { setError("Enter the actual (counted) closing balance."); return; }
+    if (approve && !notes.trim()) { setError("Explain the difference in the notes before approving it."); return; }
+    setBusy(true); setError("");
+    try {
+      await call("/api/daily-ops/reconcile", { method: "POST", body: { date: data.date, currency: cur, actual: Number(actual), notes, approveDifference: !!approve } });
+      notify(`${cur} reconciliation saved.`); onSaved();
+    } catch (e) { setError(e.message); } finally { setBusy(false); }
+  }
+  const line = (l, v, ic, tone) => <div data-row={l}><dt><NavIcon name={ic} size={14} style={{ color: DO_TONE[tone || "other"] }} />{l}</dt><dd className="gk-do-num">{v}</dd></div>;
+  return (
+    <section className="gk-do-panel" aria-label="Daily Reconciliation">
+      <div className="gk-do-panel-head">
+        <h3><DoIcon name="calculator" size={17} />Daily Reconciliation</h3>
+        <div className="gk-do-tabs" role="tablist" aria-label="Reconciliation currency">
+          {data.currencies.map((c) => { const rr = data.reconciliation[c]; const t = DO_RECON[rr ? rr.status : "pending"]; return (
+            <button key={c} type="button" role="tab" aria-selected={cur === c} className={`gk-do-tab${cur === c ? " is-active" : ""}`} onClick={() => setCur(c)}><NavIcon name={DO_CUR_ICON[c]} size={15} />{c}<NavIcon name={t[1]} size={13} /></button>); })}
+        </div>
+      </div>
+      <div className="gk-do-recon" data-recon={cur} data-status={state}>
+        <dl className="gk-do-recon-figs">
+          {line("Opening Balance", fmtMoney(s.openingCash, cur), "wallet")}
+          {line("Money In", `+${fmtMoney(s.cashIn + s.exchangeIn, cur)}`, "arrowDownToLine", "credit")}
+          {line("Money Out", `−${fmtMoney(s.cashOut + s.exchangeOut, cur)}`, "arrowUpFromLine", "debit")}
+          {line("Transfers (in / out)", `+${fmtMoney(s.transferIn, cur)} / −${fmtMoney(s.transferOut, cur)}`, "repeat2", "transfer")}
+          {line("Exchange (in / out)", `+${fmtMoney(s.exchangeIn, cur)} / −${fmtMoney(s.exchangeOut, cur)}`, "arrowLeftRight", "exchange")}
+          <div className="is-total" data-row="Expected">{<><dt><NavIcon name="calculator" size={14} />Expected Closing</dt><dd className="gk-do-num" data-expected>{fmtMoney(expected, cur)}</dd></>}</div>
+        </dl>
+        <div className="gk-do-recon-entry">
+          <DoField icon={DO_CUR_ICON[cur]} label={`Actual Closing Balance (${cur}) — counted`}>
+            <div className="gk-do-amount"><span>{cur === "USD" ? "$" : "SLSH"}</span><input inputMode="decimal" aria-label={`Actual closing balance ${cur}`} value={actual} onChange={(e) => setActual(e.target.value.replace(/[^0-9.-]/g, ""))} disabled={busy || closed || !data.can.reconcile} placeholder="0.00" /></div>
+          </DoField>
+          <div className="gk-do-diff" data-diff={diff == null ? "none" : Math.abs(diff) < 0.005 ? "zero" : "nonzero"}>
+            <span><NavIcon name={diff != null && Math.abs(diff) >= 0.005 ? "triangleAlert" : "circleCheck"} size={15} />Difference</span>
+            <b className="gk-do-num">{diff == null ? "—" : `${diff > 0 ? "+" : diff < 0 ? "−" : ""}${fmtMoney(Math.abs(diff), cur)}`}</b>
+          </div>
+          <DoField icon="notebookPen" label="Notes / Explanation"><textarea style={{ ...inputStyle, minHeight: 54 }} aria-label="Reconciliation notes" value={notes} onChange={(e) => setNotes(e.target.value)} disabled={busy || closed || !data.can.reconcile} placeholder="Explain any difference" /></DoField>
+          <div className="gk-do-recon-status">
+            <Pill tone={st[0]}><span className="gk-do-pill"><NavIcon name={st[1]} size={12} />{st[2]}</span></Pill>
+            {r && <span className="gk-do-hint"><NavIcon name="userRound" size={12} />{r.performedBy} · <NavIcon name="clock" size={12} />{String(r.performedAt).replace("T", " ").slice(0, 16)} UTC · v{r.version}</span>}
+          </div>
+          {error && <div className="gk-do-error" role="alert"><NavIcon name="triangleAlert" size={15} />{error}</div>}
+          {data.can.reconcile && !closed && (
+            <div className="gk-do-actions">
+              {diff != null && Math.abs(diff) >= 0.005 && <Btn tone="subtle" size="sm" icon="checkCircle2" onClick={() => save(true)} disabled={busy}>Approve Difference</Btn>}
+              <Btn tone="primary" size="sm" icon="save" onClick={() => save(false)} disabled={busy}>{busy ? "Saving…" : "Save Reconciliation"}</Btn>
+            </div>
+          )}
+          <div className="gk-do-hint"><NavIcon name="info" size={12} />Reconciliation records what was counted — it never changes a balance.</div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function DailyClosingPanel({ call, notify, dl, preview, data, onChanged }) {
+  const [confirm, setConfirm] = useState(null); // "close" | "reopen"
+  const [reviewed, setReviewed] = useState(false);
+  const [cashIncl, setCashIncl] = useState(false);
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const c = data.checks;
+  const closed = data.closing && data.closing.status === "closed";
+  const checks = [
+    ["reviewed", "Transactions reviewed", reviewed || closed, "list"],
+    ["cash", "Cash Account movements included", cashIncl || closed, "wallet"],
+    ...data.currencies.map((cur) => [`recon-${cur}`, `${cur} reconciliation completed`, !!c.reconciliation[cur], "calculator"]),
+    ["diff", "Differences resolved or approved", c.differencesResolved && data.currencies.every((cur) => c.reconciliation[cur]), "checkCircle2"],
+    ["snapshot", "Daily snapshot saved", c.snapshotSaved, "archive"],
+  ];
+  async function act(kind) {
+    if (busy) return;
+    setBusy(true); setError("");
+    try {
+      if (kind === "snapshot") {
+        const r = await call("/api/daily-ops/snapshot", { method: "POST", body: { date: data.date } });
+        notify(data.isToday ? (r.snapshot && r.snapshot.created ? "Daily snapshot saved." : "Today's snapshot was already saved.") : "Saved history brought up to date.");
+      } else if (kind === "close") {
+        await call("/api/daily-ops/close", { method: "POST", body: { date: data.date, confirmReviewed: reviewed, confirmCashIncluded: cashIncl } });
+        notify(`${data.date} closed.`); setConfirm(null);
+      } else if (kind === "reopen") {
+        await call("/api/daily-ops/reopen", { method: "POST", body: { date: data.date, reason } });
+        notify(`${data.date} reopened.`); setConfirm(null); setReason("");
+      }
+      onChanged();
+    } catch (e) { setError(e.message); } finally { setBusy(false); }
+  }
+  const scrollTo = (label) => { const el = document.querySelector(`.gk-do section[aria-label="${label}"]`); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); };
+  const canSnap = data.isToday ? data.can.snapshot : data.can.updateHistory;
+  return (
+    <section className="gk-do-panel" aria-label="Daily Closing" data-closing={closed ? "closed" : data.closing ? data.closing.status : "open"}>
+      <div className="gk-do-panel-head">
+        <h3><DoIcon name="lockKeyhole" size={17} />Daily Closing</h3>
+        {closed ? <Pill tone="navy"><span className="gk-do-pill"><NavIcon name="lockKeyhole" size={12} />Closed by {data.closing.closedBy}</span></Pill>
+          : data.closing ? <Pill tone="amber"><span className="gk-do-pill"><NavIcon name="lockOpen" size={12} />Reopened by {data.closing.reopenedBy}</span></Pill>
+          : <Pill tone="slate"><span className="gk-do-pill"><NavIcon name="clock" size={12} />Open</span></Pill>}
+      </div>
+      <div className="gk-do-close">
+        <ul className="gk-do-checks">
+          {checks.map(([k, l, okv, ic]) => (
+            <li key={k} data-check={k} data-ok={okv ? "1" : "0"}>
+              {k === "reviewed" || k === "cash" ? (
+                <label><input type="checkbox" checked={!!okv} disabled={closed || !data.can.close} onChange={(e) => (k === "reviewed" ? setReviewed : setCashIncl)(e.target.checked)} /><NavIcon name={ic} size={14} />{l}</label>
+              ) : <span><NavIcon name={okv ? "circleCheck" : "circleX"} size={15} style={{ color: okv ? DO_TONE.credit : DO_TONE.debit }} /><NavIcon name={ic} size={14} />{l}</span>}
+            </li>
+          ))}
+        </ul>
+        <div className="gk-do-close-figs">
+          {data.currencies.map((cur) => {
+            const rr = data.reconciliation ? data.reconciliation[cur] : null;
+            const t = DO_RECON[rr ? rr.status : "pending"];
+            return <div key={cur} data-close-cur={cur}><span><NavIcon name={DO_CUR_ICON[cur]} size={15} />{cur} closing</span><b className="gk-do-num">{fmtMoney(data.summaries[cur].closingCash, cur)}</b>{data.reconciliation && <Pill tone={t[0]}>{t[2]}</Pill>}</div>;
+          })}
+          {closed && <div className="gk-do-hint"><NavIcon name="clock" size={12} />Closed {String(data.closing.closedAt).replace("T", " ").slice(0, 16)} UTC</div>}
+          {data.closing && data.closing.reopenReason && <div className="gk-do-hint"><NavIcon name="notebookPen" size={12} />Reopen reason: {data.closing.reopenReason}</div>}
+        </div>
+      </div>
+      {error && <div className="gk-do-error" role="alert"><NavIcon name="triangleAlert" size={15} />{error}</div>}
+      <div className="gk-do-actions is-wrap">
+        <Btn tone="ghost" size="sm" icon="list" onClick={() => scrollTo("Today's Transactions")}>Review Transactions</Btn>
+        {data.reconciliation && <Btn tone="ghost" size="sm" icon="calculator" onClick={() => scrollTo("Daily Reconciliation")}>Reconcile</Btn>}
+        {canSnap && !closed && <Btn tone="subtle" size="sm" icon="archive" onClick={() => act("snapshot")} disabled={busy}>{data.isToday ? "Save Daily Snapshot" : "Update Saved History"}</Btn>}
+        {data.can.print && <Btn tone="ghost" size="sm" icon="printer" onClick={() => preview(`/api/daily-ops/report.pdf` + qs({ date: data.date, print: "1" }))}>Print Daily Report</Btn>}
+        {data.can.export && <Btn tone="ghost" size="sm" icon="download" onClick={() => dl(`/api/daily-ops/report.xlsx` + qs({ date: data.date }), `daily-operations-${data.date}.xlsx`)}>Excel</Btn>}
+        {data.can.export && <Btn tone="ghost" size="sm" icon="download" onClick={() => dl(`/api/daily-ops/report.pdf` + qs({ date: data.date }), `daily-operations-${data.date}.pdf`)}>PDF</Btn>}
+        <Btn tone="ghost" size="sm" icon="eye" onClick={() => scrollTo(`${data.currencies[0]} summary`)}>View Daily Summary</Btn>
+        {data.can.close && !closed && <Btn tone="primary" size="sm" icon="lockKeyhole" onClick={() => { setError(""); setConfirm("close"); }} disabled={busy || !c.allPassed || !reviewed || !cashIncl}>Close Day</Btn>}
+        {data.can.reopen && closed && <Btn tone="danger" size="sm" icon="lockOpen" onClick={() => { setError(""); setConfirm("reopen"); }} disabled={busy}>Reopen Day</Btn>}
+      </div>
+      {confirm === "close" && (
+        <Modal title={`Close ${data.date}?`} onClose={() => setConfirm(null)}>
+          <div className="gk-do-confirm">
+            <p><NavIcon name="lockKeyhole" size={15} />Closing records the day's closing balances and locks its reconciliation. It never changes a balance. An authorised user can reopen it later.</p>
+            {data.currencies.map((cur) => <div key={cur} className="gk-do-confirm-row"><span><NavIcon name={DO_CUR_ICON[cur]} size={14} />{cur} closing</span><b className="gk-do-num">{fmtMoney(data.summaries[cur].closingCash, cur)}</b></div>)}
+            {error && <div className="gk-do-error" role="alert"><NavIcon name="triangleAlert" size={15} />{error}</div>}
+            <div className="gk-do-actions"><Btn tone="ghost" size="sm" icon="x" onClick={() => setConfirm(null)} disabled={busy}>Cancel</Btn><Btn tone="primary" size="sm" icon="lockKeyhole" onClick={() => act("close")} disabled={busy}>{busy ? "Closing…" : "Confirm Close Day"}</Btn></div>
+          </div>
+        </Modal>
+      )}
+      {confirm === "reopen" && (
+        <Modal title={`Reopen ${data.date}?`} onClose={() => setConfirm(null)}>
+          <div className="gk-do-confirm">
+            <DoField icon="notebookPen" label="Reason for reopening *"><textarea style={{ ...inputStyle, minHeight: 60 }} aria-label="Reason for reopening" value={reason} onChange={(e) => setReason(e.target.value)} /></DoField>
+            {error && <div className="gk-do-error" role="alert"><NavIcon name="triangleAlert" size={15} />{error}</div>}
+            <div className="gk-do-actions"><Btn tone="ghost" size="sm" icon="x" onClick={() => setConfirm(null)} disabled={busy}>Cancel</Btn><Btn tone="danger" size="sm" icon="lockOpen" onClick={() => act("reopen")} disabled={busy || !reason.trim()}>{busy ? "Reopening…" : "Confirm Reopen"}</Btn></div>
+          </div>
+        </Modal>
+      )}
+    </section>
   );
 }
 

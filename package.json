@@ -62,7 +62,8 @@
     "test:account-fields": "node test/account-fields.js",
     "test:account-view-order": "node test/account-view-order.js",
     "test:account-search": "node test/account-search.js",
-    "test:daily-history": "node test/daily-history.js"
+    "test:daily-history": "node test/daily-history.js",
+    "test:daily-ops": "node test/daily-ops.js"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",

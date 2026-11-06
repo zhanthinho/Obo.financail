@@ -687,4 +687,4 @@ function register(router) {
   });
 }
 
-module.exports = { register, queryHistory, historySummary };
+module.exports = { register, queryHistory, historySummary, scopedHistory, historyTypeLabel };

@@ -8189,6 +8189,508 @@
      "isCompanyId": true
     }
    ]
+  },
+  {
+   "name": "daily_reconciliations",
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [],
+   "checks": [
+    "currency IN ('USD','SLSH')",
+    "status IN ('balanced','difference','approved')"
+   ],
+   "indexes": [
+    {
+     "name": "uq_daily_recon_date_cur",
+     "unique": true,
+     "columns": [
+      "business_date",
+      "currency"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ],
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "business_date",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "currency",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "opening",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "total_in",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "total_out",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "expected",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "actual",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "difference",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "status",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "notes",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "version",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "performed_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "performed_by_name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "performed_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ]
+  },
+  {
+   "name": "daily_reconciliation_history",
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [],
+   "checks": [],
+   "indexes": [
+    {
+     "name": "idx_daily_recon_hist_date",
+     "unique": false,
+     "columns": [
+      "business_date",
+      "currency"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ],
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "business_date",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "currency",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "version",
+     "sqliteType": "INTEGER",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "expected",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "actual",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "difference",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "status",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "notes",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "performed_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "performed_by_name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "performed_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ]
+  },
+  {
+   "name": "daily_closings",
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [],
+   "checks": [
+    "status IN ('closed','reopened')"
+   ],
+   "indexes": [
+    {
+     "name": "uq_daily_closings_date",
+     "unique": true,
+     "columns": [
+      "business_date"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ],
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "business_date",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "status",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "usd_closing",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "slsh_closing",
+     "sqliteType": "REAL",
+     "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 0
+     },
+     "pk": 0,
+     "mysqlType": "DOUBLE",
+     "isCompanyId": false
+    },
+    {
+     "name": "data",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "notes",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "closed_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "closed_by_name",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "closed_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "reopened_by_name",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "reopened_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "reopen_reason",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ]
   }
  ],
  "controlTables": [
