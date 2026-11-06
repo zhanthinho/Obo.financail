@@ -267,7 +267,8 @@ async function browserChecks() {
     await p.getByRole("radio", { name: /Track in Account/ }).click(); await p.waitForTimeout(300);
     return { c, p };
   };
-  const pick = async (p, acc) => { await p.selectOption("#qx-from", acc.id); await p.waitForTimeout(600); };
+  // GLOBAL SMART ACCOUNT SEARCH round: the From Account is a searchable combo.
+  const pick = async (p, acc) => { await p.click("#qx-from"); await p.waitForTimeout(150); await p.locator(`#qx-from + .gk-acombo-panel [data-account-id="${acc.id}"]`).click(); await p.waitForTimeout(600); };
   const dialog = (p) => p.locator('[role="dialog"]').last();
   const useBtn = (p) => dialog(p).getByRole("button", { name: /Use Selected Amount/ });
   try {

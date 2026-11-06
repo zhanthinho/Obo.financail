@@ -76,7 +76,7 @@ async function run() {
     // Every account section on screen: mint background, emerald icon, bold label, white select with grey border.
     const looksRight = async (scope, minCount) => {
       const groups = await scope.locator(".gk-acct-group").evaluateAll((els) => els.filter((e) => e.offsetParent).map((g) => {
-        const cs = getComputedStyle(g), lab = g.querySelector(".gk-acct-label"), ic = g.querySelector(".gk-acct-label svg"), sel = g.querySelector("select, input");
+        const cs = getComputedStyle(g), lab = g.querySelector(".gk-acct-label"), ic = g.querySelector(".gk-acct-label svg"), sel = g.querySelector("select, input, .gk-acombo-trigger");
         return { bg: cs.backgroundColor, radius: parseFloat(cs.borderTopLeftRadius), pad: parseFloat(cs.paddingTop), w: g.getBoundingClientRect().width, label: lab ? lab.textContent.trim() : "",
           weight: lab ? Number(getComputedStyle(lab).fontWeight) : 0, icon: ic ? getComputedStyle(ic).color : null,
           selBg: sel ? getComputedStyle(sel).backgroundColor : null, selBorder: sel ? getComputedStyle(sel).borderTopColor : null };
@@ -102,8 +102,9 @@ async function run() {
       assert(Math.abs(g[0].w - g[1].w) < 2, `widths ${g[0].w} / ${g[1].w}`);
       assert(/^From/.test(g[0].label) && /^To/.test(g[1].label), g.map((x) => x.label).join(" | "));
       // the dropdowns still work
-      await dlg.locator(".gk-acct-group select").first().selectOption({ index: 1 }); await p.waitForTimeout(200);
-      assert(!(await dlg.locator(".gk-acct-group select").nth(1).isDisabled()), "To not enabled after choosing From");
+      await dlg.locator(".gk-acct-group .gk-acombo-trigger").first().click(); await p.waitForTimeout(200);
+      await dlg.locator(".gk-acombo-panel .gk-acard").first().click(); await p.waitForTimeout(200);
+      assert(!(await dlg.locator(".gk-acct-group .gk-acombo-trigger").nth(1).isDisabled()), "To not enabled after choosing From");
       await p.keyboard.press("Escape"); await p.waitForTimeout(300);
       if (await p.getByRole("dialog").count()) await p.getByRole("dialog").getByRole("button", { name: "Cancel" }).first().click();
     });
@@ -112,7 +113,8 @@ async function run() {
       await p.getByRole("button", { name: /New Cash Exchange/ }).click(); await p.waitForTimeout(500);
       const dlg = p.getByRole("dialog");
       await looksRight(dlg, 2);
-      await dlg.locator(".gk-acct-group select").first().selectOption({ label: /Af Till Usd/i }).catch(async () => { await dlg.locator(".gk-acct-group select").first().selectOption({ index: 1 }); });
+      await dlg.locator(".gk-acct-group .gk-acombo-trigger").first().click(); await p.waitForTimeout(200);
+      await dlg.locator(".gk-acombo-panel .gk-acard").filter({ hasText: /Af Till Usd/i }).first().click();
       await p.waitForTimeout(200);
       const t = await dlg.locator(".gk-acct-pair").innerText();
       assert(/Gives (USD|SLSH)/.test(t) && /Receives (USD|SLSH)/.test(t), t);
@@ -131,7 +133,9 @@ async function run() {
     await check("Payments (Bulk Entry): the USD account selector is a mint section", async () => {
       await go("USD Payment");
       await p.getByRole("button", { name: /Bulk Entry/ }).first().click(); await p.waitForTimeout(700);
-      await looksRight(p.locator("body"), 1);
+      // GLOBAL SMART ACCOUNT SEARCH round: here it is the Add Transaction search panel (same mint).
+      const panel = p.locator(".gk-asearch").first();
+      assert(await panel.evaluate((e) => getComputedStyle(e).backgroundColor) === "rgb(240, 250, 247)", "search panel not mint");
     });
     await check("Account Transfer: From Account and To Account sections, equal widths", async () => {
       await go("USD Payment");

@@ -156,6 +156,48 @@ const THEME_CSS = `
   .gk-amt-debit { color: var(--c-debit); font-weight: 600; white-space: nowrap; }
   .gk-bal { font-weight: 700; white-space: nowrap; }
   .gk-bal[data-sign="pos"] { color: var(--c-bal-pos); } .gk-bal[data-sign="neg"] { color: var(--c-bal-neg); } .gk-bal[data-sign="zero"] { color: var(--c-bal-zero); }
+  .gk-asearch { background: #F0FAF7; border: 1px solid #D5EDE5; border-left: 4px solid #10B981; border-radius: 12px; padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+  .gk-asearch.is-compact { padding: 10px; border-left-width: 3px; }
+  .gk-asearch-label { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; color: var(--c-ink, #0B1F33); margin: 0; }
+  .gk-asearch-label-icon { color: #0F5B50; }
+  .gk-asearch-box { position: relative; }
+  .gk-asearch-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #0F5B50; pointer-events: none; }
+  .gk-asearch-input { width: 100%; box-sizing: border-box; height: 44px; padding: 0 38px 0 40px; border: 1px solid #CBD5D8; border-radius: 10px; background: #fff; color: var(--c-ink, #0B1F33); font: inherit; font-size: 14px; outline: none; }
+  .gk-asearch.is-compact .gk-asearch-input { height: 40px; }
+  .gk-asearch-input::-webkit-search-cancel-button { display: none; }
+  .gk-asearch-input:focus { border-color: #10B981; box-shadow: 0 0 0 3px rgba(16,185,129,.18); }
+  .gk-asearch-clear { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: none; background: transparent; color: var(--c-slate); cursor: pointer; padding: 4px; display: flex; border-radius: 6px; }
+  .gk-asearch-help { font-size: 11.5px; color: var(--c-slate, #64748B); }
+  .gk-acard { display: flex; align-items: center; gap: 11px; width: 100%; box-sizing: border-box; text-align: left; padding: 10px 12px; background: #fff; border: 1px solid #DDE5E8; border-radius: 10px; cursor: pointer; font: inherit; color: var(--c-ink); transition: border-color .12s, box-shadow .12s; }
+  button.gk-acard:hover, button.gk-acard:focus-visible { border-color: #10B981; box-shadow: 0 1px 6px rgba(15,91,80,.10); outline: none; }
+  .gk-acard.is-selected { border-color: #10B981; background: #FBFEFD; }
+  .gk-acard-avatar { flex: 0 0 36px; width: 36px; height: 36px; border-radius: 50%; background: #D9F2EA; color: #0F5B50; font-weight: 700; font-size: 12.5px; display: flex; align-items: center; justify-content: center; letter-spacing: .02em; }
+  .gk-acard-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .gk-acard-name { font-weight: 700; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gk-acard-sub { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 11.5px; color: var(--c-slate); }
+  .gk-acard-num { font-family: var(--c-font-num); font-variant-numeric: tabular-nums; }
+  .gk-acard-cur { font-weight: 700; color: #0F5B50; }
+  .gk-acard-type { padding: 1px 7px; border-radius: 999px; font-size: 10.5px; font-weight: 700; background: #E8F0FB; color: #1E4E8C; }
+  .gk-acard-type.is-company { background: #F2ECFB; color: #5B3B9A; }
+  .gk-acard-type.is-cash { background: #E6F6F1; color: #0F5B50; }
+  .gk-acard-bal { flex: 0 0 auto; margin-left: auto; font-family: var(--c-font-num); font-variant-numeric: tabular-nums; font-weight: 700; font-size: 13.5px; text-align: right; white-space: nowrap; }
+  .gk-acard-bal.is-pos { color: #059669; } .gk-acard-bal.is-neg { color: #DC2626; } .gk-acard-bal.is-zero { color: #64748B; }
+  .gk-acard-list { display: flex; flex-direction: column; gap: 7px; }
+  .gk-acombo { position: relative; min-width: 0; }
+  .gk-acombo-trigger { width: 100%; display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 4px 10px 4px 4px; background: #fff; border: 1px solid #CBD5D8; border-radius: 10px; cursor: pointer; font: inherit; color: var(--c-ink); text-align: left; }
+  .gk-acombo-trigger:disabled { opacity: .6; cursor: not-allowed; }
+  .gk-acombo-trigger.is-invalid { border-color: #DC2626; }
+  .gk-acombo-trigger:focus-visible, .gk-acombo[data-open] .gk-acombo-trigger { border-color: #10B981; box-shadow: 0 0 0 3px rgba(16,185,129,.18); outline: none; }
+  .gk-acombo-trigger > .gk-acard { border: none; padding: 4px 6px; background: transparent; box-shadow: none; flex: 1 1 auto; }
+  .gk-acombo-ph { flex: 1 1 auto; padding: 0 8px; color: var(--c-slate); font-size: 13px; }
+  .gk-acombo-chev { flex: 0 0 auto; color: #0F5B50; }
+  .gk-acombo-panel { margin-top: 6px; }
+  .gk-acombo-list { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; margin-top: 4px; }
+  .gk-acombo-none { text-align: left; padding: 9px 12px; background: #fff; border: 1px dashed #CBD5D8; border-radius: 10px; cursor: pointer; font: inherit; font-size: 12.5px; color: var(--c-slate); }
+  .gk-acombo-empty { padding: 12px; text-align: center; font-size: 12.5px; color: var(--c-slate); background: #fff; border: 1px dashed #CBD5D8; border-radius: 10px; }
+  .gk-acct-group .gk-acombo-trigger, .gk-acct-group .gk-asearch-input { border-color: #CBD5D8 !important; background: #fff !important; }
+  :root[data-theme="dark"] .gk-asearch { background: rgba(43,165,138,.10); border-color: rgba(43,165,138,.25); border-left-color: #10B981; }
+  :root[data-theme="dark"] .gk-acard, :root[data-theme="dark"] .gk-acombo-trigger, :root[data-theme="dark"] .gk-asearch-input, :root[data-theme="dark"] .gk-acombo-none, :root[data-theme="dark"] .gk-acombo-empty { background: var(--c-card) !important; color: var(--c-ink) !important; }
   .gk-acct-group { background: #F0FAF7; border: 1px solid #DCEFE8; border-radius: 11px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0; box-sizing: border-box; }
   .gk-acct-group .gk-acct-label { font-size: 12px; font-weight: 700; color: var(--c-ink, #0B1F33); display: flex; align-items: center; gap: 7px; margin: 0; }
   .gk-acct-group .gk-acct-icon, .gk-acct-group .gk-acct-label > svg { color: #0F5B50 !important; opacity: 1 !important; flex: 0 0 auto; }
@@ -5708,13 +5750,11 @@ function AccountPicker({ call, accountId, accountName, onChange }) {
   return (
     <div ref={ref} style={{ position: "relative" }}>
       <Input placeholder="All accounts…" value={q} onChange={(e) => { setQ(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)} />
-      {open && results.length > 0 && (
-        <div style={{ position: "absolute", top: 38, left: 0, right: 0, background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, boxShadow: "0 8px 24px rgba(8,20,30,0.18)", zIndex: 30, maxHeight: 220, overflowY: "auto" }}>
-          {results.map((a) => (
-            <button key={a.id} onClick={() => { onChange(a.id, a.name); setQ(""); setResults([]); setOpen(false); }}
-              style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 10px", background: "none", border: "none", cursor: "pointer", fontSize: 12.5, color: C.ink }}>
-              {toTitleCase(a.name)} <span style={{ color: C.slate, fontFamily: FONT_MONO, fontSize: 11 }}>· {a.accountNumber} · {a.currency}</span>
-            </button>
+      {open && results.filter((a) => accountMatchesSearch(a, q)).length > 0 && (
+        // GLOBAL SMART ACCOUNT SEARCH round: matching accounts as cards (strict live filter).
+        <div className="gk-acard-list" role="listbox" aria-label="Matching accounts" style={{ position: "absolute", top: 40, left: 0, right: 0, minWidth: 280, background: "#F0FAF7", border: "1px solid #D5EDE5", borderLeft: "3px solid #10B981", borderRadius: 10, boxShadow: "0 8px 24px rgba(8,20,30,0.18)", zIndex: 30, maxHeight: 280, overflowY: "auto", padding: 6 }}>
+          {results.filter((a) => accountMatchesSearch(a, q)).map((a) => (
+            <AccountResultCard key={a.id} a={a} term={q} onClick={() => { onChange(a.id, a.name); setQ(""); setResults([]); setOpen(false); }} />
           ))}
         </div>
       )}
@@ -7566,10 +7606,7 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
                   {fromAccountOptions.length === 0 ? (
                     <div style={{ fontSize: 11.5, color: C.slate, border: `1px dashed ${C.line}`, borderRadius: 8, padding: "10px 10px" }}>No active {currencyGiven} accounts.</div>
                   ) : (
-                    <Select id="qx-from" value={fromAccountId} onChange={(e) => setFromAccountId(e.target.value)} disabled={busy}>
-                      <option value="">— None —</option>
-                      {fromAccountOptions.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)} · {a.accountNumber} · {fmtMoney(a.balance, a.currency)}</option>)}
-                    </Select>
+                    <AccountCombo id="qx-from" ariaLabel={`From Account (${currencyGiven})`} accounts={fromAccountOptions} value={fromAccountId} onChange={setFromAccountId} disabled={busy} noneLabel="— None —" placeholder={`Select a ${currencyGiven} account…`} />
                   )}
                   {fromAccount && (
                     <div className="gk-qx-available" style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, fontSize: 11, color: C.slate, marginTop: 4 }}>
@@ -7590,10 +7627,7 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
                   {toAccountOptions.length === 0 ? (
                     <div style={{ fontSize: 11.5, color: C.slate, border: `1px dashed ${C.line}`, borderRadius: 8, padding: "10px 10px" }}>No active {curReceived} accounts.</div>
                   ) : (
-                    <Select id="qx-to" value={toAccountId} onChange={(e) => setToAccountId(e.target.value)} disabled={busy}>
-                      <option value="">— None —</option>
-                      {toAccountOptions.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)} · {a.accountNumber} · {fmtMoney(a.balance, a.currency)}</option>)}
-                    </Select>
+                    <AccountCombo id="qx-to" ariaLabel={`Receiving Account (${curReceived})`} accounts={toAccountOptions} value={toAccountId} onChange={setToAccountId} disabled={busy} noneLabel="— None —" placeholder={`Select a ${curReceived} account…`} />
                   )}
                   {toAccount && <div style={{ fontSize: 11, color: C.slate, marginTop: 4 }}>Balance: {fmtMoney(toAccount.balance, toAccount.currency)}</div>}
                 </div>
@@ -7810,10 +7844,7 @@ function AddTxModal({ call, notify, perm, rate, saleRate, dailySlshRate, onRateC
                     : payCashError ? <div className="gk-qx-paid-err">{payCashError}</div>
                     : payCashAccounts.length === 0 ? <div className="gk-qx-paid-hint">No active {currencyGiven} Cash Accounts — the Credit is recorded without one.</div>
                     : (
-                      <Select id="qx-pay-cash" value={payCashId} disabled={busy} onChange={(e) => setPayCashId(e.target.value)} aria-invalid={payCashMissing}>
-                        <option value="">Select a Cash Account…</option>
-                        {payCashAccounts.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)} — {a.currency}</option>)}
-                      </Select>
+                      <AccountCombo id="qx-pay-cash" kind="cash" ariaLabel="Cash In To (Cash Account)" accounts={payCashAccounts} value={payCashId} disabled={busy} onChange={setPayCashId} invalid={payCashMissing} placeholder="Select a Cash Account…" />
                     )}
                   {payCashMissing && triedSubmit && <div className="gk-qx-paid-err">Choose the Cash Account the money went into.</div>}
                   </div>
@@ -11700,19 +11731,15 @@ function NewLedgerMoveModal({ currency, call, onClose, onSubmit, presetAccount, 
     <Modal title={`New ${currency} transaction`} subtitle="Record a credit or debit for this account" onClose={onClose} wide>
       {!selected ? (
         <>
-          <Field acct="receive" label={`Search for a ${currency} account`} hint="Name, account number, or phone — leave blank to see all"><Input placeholder="Start typing…" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus /></Field>
-          <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6, maxHeight: 260, overflowY: "auto" }}>
-            {results.length === 0 && <Empty text={`No ${currency} accounts found.`} />}
-            {results.map((a) => (
-              <button key={a.id} onClick={() => setSelected(a)} style={{ textAlign: "left", padding: "10px 12px", border: `1px solid ${C.line}`, borderRadius: 6, background: C.card, cursor: "pointer" }}>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ fontWeight: 600, fontSize: 13.5 }}>{toTitleCase(a.name)}</span>
-                  <Pill tone="navy">{a.accountType === "company" ? "Company" : "Customer"}</Pill>
-                </div>
-                <div style={{ fontSize: 11.5, color: C.slate, marginTop: 3, fontFamily: FONT_MONO }}>{a.accountNumber} · {fmtMoney(a.balance, currency)}</div>
-              </button>
-            ))}
-          </div>
+          {/* GLOBAL SMART ACCOUNT SEARCH round: the same mint search panel
+              and account cards as Bulk Entry; a reply for an older search
+              never brings unrelated accounts back (strict local filter). */}
+          <AccountSearchPanel label={`Search for ${currency === "USD" ? "a" : "an"} ${currency} account`} ariaLabel={`Search for a ${currency} account`} value={query} onChange={setQuery} autoFocus inputId="tx-acct-search">
+            <div className="gk-acard-list" role="listbox" aria-label="Matching accounts" style={{ marginTop: 6, maxHeight: 300, overflowY: "auto" }}>
+              {results.filter((a) => accountMatchesSearch(a, query)).map((a) => <AccountResultCard key={a.id} a={{ ...a, currency: a.currency || currency }} term={query} onClick={() => setSelected(a)} />)}
+              {results.filter((a) => accountMatchesSearch(a, query)).length === 0 && <div className="gk-acombo-empty">{normSearch(query) ? "No matching accounts found." : `No ${currency} accounts found.`}</div>}
+            </div>
+          </AccountSearchPanel>
         </>
       ) : (
         <>
@@ -11779,10 +11806,7 @@ function NewLedgerMoveModal({ currency, call, onClose, onSubmit, presetAccount, 
                 Hand" that only differs in its hint text. No field, option
                 list, or validation logic changed — label only. */}
             <Field label={isWithdraw ? "Cash Out From" : "Cash In To"} hint={cashAccount ? `Available: ${fmtMoney(cashAccount.balance, currency)}` : cashRequired ? `Which Cash Account this ${currency} ${isWithdraw ? "will come from" : "is physically going into"}` : "No Cash Accounts configured yet"}>
-              <Select value={cashAccountId} onChange={(e) => setCashAccountId(e.target.value)}>
-                <option value="">{cashRequired ? "Select source…" : "— None —"}</option>
-                {cashAccounts.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)} — {currency}</option>)}
-              </Select>
+              <AccountCombo kind="cash" ariaLabel={isWithdraw ? "Cash Out From" : "Cash In To"} accounts={cashAccounts} value={cashAccountId} onChange={setCashAccountId} noneLabel={cashRequired ? undefined : "— None —"} placeholder={cashRequired ? "Select source…" : "— None —"} />
             </Field>
             <Field label="Reference (optional)" hint="A human-chosen reference — e.g. a loan or invoice number"><Input value={reference} onChange={(e) => setReference(e.target.value)} /></Field>
           </div>
@@ -11833,10 +11857,102 @@ function genDraftId() {
 // SMART ACCOUNT LIVE SEARCH round — the same match the server makes (name,
 // account number, phone; case-insensitive, partial), used to narrow the list
 // instantly while the server answer is on its way.
+// GLOBAL SMART ACCOUNT SEARCH round: one strict, case-insensitive,
+// partial-match rule for every account search — name, account number,
+// phone (also with the spaces / + / dashes left out), email, ID — extra
+// spaces ignored. A non-empty search never lets an unrelated account through.
+function normSearch(v) { return String(v == null ? "" : v).replace(/\s+/g, " ").trim().toLowerCase(); }
 function accountMatchesSearch(a, term) {
-  const t = String(term || "").trim().toLowerCase();
+  const t = normSearch(term);
   if (!t) return true;
-  return [a.name, a.accountNumber, a.contact, a.email, a.idNumber].some((v) => v != null && String(v).toLowerCase().includes(t));
+  if ([a.name, a.accountNumber, a.contact, a.email, a.idNumber].some((v) => v != null && normSearch(v).includes(t))) return true;
+  const digits = t.replace(/[\s+\-().]/g, "");
+  return /^\d{3,}$/.test(digits) && a.contact != null && String(a.contact).replace(/\D/g, "").includes(digits);
+}
+// The mint search panel (Add Transaction design): icon + bold label, a
+// large input with the search icon inside, a clear button and helper text.
+function AccountSearchPanel({ label, ariaLabel, value, onChange, autoFocus, helper = "Type to search — leave blank to see all.", icon = "landmark", compact, children, inputId }) {
+  return (
+    <div className={`gk-asearch${compact ? " is-compact" : ""}`}>
+      {label && <label className="gk-asearch-label" htmlFor={inputId}><NavIcon name={icon} size={16} className="gk-asearch-label-icon" />{label}</label>}
+      <div className="gk-asearch-box">
+        <NavIcon name="search" size={17} className="gk-asearch-icon" />
+        <input id={inputId} className="gk-asearch-input" type="search" autoComplete="off" spellCheck={false} aria-label={ariaLabel || label}
+          placeholder="Search by name, account number, or phone..." value={value} onChange={(e) => onChange(e.target.value)} autoFocus={autoFocus} />
+        {value && <button type="button" className="gk-asearch-clear gk-bulk-search-clear" aria-label="Clear search" title="Clear search" onClick={() => onChange("")}><NavIcon name="x" size={14} /></button>}
+      </div>
+      {helper && <div className="gk-asearch-help">{helper}</div>}
+      {children}
+    </div>
+  );
+}
+// One account as a result card: initials, bold name, account number,
+// currency, type badge, and the balance on the right (green / red / grey).
+// kind="cash" for Cash Accounts (their type — Bank, Mobile Money, … — as the badge).
+function AccountResultCard({ a, term, kind, onClick, selected, as = "button", role = "option" }) {
+  const cur = a.currency;
+  const bal = Number(a.balance || 0);
+  const typeLabel = kind === "cash" ? (CASH_TYPE_LABEL[a.type] || "Cash Account") : a.accountType === "company" ? "Company" : "Customer";
+  const t = normSearch(term);
+  const phoneHit = t && a.contact && !normSearch(a.name).includes(t) && !normSearch(a.accountNumber).includes(t);
+  const Tag = as;
+  return (
+    <Tag type={as === "button" ? "button" : undefined} role={role} aria-selected={role === "option" ? !!selected : undefined} className={`gk-acard${selected ? " is-selected" : ""}`}
+      data-account={a.accountNumber || undefined} data-account-id={a.id} onClick={onClick}>
+      <span className="gk-acard-avatar" aria-hidden="true">{accountInitials(a.name)}</span>
+      <span className="gk-acard-main">
+        <span className="gk-acard-name"><HighlightMatch text={toTitleCase(a.name)} term={term} /></span>
+        <span className="gk-acard-sub">
+          {a.accountNumber && <span className="gk-acard-num"><HighlightMatch text={a.accountNumber} term={term} /></span>}
+          {cur && <span className="gk-acard-cur">{cur}</span>}
+          <span className={`gk-acard-type is-${kind === "cash" ? "cash" : a.accountType === "company" ? "company" : "customer"}`}>{typeLabel}</span>
+          {phoneHit && <span className="gk-acard-phone"><HighlightMatch text={a.contact} term={term} /></span>}
+        </span>
+      </span>
+      {a.balance !== undefined && a.balance !== null && <span className={`gk-acard-bal ${bal > 0 ? "is-pos" : bal < 0 ? "is-neg" : "is-zero"}`}>{fmtMoney(bal, cur)}</span>}
+    </Tag>
+  );
+}
+// A searchable account selector (replaces a plain dropdown): the chosen
+// account as a card; opening it shows the mint search box and the matching
+// account cards, filtered live from the accounts this form already loaded
+// (which the server returned for this user and company only).
+function AccountCombo({ id, accounts, value, onChange, kind, placeholder = "Select an account…", noneLabel, disabled, invalid, ariaLabel, searchLabel }) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const root = useRef(null);
+  const selected = (accounts || []).find((a) => a.id === value) || null;
+  const shown = (accounts || []).filter((a) => accountMatchesSearch(a, q));
+  useEffect(() => {
+    if (!open) return undefined;
+    const away = (e) => { if (root.current && !root.current.contains(e.target)) setOpen(false); };
+    const esc = (e) => { if (e.key === "Escape") { e.stopPropagation(); setOpen(false); } };
+    document.addEventListener("mousedown", away);
+    root.current && root.current.addEventListener("keydown", esc);
+    const r = root.current;
+    return () => { document.removeEventListener("mousedown", away); r && r.removeEventListener("keydown", esc); };
+  }, [open]);
+  const pick = (a) => { onChange(a ? a.id : ""); setOpen(false); setQ(""); };
+  return (
+    <div className="gk-acombo" ref={root} data-open={open ? "1" : undefined}>
+      <button type="button" id={id} className={`gk-acombo-trigger${invalid ? " is-invalid" : ""}`} aria-haspopup="listbox" aria-expanded={open} aria-label={ariaLabel}
+        aria-invalid={invalid || undefined} disabled={disabled} data-value={value || ""} onClick={() => setOpen((o) => !o)}>
+        {selected ? <AccountResultCard a={selected} kind={kind} as="span" role={undefined} /> : <span className="gk-acombo-ph">{placeholder}</span>}
+        <NavIcon name="chevronDown" size={16} className="gk-acombo-chev" />
+      </button>
+      {open && (
+        <div className="gk-acombo-panel">
+          <AccountSearchPanel compact value={q} onChange={setQ} autoFocus ariaLabel={searchLabel || `Search ${ariaLabel || "accounts"}`} helper={null}>
+            <div className="gk-acombo-list" role="listbox" aria-label="Matching accounts">
+              {noneLabel && !normSearch(q) && <button type="button" role="option" aria-selected={!value} className="gk-acombo-none" onClick={() => pick(null)}>{noneLabel}</button>}
+              {shown.map((a) => <AccountResultCard key={a.id} a={a} kind={kind} term={q} selected={a.id === value} onClick={() => pick(a)} />)}
+              {shown.length === 0 && <div className="gk-acombo-empty">{normSearch(q) ? "No matching accounts found." : "No accounts available."}</div>}
+            </div>
+          </AccountSearchPanel>
+        </div>
+      )}
+    </div>
+  );
 }
 // Marks the part of `text` that matches the search (first occurrence).
 function HighlightMatch({ text, term }) {
@@ -12045,36 +12161,25 @@ function BulkTransactionWorkspace({ currency, call, notify, user, onBack }) {
             form in the app keep their existing default styling untouched.
             No field, validation, submit, or data logic changed anywhere
             below — purely visual. */}
-        <div style={{ background: C.brandTintBg, border: `1.5px solid ${C.line}`, borderRadius: 10, padding: 18 }}>
+        <div className="gk-add-tx-card" style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 12, padding: 18, boxShadow: "0 1px 3px rgba(15,23,42,.05)" }}>
           <div style={{ fontWeight: 700, fontSize: 17, color: C.navyDeep, marginBottom: 14 }}>
             {editingDraftId ? "Edit prepared transaction" : "Add Transaction"}
           </div>
 
           {!selected ? (
             <>
-              <Field acct="receive" label={`Search for a ${currency} account`} hint="Name, account number, or phone — leave blank to see all">
-                <div style={{ position: "relative" }}>
-                  <Input className="gk-bulk-mint-input" aria-label={`Search for a ${currency} account`} style={{ border: `1.5px solid ${C.line}`, borderRadius: 7, background: C.card, height: 40, paddingRight: query ? 34 : undefined }} placeholder="Start typing…" value={query} onChange={(e) => setQuery(e.target.value)} />
-                  {query && <button type="button" className="gk-bulk-search-clear" aria-label="Clear search" title="Clear search" onClick={() => setQuery("")}><NavIcon name="x" size={14} /></button>}
+              {/* GLOBAL SMART ACCOUNT SEARCH round: the Add Transaction design —
+                  the mint search panel (emerald edge, Landmark icon, large
+                  input with the search icon inside) and one card per
+                  matching account; only matching accounts, live. */}
+              <AccountSearchPanel label={`Search for ${currency === "USD" ? "a" : "an"} ${currency} account`} ariaLabel={`Search for a ${currency} account`} value={query} onChange={setQuery} inputId="bulk-acct-search">
+                <div className="gk-bulk-search-results gk-acard-list" role="listbox" aria-label="Matching accounts" style={{ marginTop: 6, maxHeight: 300, overflowY: "auto", paddingRight: 2 }}>
+                  {shownResults.length === 0 && (searching && resultsFor !== searchTerm
+                    ? <div className="gk-bulk-search-note">Searching…</div>
+                    : <div className="gk-acombo-empty">{searchTerm ? "No matching accounts found." : `No ${currency} accounts found.`}</div>)}
+                  {shownResults.map((a) => <AccountResultCard key={a.id} a={{ ...a, currency: a.currency || currency }} term={searchTerm} onClick={() => setSelected(a)} />)}
                 </div>
-              </Field>
-              <div className="gk-bulk-search-results" role="listbox" aria-label="Matching accounts" style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6, maxHeight: 220, overflowY: "auto" }}>
-                {shownResults.length === 0 && (searching && resultsFor !== searchTerm
-                  ? <div className="gk-bulk-search-note">Searching…</div>
-                  : <Empty text={searchTerm ? "No matching accounts found." : `No ${currency} accounts found.`} />)}
-                {shownResults.map((a) => (
-                  <button key={a.id} type="button" role="option" aria-selected="false" data-account={a.accountNumber} onClick={() => setSelected(a)} style={{ textAlign: "left", padding: "10px 12px", border: `1px solid ${C.line}`, borderRadius: 7, background: C.card, cursor: "pointer" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-                      <span style={{ fontWeight: 600, fontSize: 13.5, color: C.ink }}><HighlightMatch text={toTitleCase(a.name)} term={searchTerm} /></span>
-                      <Pill tone="navy">{a.accountType === "company" ? "Company" : "Customer"}</Pill>
-                    </div>
-                    <div style={{ fontSize: 11.5, color: C.slate, marginTop: 3, fontFamily: FONT_MONO }}>
-                      <HighlightMatch text={a.accountNumber || ""} term={searchTerm} /> · {a.currency || currency} · {fmtMoney(a.balance, a.currency || currency)}
-                      {a.contact && searchTerm && String(a.contact).toLowerCase().includes(searchTerm.toLowerCase()) && <> · <HighlightMatch text={a.contact} term={searchTerm} /></>}
-                    </div>
-                  </button>
-                ))}
-              </div>
+              </AccountSearchPanel>
             </>
           ) : (
             <>
@@ -12112,10 +12217,7 @@ function BulkTransactionWorkspace({ currency, call, notify, user, onBack }) {
               </div>
               <div style={{ marginTop: 10 }}>
                 <Field label={isWithdraw ? "Cash Out From" : "Cash In To"} hint={cashAccount ? `Available: ${fmtMoney(cashAccount.balance, currency)}` : cashRequired ? "Which Cash Account this will move through" : "No Cash Accounts configured yet"}>
-                  <Select className="gk-bulk-mint-input" style={{ border: `1.5px solid ${C.line}`, borderRadius: 7, background: C.card, height: 40 }} value={cashAccountId} onChange={(e) => setCashAccountId(e.target.value)}>
-                    <option value="">{cashRequired ? "Select source…" : "— None —"}</option>
-                    {cashAccounts.map((a) => <option key={a.id} value={a.id}>{toTitleCase(a.name)} — {currency}</option>)}
-                  </Select>
+                  <AccountCombo kind="cash" ariaLabel={isWithdraw ? "Cash Out From" : "Cash In To"} accounts={cashAccounts} value={cashAccountId} onChange={setCashAccountId} noneLabel={cashRequired ? undefined : "— None —"} placeholder={cashRequired ? "Select source…" : "— None —"} />
                 </Field>
               </div>
               <div style={{ marginTop: 10 }}>
@@ -12339,22 +12441,18 @@ function TransferModal({ currency, call, onClose, onSubmit, presetFromAccount, e
         </div>
         {!selected ? (
           <>
-            <Field acct={false} label={`Search ${currency} account`}><Input placeholder="Start typing…" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus={autoFocus} /></Field>
-            <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6, maxHeight: 200, overflowY: "auto" }}>
-              {results.length === 0 && <Empty text={`No ${currency} accounts found.`} />}
-              {results.map((a) => (
-                <button key={a.id} onClick={() => setSelected(a)} style={{ textAlign: "left", padding: "8px 10px", border: `1px solid ${C.line}`, borderRadius: 6, background: C.card, cursor: "pointer" }}>
-                  <div style={{ fontWeight: 600, fontSize: 12.5 }}>{toTitleCase(a.name)}</div>
-                  <div style={{ fontSize: 11, color: C.slate, fontFamily: FONT_MONO }}>{a.accountNumber} · {fmtMoney(a.balance, currency)}</div>
-                </button>
-              ))}
-            </div>
+            {/* GLOBAL SMART ACCOUNT SEARCH round: mint search box + cards, strict live filter. */}
+            <AccountSearchPanel compact ariaLabel={`Search ${currency} account — ${label}`} value={query} onChange={setQuery} autoFocus={autoFocus}>
+              <div className="gk-acard-list" role="listbox" aria-label="Matching accounts" style={{ marginTop: 4, maxHeight: 240, overflowY: "auto" }}>
+                {results.filter((a) => accountMatchesSearch(a, query)).map((a) => <AccountResultCard key={a.id} a={{ ...a, currency: a.currency || currency }} term={query} onClick={() => setSelected(a)} />)}
+                {results.filter((a) => accountMatchesSearch(a, query)).length === 0 && <div className="gk-acombo-empty">{normSearch(query) ? "No matching accounts found." : `No ${currency} accounts found.`}</div>}
+              </div>
+            </AccountSearchPanel>
           </>
         ) : (
-          <div style={{ padding: 10, background: accentBg, borderRadius: 6, border: `1px solid ${C.line}` }}>
-            <div style={{ fontWeight: 700, fontSize: 13 }}>{selected.name}</div>
-            <div style={{ fontSize: 11, color: C.slate, fontFamily: FONT_MONO }}>{selected.accountNumber} · {currency} Account</div>
-            <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 3, color: balanceTone(selected.balance) }}>Current Balance: {fmtMoney(selected.balance, currency)}</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <AccountResultCard a={{ ...selected, currency: selected.currency || currency }} as="div" role={undefined} selected />
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: balanceTone(selected.balance) }}>Current Balance: {fmtMoney(selected.balance, currency)}</div>
             {!lockedNoChange && <button onClick={() => { setSelected(null); setQuery(""); }} style={{ background: "none", border: "none", color: C.navy, textDecoration: "underline", cursor: "pointer", fontSize: 11.5, padding: 0, marginTop: 6 }}>Change</button>}
           </div>
         )}
@@ -17034,14 +17132,8 @@ function CashTransferFormModal({ accounts, onClose, onSubmit }) {
     <Modal title="Transfer Between Cash Accounts" onClose={onClose}>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <div className="gk-acct-pair">
-        <Field label="From"><Select value={fromId} onChange={(e) => { setFromId(e.target.value); setToId(""); }}>
-          <option value="">Select source account…</option>
-          {accounts.map((a) => <option key={a.id} value={a.id}>{accountOptionLabel(a)} — {fmtMoney(a.balance, a.currency)}</option>)}
-        </Select></Field>
-        <Field label="To"><Select value={toId} onChange={(e) => setToId(e.target.value)} disabled={!fromId}>
-          <option value="">Select destination account…</option>
-          {sameCurrencyTargets.map((a) => <option key={a.id} value={a.id}>{accountOptionLabel(a)} — {fmtMoney(a.balance, a.currency)}</option>)}
-        </Select></Field>
+        <Field label="From"><AccountCombo kind="cash" ariaLabel="From" accounts={accounts} value={fromId} onChange={(v) => { setFromId(v); setToId(""); }} placeholder="Select source account…" /></Field>
+        <Field label="To"><AccountCombo kind="cash" ariaLabel="To" accounts={sameCurrencyTargets} value={toId} onChange={setToId} disabled={!fromId} placeholder="Select destination account…" /></Field>
         </div>
         <Field label={`Amount${fromAcc ? ` (${fromAcc.currency})` : ""}`}><MoneyInput value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
         <Field label="Date"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
@@ -17095,14 +17187,8 @@ function CashExchangeFormModal({ accounts, rate, onClose, onSubmit }) {
           </div>
         </div>
         <div className="gk-acct-pair">
-        <Field label="From (USD or SLSH account)" hint={fromAcc ? `Gives ${fromAcc.currency}` : undefined}><Select value={fromId} onChange={(e) => { setFromId(e.target.value); setToId(""); }}>
-          <option value="">Select source account…</option>
-          {accounts.map((a) => <option key={a.id} value={a.id}>{accountOptionLabel(a)} — {fmtMoney(a.balance, a.currency)}</option>)}
-        </Select></Field>
-        <Field label="To (opposite currency account)" hint={fromAcc ? `Receives ${fromAcc.currency === "USD" ? "SLSH" : "USD"}` : undefined}><Select value={toId} onChange={(e) => setToId(e.target.value)} disabled={!fromId}>
-          <option value="">Select destination account…</option>
-          {oppositeTargets.map((a) => <option key={a.id} value={a.id}>{accountOptionLabel(a)} — {fmtMoney(a.balance, a.currency)}</option>)}
-        </Select></Field>
+        <Field label="From (USD or SLSH account)" hint={fromAcc ? `Gives ${fromAcc.currency}` : undefined}><AccountCombo kind="cash" ariaLabel="From (USD or SLSH account)" accounts={accounts} value={fromId} onChange={(v) => { setFromId(v); setToId(""); }} placeholder="Select source account…" /></Field>
+        <Field label="To (opposite currency account)" hint={fromAcc ? `Receives ${fromAcc.currency === "USD" ? "SLSH" : "USD"}` : undefined}><AccountCombo kind="cash" ariaLabel="To (opposite currency account)" accounts={oppositeTargets} value={toId} onChange={setToId} disabled={!fromId} placeholder="Select destination account…" /></Field>
         </div>
         <Field label={`Amount Given${fromAcc ? ` (${fromAcc.currency})` : ""}`}><MoneyInput value={amountGiven} onChange={(e) => setAmountGiven(e.target.value)} /></Field>
         {estimatedReceived != null && <div style={{ fontSize: 12.5, color: C.slate }}>Estimated received at {rateUsed !== "" ? "the rate above" : "current rate"}: <span style={{ fontFamily: FONT_MONO, fontWeight: 700, color: C.ink }}>{fmtMoney(estimatedReceived, toAcc.currency)}</span></div>}
@@ -17139,10 +17225,7 @@ function LoanFormModal({ call, accounts, onClose, onSubmit }) {
     <Modal title="New Loan" onClose={onClose}>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <Field label="Customer"><AccountPicker call={call} accountId={clientId} accountName={clientName} onChange={(id, name) => { setClientId(id); setClientName(name); }} /></Field>
-        <Field label="Cash Account (source of funds)"><Select value={cashAccountId} onChange={(e) => setCashAccountId(e.target.value)}>
-          <option value="">Select cash account…</option>
-          {accounts.map((a) => <option key={a.id} value={a.id}>{accountOptionLabel(a)} — {fmtMoney(a.balance, a.currency)}</option>)}
-        </Select></Field>
+        <Field label="Cash Account (source of funds)"><AccountCombo kind="cash" ariaLabel="Cash Account (source of funds)" accounts={accounts} value={cashAccountId} onChange={setCashAccountId} placeholder="Select cash account…" /></Field>
         <Field label={`Loan Amount${cashAccount ? ` (${cashAccount.currency})` : ""}`}><MoneyInput value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
         <Field label="Date"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
         <OptionalNotes value={notes} onChange={(e) => setNotes(e.target.value)} multiline={false} />
@@ -17175,10 +17258,7 @@ function LoanRepayModal({ loan, accounts, onClose, onSubmit }) {
     <Modal title={`Record Repayment — ${toTitleCase(loan.clientName)}`} onClose={onClose}>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <div style={{ fontSize: 12.5, color: C.slate }}>Outstanding: <span style={{ fontFamily: FONT_MONO, fontWeight: 700, color: C.ink }}>{fmtMoney(loan.outstandingAmount, loan.currency)}</span></div>
-        <Field label="Credit to Cash Account"><Select value={cashAccountId} onChange={(e) => setCashAccountId(e.target.value)}>
-          <option value="">Select cash account…</option>
-          {eligible.map((a) => <option key={a.id} value={a.id}>{accountOptionLabel(a)}</option>)}
-        </Select></Field>
+        <Field label="Credit to Cash Account"><AccountCombo kind="cash" ariaLabel="Credit to Cash Account" accounts={eligible} value={cashAccountId} onChange={setCashAccountId} placeholder="Select cash account…" /></Field>
         <Field label={`Amount (${loan.currency})`}><MoneyInput value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
         <Field label="Date"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
         <OptionalNotes value={notes} onChange={(e) => setNotes(e.target.value)} multiline={false} />
@@ -17644,10 +17724,7 @@ function ExpenseFormModal({ call, notify, meta, expense, onClose, onSaved }) {
           </Field>
           <div style={{ gridColumn: "1 / -1" }}>
             <Field label="Paid From Account *">
-              <Select value={f.cashAccountId} onChange={(e) => set("cashAccountId", e.target.value)} aria-invalid={!!errors.cashAccountId}>
-                <option value="">{accounts.length ? "Choose a Cash Account…" : `No active ${f.currency} Cash Account`}</option>
-                {accounts.map((a) => <option key={a.id} value={a.id}>{accountOptionLabel(a)}{a.balance !== undefined ? ` (${fmtMoney(a.balance, a.currency)})` : ""}</option>)}
-              </Select>{fieldErr("cashAccountId")}
+              <AccountCombo kind="cash" ariaLabel="Paid From Account" accounts={accounts} value={f.cashAccountId} onChange={(v) => set("cashAccountId", v)} invalid={!!errors.cashAccountId} placeholder={accounts.length ? "Choose a Cash Account…" : `No active ${f.currency} Cash Account`} />{fieldErr("cashAccountId")}
               {chosen && chosen.balance !== undefined && Number.isFinite(amountNum) && amountNum > 0 && !editing && (
                 <div style={{ fontSize: 11.5, color: chosen.balance - amountNum < 0 ? C.amber : C.slate, marginTop: 4 }}>
                   Balance after this expense: <b translate="no">{fmtMoney(chosen.balance - amountNum, chosen.currency)}</b>{chosen.balance - amountNum < 0 ? " — this account will go negative." : ""}

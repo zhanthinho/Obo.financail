@@ -257,11 +257,18 @@ function register(router) {
     if (query.from) { clauses.push("date(created_at) >= date(?)"); sqlParams.push(query.from); }
     if (query.to) { clauses.push("date(created_at) <= date(?)"); sqlParams.push(query.to); }
     // SMART ACCOUNT LIVE SEARCH round: leading/trailing spaces never stop a match.
-    if (typeof query.search === "string") query.search = query.search.trim();
+    // GLOBAL SMART ACCOUNT SEARCH round: repeated inner spaces count as one,
+    // and a phone number matches with or without its spaces / + / dashes.
+    if (typeof query.search === "string") query.search = query.search.trim().replace(/\s+/g, " ");
     if (query.search) {
-      clauses.push("(name LIKE ? OR contact LIKE ? OR email LIKE ? OR account_number LIKE ? OR id_number LIKE ?)");
+      const digits = /^[\d\s+\-().]+$/.test(query.search) ? query.search.replace(/\D/g, "") : "";
+      const phoneDigits = digits.length >= 3
+        ? " OR REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(COALESCE(contact, ''), ' ', ''), '+', ''), '-', ''), '(', ''), ')', ''), '.', '') LIKE ?"
+        : "";
+      clauses.push(`(name LIKE ? OR contact LIKE ? OR email LIKE ? OR account_number LIKE ? OR id_number LIKE ?${phoneDigits})`);
       const s = `%${query.search}%`;
       sqlParams.push(s, s, s, s, s);
+      if (phoneDigits) sqlParams.push(`%${digits}%`);
     }
     if (query.balanceSign === "positive") clauses.push("(CASE WHEN currency='USD' THEN balance_usd ELSE balance_slsh END) > 0");
     else if (query.balanceSign === "negative") clauses.push("(CASE WHEN currency='USD' THEN balance_usd ELSE balance_slsh END) < 0");

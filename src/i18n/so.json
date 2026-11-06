@@ -2520,5 +2520,13 @@
  "No cash exchanges found.": "Sarrif lacageed lama helin.",
  "Reference, account, notes…": "Tixraac, akoon, qoraal…",
  "Company Expense": "Kharashka Shirkadda",
- "Repaid": "La bixiyay"
+ "Repaid": "La bixiyay",
+ "Paid From Account": "Akoonka laga bixiyay",
+ "Search by name, account number, or phone...": "Ku raadi magac, lambarka akoonka, ama telefoon...",
+ "Type to search — leave blank to see all.": "Qor si aad u raadiso — madhan u daa si aad dhammaan u aragto.",
+ "No accounts available.": "Akoon la heli karo ma jiro.",
+ "Select an account…": "Dooro akoon…",
+ "Search for a USD account": "Raadi akoon USD ah",
+ "Search for an SLSH account": "Raadi akoon SLSH ah",
+ "Search for a SLSH account": "Raadi akoon SLSH ah"
 }

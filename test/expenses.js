@@ -462,7 +462,7 @@ async function browserChecks() {
         await m.locator("select").nth(0).selectOption({ label: "Marketing" });
         await m.locator("input").nth(1).fill("Radio advert");
         await m.locator("input").nth(2).fill("75");
-        await m.locator("select").nth(2).selectOption({ index: 1 });
+        await m.locator(".gk-acombo-trigger").first().click(); await p.waitForTimeout(150); await m.locator(".gk-acombo-panel .gk-acard").first().click(); // Paid From Account (searchable)
         await m.locator('button[type="submit"]').dblclick(); await p.waitForTimeout(1500);
         const after = (await api("/api/expenses?status=all", { token: ctx.admin })).json.total;
         assert(after === before + 1, `${before} -> ${after}`);
@@ -475,7 +475,7 @@ async function browserChecks() {
         await m.locator("select").nth(0).selectOption({ label: "Utilities" });
         await m.locator("input").nth(1).fill("Water bill");
         await m.locator("input").nth(2).fill("20");
-        await m.locator("select").nth(2).selectOption({ index: 1 });
+        await m.locator(".gk-acombo-trigger").first().click(); await p.waitForTimeout(150); await m.locator(".gk-acombo-panel .gk-acard").first().click(); // Paid From Account (searchable)
         await m.locator('button[type="submit"]').click(); await p.waitForTimeout(800);
         const t = await m.innerText();
         assert(/Server unavailable/.test(t) && (await m.locator("input").nth(1).inputValue()) === "Water bill", "error/inputs");

@@ -30,6 +30,10 @@ const ENV = { ...process.env, ...TESTDB.env, PORT: String(PORT), JWT_SECRET: cry
 const PW = process.env.SEED_DEMO_PASSWORD;
 const SA_PW = process.env.SUPER_ADMIN_INITIAL_PASSWORD;
 
+// GLOBAL SMART ACCOUNT SEARCH round: account selectors are searchable
+// combos now — open one and click the account's card.
+async function pickCombo(p, sel, id) { await p.click(sel); await p.waitForTimeout(150); await p.locator(`${sel} + .gk-acombo-panel [data-account-id="${id}"]`).click(); await p.waitForTimeout(150); }
+
 let passed = 0;
 const failures = [];
 function assert(cond, msg) { if (!cond) throw new Error(msg); }
@@ -265,7 +269,7 @@ async function browserChecks() {
     });
     await check("UI: with a From Account it opens the payment fields (Cash In To, Reference, Date)", async () => {
       await p.getByRole("radio", { name: /Track in Account/ }).click(); await p.waitForTimeout(300);
-      await p.selectOption("#qx-from", A.id); await p.selectOption("#qx-to", R.id); await p.waitForTimeout(500);
+      await pickCombo(p, "#qx-from", A.id); await pickCombo(p, "#qx-to", R.id); await p.waitForTimeout(500);
       await p.fill("#qx-amount", "50");
       await p.check("#qx-markpaid"); await p.waitForTimeout(800);
       const t = await p.locator(".gk-qx-paid").innerText();
@@ -273,9 +277,10 @@ async function browserChecks() {
       assert(await p.locator("#qx-pay-cash").count() && await p.locator("#qx-pay-ref").count() && await p.locator("#qx-pay-date").count(), "fields missing");
     });
     await check("UI: recording creates the exchange with its linked Credit", async () => {
-      const opts = await p.locator("#qx-pay-cash option").evaluateAll((os) => os.map((o) => ({ v: o.value, t: o.textContent })));
+      await p.click("#qx-pay-cash"); await p.waitForTimeout(150);
+      const opts = await p.locator("#qx-pay-cash + .gk-acombo-panel [data-account-id]").evaluateAll((os) => os.map((o) => ({ v: o.dataset.accountId, t: o.textContent })));
       const usd = opts.find((o) => /Main Till USD/i.test(o.t));
-      await p.selectOption("#qx-pay-cash", usd.v);
+      await p.locator(`#qx-pay-cash + .gk-acombo-panel [data-account-id="${usd.v}"]`).click();
       await p.fill("#qx-pay-ref", "UI-PAY-1");
       await p.locator('button:has-text("Record Exchange")').click(); await p.waitForTimeout(2500);
       const t = (await exchanges()).find((x) => x.fromAccountId === A.id);

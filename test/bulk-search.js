@@ -91,7 +91,7 @@ async function run() {
     await p.getByRole("button", { name: /Bulk Entry/ }).first().click(); await p.waitForTimeout(500);
     const box = p.getByLabel("Search for a USD account");
     const list = p.locator(".gk-bulk-search-results");
-    const names = async () => (await list.locator("button[role=option]").allInnerTexts()).map((t) => t.split("\n")[0].trim());
+    const names = async () => (await list.locator("button[role=option] .gk-acard-name").allInnerTexts()).map((t) => t.trim());
 
     await check("typing a name at once shows only the matching accounts — even before the server answers", async () => {
       await box.fill("Maxamed");
