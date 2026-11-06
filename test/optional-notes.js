@@ -145,7 +145,7 @@ async function browserChecks() {
         assert(t.notes === "Paid in cash at branch" && t.amountGiven === 100, JSON.stringify({ notes: t.notes, amt: t.amountGiven }));
       });
       await check("6/8. reopening the saved record: Notes already open with the note", async () => {
-        await p.locator("button", { hasText: /^Update$/ }).first().click();
+        await p.getByRole("button", { name: "Update", exact: true }).first().click();
         await p.waitForSelector("#qx-amount", { timeout: 10000 }); await p.waitForTimeout(300);
         assert(await notesBox(p).getAttribute("data-open") === "true", "collapsed although a note exists");
         assert((await p.inputValue("#qx-notes")) === "Paid in cash at branch", "saved note not shown");
@@ -155,7 +155,7 @@ async function browserChecks() {
         await api("/api/transactions", { method: "POST", token: admin, body: { clientName: "Walk-in", amountGiven: 12, currencyGiven: "USD" } });
         await p.reload(); await p.waitForSelector(".gk-sidebar", { state: "attached", timeout: 15000 }); await p.waitForTimeout(1500);
         await goExchange(p);
-        await p.locator("button", { hasText: /^Update$/ }).first().click();
+        await p.getByRole("button", { name: "Update", exact: true }).first().click();
         await p.waitForSelector("#qx-amount", { timeout: 10000 }); await p.waitForTimeout(300);
         assert((await p.inputValue("#qx-amount")).replace(/,/g, "") === "12", "opened the wrong record");
         assert(await notesBox(p).getAttribute("data-open") === "false", "open although there's no note");
