@@ -133,6 +133,7 @@ function register(router) {
   router.get("/api/accounts/:id/statement.pdf", async (req, res, params, query) => {
     const user = requireAuth(req, res); if (!user) return;
     if (!canView(user)) return requirePerm(user, res, "accountsManage");
+    if (!require("../account-access").canView(user, params.id)) return notFound(res, "Account not found.");
     const data = loadStatementData(params.id, query);
     if (data.error) return notFound(res, data.error);
     // SECURITY HARDENING: this route was missing the currency-scope check
@@ -154,6 +155,7 @@ function register(router) {
   router.get("/api/accounts/:id/statement.xlsx", async (req, res, params, query) => {
     const user = requireAuth(req, res); if (!user) return;
     if (!canView(user)) return requirePerm(user, res, "accountsManage");
+    if (!require("../account-access").canView(user, params.id)) return notFound(res, "Account not found.");
     const data = loadStatementData(params.id, query);
     if (data.error) return notFound(res, data.error);
     // SECURITY HARDENING: same missing currency-scope check as the PDF route

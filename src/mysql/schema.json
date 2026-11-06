@@ -7590,6 +7590,238 @@
      "expression": null
     }
    ]
+  },
+  {
+   "name": "user_account_access",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "user_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "account_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "level",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [],
+   "checks": [
+    "level IN ('full','view','credit','debit','none')"
+   ],
+   "indexes": [
+    {
+     "name": "uq_user_account_access",
+     "unique": true,
+     "columns": [
+      "user_id",
+      "account_id"
+     ],
+     "where": null,
+     "expression": null
+    },
+    {
+     "name": "idx_user_account_access_account",
+     "unique": false,
+     "columns": [
+      "account_id"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ]
+  },
+  {
+   "name": "role_account_access",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "role_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "account_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "level",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [],
+   "checks": [
+    "level IN ('full','view','credit','debit','none')"
+   ],
+   "indexes": [
+    {
+     "name": "uq_role_account_access",
+     "unique": true,
+     "columns": [
+      "role_id",
+      "account_id"
+     ],
+     "where": null,
+     "expression": null
+    },
+    {
+     "name": "idx_role_account_access_account",
+     "unique": false,
+     "columns": [
+      "account_id"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ]
   }
  ],
  "controlTables": [

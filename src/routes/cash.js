@@ -505,7 +505,9 @@ function register(router) {
     // already tie on both date and created_at.
     const rows = all(`SELECT * FROM cash_ledger ${where} ORDER BY date DESC, created_at DESC, id DESC`, p);
     newestFirst(rows);
-    sendJSON(res, 200, { entries: rows.map(ledgerToJSON) });
+    // ACCOUNT-LEVEL ACCESS round: a movement whose customer account is
+    // hidden from this user is left out (its counterparty is that account).
+    sendJSON(res, 200, { entries: require("../account-access").filterRows(user, rows, (r) => [r.counterparty_client_id]).map(ledgerToJSON) });
   });
 
   router.patch("/api/cash/ledger/:id", async (req, res, params) => {

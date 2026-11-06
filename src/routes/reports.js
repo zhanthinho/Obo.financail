@@ -125,11 +125,16 @@ function register(router) {
   router.get("/api/reports/accounts-summary", (req, res) => {
     const user = requireAuth(req, res); if (!user) return;
     if (!requirePerm(user, res, "reports")) return;
-    const totals = get("SELECT COUNT(*) as n, SUM(CASE WHEN account_type='customer' THEN 1 ELSE 0 END) as customers, SUM(CASE WHEN account_type='company' THEN 1 ELSE 0 END) as companies, SUM(balance_usd) as usd, SUM(balance_slsh) as slsh FROM clients WHERE deleted_at IS NULL");
+    // ACCOUNT-LEVEL ACCESS round: accounts this user has "No Access" to are
+    // not counted or listed.
+    const hidden = [...require("../account-access").hiddenIds(user)];
+    const notHidden = hidden.length ? ` AND id NOT IN (${hidden.map(() => "?").join(",")})` : "";
+    const notHiddenL = hidden.length ? ` AND l.client_id NOT IN (${hidden.map(() => "?").join(",")})` : "";
+    const totals = get(`SELECT COUNT(*) as n, SUM(CASE WHEN account_type='customer' THEN 1 ELSE 0 END) as customers, SUM(CASE WHEN account_type='company' THEN 1 ELSE 0 END) as companies, SUM(balance_usd) as usd, SUM(balance_slsh) as slsh FROM clients WHERE deleted_at IS NULL${notHidden}`, hidden);
     // SECURITY AUDIT round: permanently deleted accounts keep their row (with
     // its last balance) for history, but their ledger is gone — they must
     // not count towards today's totals, same as every other summary.
-    const recentLedger = all("SELECT l.*, c.name as client_name, c.account_number FROM account_ledger l JOIN clients c ON c.id = l.client_id WHERE c.deleted_at IS NULL ORDER BY l.date DESC, l.created_at DESC, l.id DESC LIMIT 8");
+    const recentLedger = all(`SELECT l.*, c.name as client_name, c.account_number FROM account_ledger l JOIN clients c ON c.id = l.client_id WHERE c.deleted_at IS NULL${notHiddenL} ORDER BY l.date DESC, l.created_at DESC, l.id DESC LIMIT 8`, hidden);
     sendJSON(res, 200, {
       totalAccounts: totals.n || 0, totalCustomers: totals.customers || 0, totalCompanies: totals.companies || 0,
       totalBalanceUSD: totals.usd || 0, totalBalanceSLSH: totals.slsh || 0,

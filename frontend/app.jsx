@@ -826,6 +826,23 @@ const THEME_CSS = `
   .gk-th-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 40px 16px; color: var(--c-slate); text-align: center; font-size: 12.5px; }
   .gk-th-empty b { color: var(--c-ink); font-size: 14px; }
   .gk-th-scope { font-size: 11.5px; color: var(--c-slate); margin-top: 8px; line-height: 1.45; }
+  /* ACCOUNT-LEVEL ACCESS round */
+  .gk-aa-counts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .gk-aa-count { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
+  .gk-aa-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; border: 1px solid var(--c-line); white-space: nowrap; }
+  .gk-aa-badge.is-full { color: #0f766e; background: #ecfdf5; border-color: #a7f3d0; }
+  .gk-aa-badge.is-view { color: #1d4ed8; background: #eff6ff; border-color: #bfdbfe; }
+  .gk-aa-badge.is-credit { color: #15803d; background: #f0fdf4; border-color: #bbf7d0; }
+  .gk-aa-badge.is-debit { color: #b45309; background: #fffbeb; border-color: #fde68a; }
+  .gk-aa-badge.is-none { color: #b91c1c; background: #fef2f2; border-color: #fecaca; }
+  .gk-aa-bulk { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 12px; color: var(--c-slate); }
+  .gk-aa-table { max-height: 46vh; overflow: auto; }
+  .gk-aa-table tr.is-changed td { background: color-mix(in srgb, #f59e0b 9%, transparent); }
+  .gk-aa-select { font: inherit; font-size: 12.5px; padding: 4px 6px; border: 1px solid var(--c-line); border-radius: 6px; background: var(--c-card); color: var(--c-ink); }
+  .gk-aa-was { margin-left: 6px; font-size: 11px; color: #b45309; }
+  .gk-aa-used { margin-left: 6px; font-size: 10px; font-weight: 700; color: var(--c-slate); border: 1px solid var(--c-line); border-radius: 8px; padding: 0 5px; }
+  .gk-aa-confirm { margin: 6px 0 8px 16px; font-size: 12px; }
+  .gk-av-denied { font-size: 12px; color: var(--c-slate); display: inline-flex; align-items: center; gap: 6px; }
   /* CROSS-CURRENCY CUSTOMER LINKING round — Customer Profiles */
   .gk-cp-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .gk-cp-check { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--c-ink); height: 34px; }
@@ -1638,6 +1655,7 @@ const NAV_ICON_PATHS = {
   edit: <><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></>,
   trash: <><path d="M3 6h18" /><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" /><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6" /><path d="M10 11v6M14 11v6" /></>,
   eye: <><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></>,
+  eyeOff: <><path d="M3 3l18 18" /><path d="M10.6 5.1A10.7 10.7 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.1M6.6 6.6C3.9 8.4 2 12 2 12s3.6 7 10 7a9.9 9.9 0 0 0 5.4-1.6" /><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" /></>,
   download: <><path d="M12 3v12M7.5 10.5 12 15l4.5-4.5" /><path d="M4 18h16" /></>,
   link: <><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5" /><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1.5-1.5" /></>,
   check: <path d="M20 6 9 17l-5-5" />,
@@ -9771,8 +9789,10 @@ function AccountsModule({ currency, call, dl, preview, print, notify, perm, hasR
                   <td style={densityStyle(td, density)} onClick={(e) => e.stopPropagation()}>
                     <div style={{ display: "flex", gap: 5 }}>
                       <RowIconBtn icon="eye" label={`${translate("View")} ${toTitleCase(a.name)}`} onClick={() => onOpenAccountView(a.id)} />
-                      {perm("accountsManage") && <RowIconBtn icon="edit" label={`${translate("Edit")} ${toTitleCase(a.name)}`} onClick={() => setEditAccount(a)} />}
-                      {perm("accountsManage") && <RowIconBtn icon="ban" danger label={`${translate("Deactivate")} ${toTitleCase(a.name)}`} onClick={() => setDeactivateTarget(a)} />}
+                      {/* ACCOUNT-LEVEL ACCESS round: editing needs Full Access to the account too. */}
+                      {perm("accountsManage") && (!a.access || a.access.canManage) && <RowIconBtn icon="edit" label={`${translate("Edit")} ${toTitleCase(a.name)}`} onClick={() => setEditAccount(a)} />}
+                      {perm("accountsManage") && (!a.access || a.access.canManage) && <RowIconBtn icon="ban" danger label={`${translate("Deactivate")} ${toTitleCase(a.name)}`} onClick={() => setDeactivateTarget(a)} />}
+                      {a.access && a.access.level !== "full" && <AaBadge level={a.access.level} />}
                     </div>
                   </td>
                 </tr>
@@ -10408,11 +10428,17 @@ function AccountDetailModal({ call, dl, preview, print, notify, perm, accountId,
     ["summary", "Balances Over Time", "trendUp"],
     ["statement", "Statement", "sheet"],
   ];
-  const canManage = perm("accountsManage");
-  const canExchange = canManage && (perm("exchangeCreate") || perm("exchangeAll"));
-  const canQuote = perm("quotationsManage") && onNewQuotation && account.accountType === "company";
+  // ACCOUNT-LEVEL ACCESS round: the role must allow it AND this account's
+  // access level must allow it (the server enforces both either way).
+  const acl = data.access || { canCredit: true, canDebit: true, canManage: true, level: "full" };
+  const canManageRole = perm("accountsManage");
+  const canManage = canManageRole && acl.canManage;
+  const canCreditHere = canManageRole && acl.canCredit;
+  const canDebitHere = canManageRole && acl.canDebit;
+  const canExchange = canDebitHere && (perm("exchangeCreate") || perm("exchangeAll"));
+  const canQuote = perm("quotationsManage") && onNewQuotation && account.accountType === "company" && acl.canDebit;
   const moreItems = [
-    canManage && { label: "Debit", icon: "arrowUpRight", disabled: !isActive, onClick: () => setMoveOpen("withdraw") },
+    canDebitHere && { label: "Debit", icon: "arrowUpRight", disabled: !isActive, onClick: () => setMoveOpen("withdraw") },
     canExchange && { label: "Exchange", icon: "exchange", disabled: !isActive, onClick: () => { onExchange?.(account); onClose(); } },
     canQuote && { label: "New quotation for this account", icon: "quotations", disabled: !isActive, onClick: () => { onNewQuotation(account); onClose(); } },
     { label: "Compare: Credits & Debits", icon: "chartCombined", onClick: () => setCompareOpen(true) },
@@ -10451,8 +10477,9 @@ function AccountDetailModal({ call, dl, preview, print, notify, perm, accountId,
           </div>
         </div>
         <div className="gk-av-actions">
-          {canManage && <Btn tone="deposit" icon="plus" disabled={!isActive} onClick={() => setMoveOpen("deposit")}>Credit</Btn>}
-          {canManage && <Btn tone="ghost" icon="arrowLeftRight" disabled={!isActive} onClick={() => setTransferOpen(true)}>Transfer</Btn>}
+          {canCreditHere && <Btn tone="deposit" icon="plus" disabled={!isActive} onClick={() => setMoveOpen("deposit")}>Credit</Btn>}
+          {canDebitHere && <Btn tone="ghost" icon="arrowLeftRight" disabled={!isActive} onClick={() => setTransferOpen(true)}>Transfer</Btn>}
+          {canManageRole && acl.level !== "full" && <span className="gk-av-denied" data-testid="account-access-level" title={acl.level === "view" ? "You do not have permission to create transactions for this account." : undefined}><AaBadge level={acl.level} />{acl.level === "view" ? "You do not have permission to create transactions for this account." : ""}</span>}
           {canManage && <Btn tone="ghost" icon="edit" disabled={!isActive} onClick={() => setEditAccountOpen(true)}>Edit</Btn>}
           <OverflowMenu items={moreItems} label="More account actions" />
         </div>
@@ -14077,9 +14104,158 @@ function groupCatalogByModule(catalog) {
   }
   return order.map((k) => byModule.get(k));
 }
+// ACCOUNT-LEVEL ACCESS round — one editor for a USER's or a ROLE's access to
+// individual accounts (Full Access / View Only / View + Credit Only /
+// View + Debit Only / No Access). The server decides everything (scope,
+// ceilings, Super Admin, own role / own user); this screen only collects the
+// changes and shows them. A user's effective level is the most restrictive
+// of their role's level and their own.
+const AA_LEVELS = [
+  ["full", "Full Access", "shield"],
+  ["view", "View Only", "eye"],
+  ["credit", "View + Credit Only", "arrowDownLeft"],
+  ["debit", "View + Debit Only", "arrowUpRight"],
+  ["none", "No Access", "eyeOff"],
+];
+const AA_LABEL = Object.fromEntries(AA_LEVELS.map(([k, l]) => [k, l]));
+const AA_ALLOWS = { full: ["view", "credit", "debit", "manage"], view: ["view"], credit: ["view", "credit"], debit: ["view", "debit"], none: [] };
+const aaStricter = (a, b) => { const both = AA_ALLOWS[a].filter((x) => AA_ALLOWS[b].includes(x)); return AA_LEVELS.map((x) => x[0]).find((l) => AA_ALLOWS[l].length === both.length && both.every((x) => AA_ALLOWS[l].includes(x))) || "none"; };
+const aaWithin = (level, ceiling) => AA_ALLOWS[level].every((x) => AA_ALLOWS[ceiling].includes(x));
+function AaBadge({ level }) {
+  const ic = (AA_LEVELS.find((x) => x[0] === level) || AA_LEVELS[0])[2];
+  return <span className={`gk-aa-badge is-${level}`}><NavIcon name={ic} size={12} />{AA_LABEL[level]}</span>;
+}
+function AccountAccessModal({ kind, target, call, notify, onClose }) {
+  const base = kind === "role" ? `/api/roles/${target.id}/account-access` : `/api/users/${target.id}/account-access`;
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState("");
+  const [search, setSearch] = useState("");
+  const [currency, setCurrency] = useState("");
+  const [type, setType] = useState("");
+  const [onlyRestricted, setOnlyRestricted] = useState(false);
+  const [changes, setChanges] = useState({}); // accountId -> level
+  const [selected, setSelected] = useState(new Set());
+  const [confirm, setConfirm] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const load = useCallback(() => {
+    call(base).then((d) => { setData(d); setErr(""); }).catch((e) => setErr(e.message));
+  }, [call, base]);
+  useEffect(load, [load]);
+  const rows = useMemo(() => {
+    if (!data) return [];
+    const s = search.trim().toLowerCase();
+    return data.accounts.filter((a) => (!currency || a.currency === currency) && (!type || a.accountType === type)
+      && (!s || a.name.toLowerCase().includes(s) || (a.accountNumber || "").toLowerCase().includes(s))
+      && (!onlyRestricted || (changes[a.id] || a.level) !== "full" || (a.roleLevel && a.roleLevel !== "full")));
+  }, [data, search, currency, type, onlyRestricted, changes]);
+  const levelOf = (a) => changes[a.id] || a.level;
+  const setLevel = (a, level) => setChanges((c) => { const n = { ...c }; if (level === a.level) delete n[a.id]; else n[a.id] = level; return n; });
+  const bulk = (level) => {
+    const list = rows.filter((a) => selected.has(a.id) && aaWithin(level, a.maxLevel || "full"));
+    setChanges((c) => { const n = { ...c }; for (const a of list) { if (level === a.level) delete n[a.id]; else n[a.id] = level; } return n; });
+    if (list.length < selected.size) notify(`${selected.size - list.length} account(s) skipped — you can't grant more than your own access.`, true);
+  };
+  const pending = Object.entries(changes);
+  const save = async (confirmRemoval) => {
+    setBusy(true);
+    try {
+      const r = await call(base, { method: "PATCH", body: { changes: pending.map(([accountId, level]) => ({ accountId, level })), confirmRemoval: !!confirmRemoval } });
+      notify(`Account access saved — ${r.changed} account(s) changed.`);
+      setChanges({}); setSelected(new Set()); setConfirm(null); load();
+    } catch (e) {
+      if (e.data && e.data.code === "CONFIRM_REMOVAL") setConfirm(e.data);
+      else notify(e.message, true);
+    } finally { setBusy(false); }
+  };
+  const who = kind === "role" ? `role “${target.name}”` : target.name;
+  const canEdit = !!(data && data.canEdit);
+  const allChecked = rows.length > 0 && rows.every((a) => selected.has(a.id));
+  return (
+    <Modal title={`Account Access — ${who}`} subtitle={kind === "role" ? `Applies to everyone with this role${data ? ` (${data.role.users} user${data.role.users === 1 ? "" : "s"})` : ""}. A user's own setting can only restrict further.` : "Restricts this user on individual accounts. Their role permissions — and their role's account access — still apply; the most restrictive wins."} width={980} onClose={onClose}>
+      <div className="gk-aa">
+        {err && <div className="gk-acc-error" role="alert"><NavIcon name="circleAlert" size={16} /><span>{err}</span></div>}
+        {!data && !err && <Spinner label="Loading accounts…" />}
+        {data && (
+          <>
+            {data.reason && <div className="gk-acc-warn" role="note"><NavIcon name="lock" size={15} /><span>{data.reason}</span></div>}
+            <div className="gk-aa-counts">
+              {AA_LEVELS.map(([k, l]) => <span key={k} className="gk-aa-count"><AaBadge level={k} /><b>{data.counts[k] || 0}</b></span>)}
+            </div>
+            <div className="gk-acc-toolbar" role="search">
+              <label className="gk-acc-field gk-acc-field--search"><span className="gk-acc-label">Search</span><span className="gk-acc-input"><NavIcon name="search" size={15} /><input aria-label="Search accounts" placeholder="Name or account number" value={search} onChange={(e) => setSearch(e.target.value)} /></span></label>
+              <label className="gk-acc-field"><span className="gk-acc-label">Currency</span><span className="gk-acc-input"><select aria-label="Currency" value={currency} onChange={(e) => setCurrency(e.target.value)}><option value="">All</option><option value="USD">USD</option><option value="SLSH">SLSH</option></select></span></label>
+              <label className="gk-acc-field"><span className="gk-acc-label">Account type</span><span className="gk-acc-input"><select aria-label="Account type" value={type} onChange={(e) => setType(e.target.value)}><option value="">All</option><option value="customer">Customer</option><option value="company">Company</option></select></span></label>
+              <label className="gk-cp-check"><input type="checkbox" checked={onlyRestricted} onChange={(e) => setOnlyRestricted(e.target.checked)} /> Only restricted</label>
+            </div>
+            {canEdit && (
+              <div className="gk-aa-bulk">
+                <span>{selected.size} selected</span>
+                {[["full", "Full Access"], ["view", "View Only"], ["none", "No Access"]].map(([k, l]) => <button key={k} type="button" className="gk-acc-btn" disabled={!selected.size} onClick={() => bulk(k)}>Set {l}</button>)}
+              </div>
+            )}
+            <div className="gk-table-wrap gk-aa-table" style={{ border: `1px solid ${C.line}`, borderRadius: 8 }}>
+              <table className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead><tr>
+                  {canEdit && <th style={{ ...th, width: 34 }} scope="col"><input type="checkbox" aria-label="Select all" checked={allChecked} onChange={() => setSelected(allChecked ? new Set() : new Set(rows.map((a) => a.id)))} /></th>}
+                  <th style={th} scope="col">Account</th><th style={th} scope="col">Currency</th><th style={th} scope="col">Type</th>
+                  {kind === "user" && <th style={th} scope="col">From role</th>}
+                  <th style={th} scope="col">Access permission</th>
+                  {kind === "user" && <th style={th} scope="col">Effective</th>}
+                </tr></thead>
+                <tbody>
+                  {rows.map((a) => {
+                    const lvl = levelOf(a);
+                    const changed = changes[a.id] !== undefined;
+                    const eff = kind === "user" ? aaStricter(a.roleLevel || "full", lvl) : lvl;
+                    return (
+                      <tr key={a.id} data-account={a.accountNumber} className={changed ? "is-changed" : ""}>
+                        {canEdit && <td style={td}><input type="checkbox" aria-label={`Select ${a.accountNumber}`} checked={selected.has(a.id)} onChange={() => setSelected((s) => { const n = new Set(s); if (n.has(a.id)) n.delete(a.id); else n.add(a.id); return n; })} /></td>}
+                        <td style={td}><b>{toTitleCase(a.name)}</b> <span className="gk-cp-num">· {a.accountNumber}</span>{a.usedByUser && <span className="gk-aa-used" title="This user has made transactions on this account">used</span>}</td>
+                        <td style={td}><span className="gk-cp-cur">{a.currency}</span></td>
+                        <td style={td}>{a.accountType === "company" ? "Company" : "Customer"}</td>
+                        {kind === "user" && <td style={td}><AaBadge level={a.roleLevel || "full"} /></td>}
+                        <td style={td}>
+                          {canEdit ? (
+                            <select aria-label={`Access for ${a.accountNumber}`} className="gk-aa-select" value={lvl} onChange={(e) => setLevel(a, e.target.value)}>
+                              {AA_LEVELS.map(([k, l]) => <option key={k} value={k} disabled={!aaWithin(k, a.maxLevel || "full")}>{l}</option>)}
+                            </select>
+                          ) : <AaBadge level={lvl} />}
+                          {changed && <span className="gk-aa-was">was {AA_LABEL[a.level]}</span>}
+                        </td>
+                        {kind === "user" && <td style={td}><AaBadge level={eff} /></td>}
+                      </tr>
+                    );
+                  })}
+                  {!rows.length && <tr><td style={td} colSpan={7}><span className="gk-cp-muted">No accounts match.</span></td></tr>}
+                </tbody>
+              </table>
+            </div>
+            <div className="gk-th-scope">Full Access = whatever the {kind === "role" ? "role's" : "user's role"} permissions allow. View Only = balance and history, no Credits or Debits. No Access = the account is hidden everywhere (lists, search, history, reports, exports). Every change is recorded in the audit log.</div>
+          </>
+        )}
+        {confirm && (
+          <div className="gk-acc-warn" role="alertdialog" aria-label="Confirm removing access">
+            <NavIcon name="circleAlert" size={15} />
+            <div>
+              <b>{confirm.error}</b>
+              <ul className="gk-aa-confirm">{confirm.needsConfirmation.map((x) => <li key={x.accountId}>{x.accountNumber} {toTitleCase(x.name)} ({x.currency}): {AA_LABEL[x.from]} → {AA_LABEL[x.to]}</li>)}</ul>
+              <div style={{ display: "flex", gap: 8 }}><Btn tone="danger" size="sm" disabled={busy} onClick={() => save(true)}>Remove access</Btn><Btn tone="ghost" size="sm" onClick={() => setConfirm(null)}>Go back</Btn></div>
+            </div>
+          </div>
+        )}
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
+          <Btn tone="ghost" onClick={onClose}>{pending.length ? "Cancel" : "Close"}</Btn>
+          {canEdit && <Btn tone="primary" disabled={!pending.length || busy} onClick={() => save(false)}>{busy ? "Saving…" : `Save${pending.length ? ` (${pending.length})` : ""}`}</Btn>}
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 function UsersModule({ call, notify, currentUser, hasRaw }) {
   const [rows, setRows] = useState([]); const [roles, setRoles] = useState([]); const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false); const [editUser, setEditUser] = useState(null); const [permsUser, setPermsUser] = useState(null);
+  const [accessUser, setAccessUser] = useState(null); // ACCOUNT-LEVEL ACCESS round
   // SUPER ADMIN & ROLE-BASED PERMISSION CONTROL round: permanent delete,
   // gated by the brand-new granular users.delete key (no legacy equivalent
   // — see src/permissions.js) rather than the coarse "users" flag every
@@ -14146,7 +14322,7 @@ function UsersModule({ call, notify, currentUser, hasRaw }) {
                 <tr key={u.id}>
                   {columns.map((c) => <td key={c.key} style={tableCellStyle(c, density)}>{c.render(u)}</td>)}
                   <td style={densityStyle(td, density)}><Btn size="sm" tone="ghost" onClick={() => setEditUser(u)}>Edit</Btn></td>
-                  <td style={densityStyle(td, density)}>{canManagePerms && <Btn size="sm" tone="subtle" onClick={() => setPermsUser(u)}>Permissions</Btn>}</td>
+                  <td style={densityStyle(td, density)}>{canManagePerms && <span style={{ display: "inline-flex", gap: 6 }}><Btn size="sm" tone="subtle" onClick={() => setPermsUser(u)}>Permissions</Btn>{!u.isSuperAdmin && u.id !== currentUser.id && <Btn size="sm" tone="subtle" onClick={() => setAccessUser(u)}>Account Access</Btn>}</span>}</td>
                   <td style={densityStyle(td, density)}>{u.id !== currentUser.id && <Btn size="sm" tone={u.active ? "danger" : "accent"} onClick={async () => { try { await call(`/api/users/${u.id}`, { method: "PATCH", body: { active: !u.active } }); reload(); } catch (e) { notify(e.message, true); } }}>{u.active ? "Deactivate" : "Activate"}</Btn>}</td>
                   {/* Delete User (Section 9/10): only ever offered once a
                       user is already deactivated — mirrors the server's own
@@ -14168,6 +14344,7 @@ function UsersModule({ call, notify, currentUser, hasRaw }) {
       {addOpen && <UserFormModal roles={roles} currentUser={currentUser} onClose={() => setAddOpen(false)} onSubmit={async (form) => { try { await call("/api/users", { method: "POST", body: form }); notify("User created."); setAddOpen(false); reload(); } catch (e) { notify(e.message, true); } }} />}
       {editUser && <UserFormModal user={editUser} roles={roles} currentUser={currentUser} onClose={() => setEditUser(null)} onSubmit={async (form) => { try { await call(`/api/users/${editUser.id}`, { method: "PATCH", body: form }); notify("User updated."); setEditUser(null); reload(); } catch (e) { notify(e.message, true); } }} />}
       {permsUser && <UserPermissionsModal user={permsUser} currentUser={currentUser} call={call} notify={notify} onClose={() => setPermsUser(null)} />}
+      {accessUser && <AccountAccessModal kind="user" target={accessUser} call={call} notify={notify} onClose={() => setAccessUser(null)} />}
       {deleteUser && (
         <DeleteUserModal user={deleteUser} call={call} notify={notify}
           onClose={() => setDeleteUser(null)}
@@ -14414,6 +14591,7 @@ function RolesModule({ call, notify, currentUser, hasRaw }) {
   const [formRole, setFormRole] = useState(undefined); // undefined = closed, null = creating, object = editing
   const [duplicateSource, setDuplicateSource] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [accessRole, setAccessRole] = useState(null); // ACCOUNT-LEVEL ACCESS round
   const reload = useCallback(() => {
     setLoading(true);
     Promise.all([call("/api/roles"), call("/api/permissions"), call("/api/roles/templates").catch(() => ({ templates: [] }))])
@@ -14467,6 +14645,7 @@ function RolesModule({ call, notify, currentUser, hasRaw }) {
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       {(canUpdate || canCreate) && !r.isSuperAdmin && <Btn size="sm" tone="ghost" onClick={() => setFormRole(r)}>Edit</Btn>}
                       {canCreate && !r.isSuperAdmin && <Btn size="sm" tone="subtle" onClick={() => setDuplicateSource(r)}>Duplicate</Btn>}
+                      {!r.isSuperAdmin && <Btn size="sm" tone="subtle" onClick={() => setAccessRole(r)}>Account Access</Btn>}
                       {canDelete && !r.isSuperAdmin && !r.isProtected && <Btn size="sm" tone="danger" onClick={() => setDeleteTarget(r)}>Delete</Btn>}
                     </div>
                   </td>
@@ -14493,6 +14672,7 @@ function RolesModule({ call, notify, currentUser, hasRaw }) {
           }}
         />
       )}
+      {accessRole && <AccountAccessModal kind="role" target={accessRole} call={call} notify={notify} onClose={() => setAccessRole(null)} />}
       {duplicateSource && (
         <DuplicateRoleModal role={duplicateSource} onClose={() => setDuplicateSource(null)}
           onSubmit={async (name) => {

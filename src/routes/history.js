@@ -407,7 +407,11 @@ function scopedHistory(user, res, query, opts) {
     sendJSON(res, 403, { error: `You don't have access to ${query.currency} accounts.` });
     return null;
   }
-  return queryHistory(query, opts).filter((e) => allowed.includes(e.accountCurrency)).map(decorate);
+  // ACCOUNT-LEVEL ACCESS round: entries of an account this user has "No
+  // Access" to (either side of a transfer) are left out of history,
+  // summaries and every export.
+  const hidden = require("../account-access").hiddenIds(user);
+  return queryHistory(query, opts).filter((e) => allowed.includes(e.accountCurrency) && !(hidden.has(e.accountId) || hidden.has(e.counterpartAccountId))).map(decorate);
 }
 
 function register(router) {

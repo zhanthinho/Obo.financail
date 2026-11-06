@@ -100,6 +100,7 @@ require("./routes/loans").register(router);
 require("./routes/expenses").register(router);
 require("./routes/dailyReports").register(router);
 require("./routes/customers").register(router);
+require("./routes/accountAccess").register(router);
 require("./routes/platform").register(router);
 
 // MYSQL round: the health check makes a real round-trip to MySQL (bounded by

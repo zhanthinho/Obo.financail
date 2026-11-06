@@ -1,7 +1,7 @@
 {
   "name": "obo-financial-system-api",
   "version": "1.0.0",
-  "description": "Financial System Management API \u2014 currency management, money exchange, quotations, RBAC, and reports for OBO Financial System (MySQL)",
+  "description": "Financial System Management API — currency management, money exchange, quotations, RBAC, and reports for OBO Financial System (MySQL)",
   "main": "src/server.js",
   "engines": {
     "node": "22.x"
@@ -52,7 +52,8 @@
     "test:history-console": "node test/history-console.js",
     "test:same-name": "node test/same-name.js",
     "test:customer-linking": "node test/customer-linking.js",
-    "test:integrity-security": "node test/integrity-security.js"
+    "test:integrity-security": "node test/integrity-security.js",
+    "test:account-access": "node test/account-access.js"
   },
   "dependencies": {
     "exceljs": "^4.4.0",

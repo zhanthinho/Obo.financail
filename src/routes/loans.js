@@ -56,14 +56,14 @@ function register(router) {
     const where = clauses.length ? "WHERE " + clauses.join(" AND ") : "";
     const rows = all(`SELECT * FROM cash_loans ${where} ORDER BY date DESC, created_at DESC, id DESC`, p);
     newestFirst(rows);
-    sendJSON(res, 200, { loans: rows.map(loanToJSON) });
+    sendJSON(res, 200, { loans: require("../account-access").filterRows(user, rows, (l) => [l.client_id]).map(loanToJSON) });
   });
 
   router.get("/api/loans/:id", (req, res, params) => {
     const user = requireAuth(req, res); if (!user) return;
     if (!requirePerm(user, res, "loans.view")) return;
     const l = get("SELECT * FROM cash_loans WHERE id = ?", [params.id]);
-    if (!l) return notFound(res, "Loan not found.");
+    if (!l || !require("../account-access").canView(user, l.client_id)) return notFound(res, "Loan not found.");
     const payments = all("SELECT * FROM cash_loan_payments WHERE loan_id = ? ORDER BY date ASC, created_at ASC", [params.id]);
     sendJSON(res, 200, { loan: loanToJSON(l), payments: payments.map(paymentToJSON) });
   });
@@ -73,7 +73,7 @@ function register(router) {
     if (!requirePerm(user, res, "loans.create")) return;
     let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
     if (!body.clientId) return badRequest(res, "Select the customer receiving this loan.");
-    const client = get("SELECT id, name FROM clients WHERE id = ?", [body.clientId]);
+    const client = require("../account-access").canView(user, body.clientId) ? get("SELECT id, name FROM clients WHERE id = ?", [body.clientId]) : null;
     if (!client) return notFound(res, "Customer account not found.");
     if (!body.cashAccountId) return badRequest(res, "Select the Cash Account this loan is paid from.");
     const cashAccount = get("SELECT * FROM cash_accounts WHERE id = ?", [body.cashAccountId]);

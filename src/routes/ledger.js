@@ -47,8 +47,12 @@ function rejectIfLinked(res, entry) {
 // the same WHERE this function already builds from query filters — the
 // account-ledger list, its daily summary, and both CSV/PDF exports all call
 // this one function, so gating it here covers every one of them at once.
-function queryLedger(query, allowed) {
+function queryLedger(query, allowed, user) {
   const clauses = [], params = [];
+  // ACCOUNT-LEVEL ACCESS round: entries of accounts this user has "No
+  // Access" to are left out of the list, daily summary and exports.
+  const hidden = user ? [...require("../account-access").hiddenIds(user)] : [];
+  if (hidden.length) { clauses.push(`l.client_id NOT IN (${hidden.map(() => "?").join(",")})`); params.push(...hidden); }
   if (allowed) { clauses.push(`l.currency IN (${allowed.map(() => "?").join(",") || "'__none__'"})`); params.push(...allowed); }
   if (query.type && ["deposit", "withdrawal"].includes(query.type)) { clauses.push("l.type = ?"); params.push(query.type); }
   if (query.currency && ["USD", "SLSH"].includes(query.currency)) { clauses.push("l.currency = ?"); params.push(query.currency); }
@@ -94,14 +98,14 @@ function register(router) {
   router.get("/api/account-ledger", (req, res, params, query) => {
     const user = requireAuth(req, res); if (!user) return;
     if (!canView(user)) return requirePerm(user, res, "accountsManage"); // sends the 403
-    sendJSON(res, 200, { entries: queryLedger(query, allowedCurrencies(user)) });
+    sendJSON(res, 200, { entries: queryLedger(query, allowedCurrencies(user), user) });
   });
 
   router.get("/api/account-ledger/daily", (req, res, params, query) => {
     const user = requireAuth(req, res); if (!user) return;
     if (!canView(user)) return requirePerm(user, res, "accountsManage");
     const date = query.date || todayStr();
-    const entries = queryLedger({}, allowedCurrencies(user)).filter((e) => e.date.slice(0, 10) === date);
+    const entries = queryLedger({}, allowedCurrencies(user), user).filter((e) => e.date.slice(0, 10) === date);
     const totals = { depositUSD: 0, depositSLSH: 0, withdrawalUSD: 0, withdrawalSLSH: 0 };
     for (const e of entries) {
       const key = `${e.type}${e.currency}`;
@@ -116,7 +120,7 @@ function register(router) {
   router.get("/api/account-ledger/export.csv", (req, res, params, query) => {
     const user = requireAuth(req, res); if (!user) return;
     if (!canView(user)) return requirePerm(user, res, "accountsManage");
-    const entries = queryLedger(query, allowedCurrencies(user));
+    const entries = queryLedger(query, allowedCurrencies(user), user);
     let totalDeposit = 0, totalWithdrawal = 0;
     const dataRows = entries.map((e) => {
       const isDeposit = e.type === "deposit";
@@ -143,7 +147,7 @@ function register(router) {
   router.get("/api/account-ledger/export.pdf", async (req, res, params, query) => {
     const user = requireAuth(req, res); if (!user) return;
     if (!canView(user)) return requirePerm(user, res, "accountsManage");
-    const entries = queryLedger(query, allowedCurrencies(user));
+    const entries = queryLedger(query, allowedCurrencies(user), user);
     let totalDeposit = 0, totalWithdrawal = 0;
     const dataRows = entries.map((e) => {
       const isDeposit = e.type === "deposit";
@@ -191,6 +195,7 @@ function register(router) {
       [params.id]
     );
     if (!row) return notFound(res, "Ledger entry not found.");
+    if (!require("../account-access").canView(user, row.client_id)) return notFound(res, "Ledger entry not found.");
     if (!requireCurrencyAccess(user, res, row.currency)) return;
     const entry = {
       id: row.id, type: row.type, currency: row.currency, amount: row.amount, balanceAfter: row.balance_after,
@@ -211,6 +216,7 @@ function register(router) {
     const entry = get("SELECT * FROM account_ledger WHERE id = ?", [params.id]);
     if (!entry) return notFound(res, "Ledger entry not found.");
     if (!requireCurrencyAccess(user, res, entry.currency)) return;
+    if (!require("../account-access").require(user, res, [{ accountId: entry.client_id, action: "manage" }])) return;
     if (rejectIfLinked(res, entry)) return;
     let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
     const amount = body.amount !== undefined ? toNumber(body.amount) : entry.amount;
@@ -284,6 +290,7 @@ function register(router) {
       return notFound(res, "Ledger entry not found.");
     }
     if (!requireCurrencyAccess(user, res, entry.currency)) return;
+    if (!require("../account-access").require(user, res, [{ accountId: entry.client_id, action: "manage" }])) return;
     if (rejectIfLinked(res, entry)) return;
     let body; try { body = await readJSONBody(req); } catch (e) { body = {}; }
     const newBalance = tx(() => {

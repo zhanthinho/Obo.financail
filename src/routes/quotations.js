@@ -1,4 +1,6 @@
 "use strict";
+// ACCOUNT-LEVEL ACCESS round — see src/account-access.js.
+const accountAccess = require("../account-access");
 const { isValidAmount, toNumber } = require("../util");
 const { all, get, run, tx } = require("../db");
 const { sendJSON, badRequest, notFound, sendCSV, sendPDF, sendXLSX, readJSONBody } = require("../http-helpers");
@@ -109,14 +111,25 @@ function requireQuotationRead(user, res) {
 }
 function quotationVisible(user, q) {
   const allowed = allowedCurrencies(user);
+  if (!accountAccess.canView(user, q.charged_account_id) || !accountAccess.canView(user, q.client_id)) return false;
   return !q.charged_currency || allowed.includes(q.charged_currency);
 }
+// The account a quotation is charged to (its customer otherwise).
+const quotationAccount = (q) => q.charged_account_id || q.client_id;
 function buildQuotationFilter(query, user) {
   const clauses = [], params = [];
   if (user) {
     const allowed = allowedCurrencies(user);
     if (allowed.length === 0) clauses.push("1 = 0");
     else if (allowed.length < 2) { clauses.push(`(q.charged_currency IS NULL OR q.charged_currency IN (${allowed.map(() => "?").join(",")}))`); params.push(...allowed); }
+  }
+  if (user) {
+    const hidden = [...accountAccess.hiddenIds(user)];
+    if (hidden.length) {
+      const ph = hidden.map(() => "?").join(",");
+      clauses.push(`(q.charged_account_id IS NULL OR q.charged_account_id NOT IN (${ph})) AND (q.client_id IS NULL OR q.client_id NOT IN (${ph}))`);
+      params.push(...hidden, ...hidden);
+    }
   }
   if (query.status && query.status !== "all") { clauses.push("q.status = ?"); params.push(query.status); }
   const search = query.search || query.client;
@@ -179,6 +192,8 @@ function createAndChargeQuotationInTx({ user, clientName, clientContact, clientA
   if (!targetAccountId) throw new QuotationChargeError("Choose an account to charge this quotation to.");
   const account = get("SELECT * FROM clients WHERE id = ?", [targetAccountId]);
   if (!account) throw new QuotationChargeError("The account to charge was not found.");
+  if (!accountAccess.canView(user, account.id)) throw new QuotationChargeError("The account to charge was not found.");
+  if (!accountAccess.can(user, account.id, "debit")) throw new QuotationChargeError("You do not have permission to create debits for this account.");
   if (account.deleted_at) throw new QuotationChargeError("The account to charge was not found.");
   if (account.status !== "active") throw new QuotationChargeError(`${account.name}'s account is deactivated — reactivate it before charging.`);
   // ACCOUNT / CLIENT SEARCH — CURRENCY SEPARATION (spec item 11): the
@@ -396,6 +411,7 @@ function register(router) {
     const user = requireAuth(req, res); if (!user) return;
     if (!requirePerm(user, res, "quotationsManage")) return;
     const existing = get("SELECT * FROM quotations WHERE id = ?", [params.id]);
+    if (existing && !accountAccess.require(user, res, [{ accountId: quotationAccount(existing), action: "manage" }])) return;
     if (!existing) return notFound(res, "Quotation not found.");
     let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
 
@@ -527,6 +543,7 @@ function register(router) {
     const user = requireAuth(req, res); if (!user) return;
     if (!requirePerm(user, res, "quotationsManage")) return;
     const q = get("SELECT * FROM quotations WHERE id = ?", [params.id]);
+    if (q && !accountAccess.require(user, res, [{ accountId: quotationAccount(q), action: "credit" }])) return;
     if (!q) return notFound(res, "Quotation not found.");
     let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
     try {
@@ -567,6 +584,7 @@ function register(router) {
     const user = requireAuth(req, res); if (!user) return;
     if (!requirePerm(user, res, "quotations.deletePayment")) return;
     const q = get("SELECT * FROM quotations WHERE id = ?", [params.id]);
+    if (q && !accountAccess.require(user, res, [{ accountId: quotationAccount(q), action: "manage" }])) return;
     if (!q) return notFound(res, "Quotation not found.");
     if (q.status === "Refunded") return badRequest(res, "This quotation has been refunded — its payment records can no longer be deleted.");
     const payment = get("SELECT * FROM quotation_payments WHERE id = ? AND quotation_id = ?", [params.paymentId, q.id]);
@@ -612,6 +630,7 @@ function register(router) {
     const user = requireAuth(req, res); if (!user) return;
     if (!requirePerm(user, res, "quotationsManage")) return;
     const q = get("SELECT * FROM quotations WHERE id = ?", [params.id]);
+    if (q && !accountAccess.require(user, res, [{ accountId: quotationAccount(q), action: "credit" }])) return;
     if (!q) return notFound(res, "Quotation not found.");
     const before = quotationPaymentSummary(q, loadPayments(q.id));
     if (before.remaining <= 0) return badRequest(res, "This quotation has no remaining balance to pay.");
@@ -640,6 +659,7 @@ function register(router) {
     const user = requireAuth(req, res); if (!user) return;
     if (!requirePerm(user, res, "quotationsManage")) return;
     const q = get("SELECT * FROM quotations WHERE id = ?", [params.id]);
+    if (q && !accountAccess.require(user, res, [{ accountId: quotationAccount(q), action: "manage" }])) return;
     if (!q) return notFound(res, "Quotation not found.");
     if (q.status === "Refunded") return badRequest(res, "This quotation has already been refunded — it cannot be refunded twice.");
     // Reverse only what's still OUTSTANDING (charged_amount minus whatever
@@ -701,6 +721,7 @@ function register(router) {
     if (!requirePerm(user, res, "quotationsManage")) return;
     if (!requirePerm(user, res, "quotationsDelete")) return;
     const q = get("SELECT * FROM quotations WHERE id = ?", [params.id]);
+    if (q && !accountAccess.require(user, res, [{ accountId: quotationAccount(q), action: "manage" }])) return;
     if (!q) return notFound(res, "Quotation not found.");
     let body = {}; try { body = await readJSONBody(req); } catch (e) { /* reason is optional */ }
     const account = q.charged_account_id ? get("SELECT id, name FROM clients WHERE id = ?", [q.charged_account_id]) : null;
@@ -724,7 +745,7 @@ function register(router) {
     const user = requireAuth(req, res); if (!user) return;
     if (!requirePerm(user, res, "quotationsManage")) return;
     const src = get("SELECT * FROM quotations WHERE id = ?", [params.id]);
-    if (!src) return notFound(res, "Quotation not found.");
+    if (!src || !quotationVisible(user, src)) return notFound(res, "Quotation not found.");
     let body = {}; try { body = await readJSONBody(req); } catch (e) { /* accountId is optional */ }
     const items = loadItems(src.id).map((it) => ({ description: it.description, qty: it.qty, unitPrice: it.unit_price, currency: it.currency, extraFields: parseExtra(it.extra_fields) }));
     try {

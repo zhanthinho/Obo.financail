@@ -1,4 +1,6 @@
 "use strict";
+// ACCOUNT-LEVEL ACCESS round — see src/account-access.js.
+const accountAccess = require("../account-access");
 const { isValidAmount, toNumber, moneyExceeds } = require("../util");
 const { all, get, run, tx } = require("../db");
 const { sendJSON, badRequest, notFound, readJSONBody, sendPDF } = require("../http-helpers");
@@ -50,7 +52,7 @@ function register(router) {
     const where = clauses.length ? "WHERE " + clauses.join(" AND ") : "";
     const rows = all(`SELECT * FROM transfers ${where} ORDER BY date DESC, created_at DESC, id DESC`, sqlParams);
     newestFirst(rows);
-    sendJSON(res, 200, { transfers: rows.map(rowToJSON) });
+    sendJSON(res, 200, { transfers: accountAccess.filterRows(user, rows, (t) => [t.from_account_id, t.to_account_id]).map(rowToJSON) });
   });
 
   // New "Transfer Receipt" document — Transfers had zero export/PDF
@@ -59,6 +61,7 @@ function register(router) {
     const user = requireAuth(req, res); if (!user) return;
     const row = get("SELECT * FROM transfers WHERE id = ?", [params.id]);
     if (!row) return notFound(res, "Transfer not found.");
+    if (!accountAccess.canView(user, row.from_account_id) || !accountAccess.canView(user, row.to_account_id)) return notFound(res, "Transfer not found.");
     if (!requireCurrencyAccess(user, res, row.currency)) return;
     const t = rowToJSON(row);
     const pdf = await renderTransferReceiptPDF({
@@ -86,6 +89,8 @@ function register(router) {
     if (toAccount.status !== "active") return badRequest(res, `${toAccount.name}'s account is deactivated — reactivate it before transferring into it.`);
     if (!requireCurrencyAccess(user, res, fromAccount.currency)) return;
     if (!requireCurrencyAccess(user, res, toAccount.currency)) return;
+    // Source is debited, destination credited — each checked on its own.
+    if (!accountAccess.require(user, res, [{ accountId: fromAccount.id, action: "debit" }, { accountId: toAccount.id, action: "credit" }])) return;
     // A Transfer is same-currency by definition — moving between USD and
     // SLSH is an Exchange instead.
     if (fromAccount.currency !== toAccount.currency) {
@@ -150,8 +155,9 @@ function register(router) {
   router.delete("/api/transfers/:id", async (req, res, params) => {
     const user = requireAuth(req, res); if (!user) return;
     if (!requirePerm(user, res, "transferDelete")) return;
-    const existing = get("SELECT currency FROM transfers WHERE id = ?", [params.id]);
+    const existing = get("SELECT currency, from_account_id, to_account_id FROM transfers WHERE id = ?", [params.id]);
     if (existing && !requireCurrencyAccess(user, res, existing.currency)) return;
+    if (existing && !accountAccess.require(user, res, [{ accountId: existing.from_account_id, action: "manage" }, { accountId: existing.to_account_id, action: "manage" }])) return;
     let body = {}; try { body = await readJSONBody(req); } catch (e) { /* optional reason */ }
 
     let deleted;
@@ -201,8 +207,9 @@ function register(router) {
   router.patch("/api/transfers/:id", async (req, res, params) => {
     const user = requireAuth(req, res); if (!user) return;
     if (!requirePerm(user, res, "transferUpdate")) return;
-    const existingTransfer = get("SELECT currency FROM transfers WHERE id = ?", [params.id]);
+    const existingTransfer = get("SELECT currency, from_account_id, to_account_id FROM transfers WHERE id = ?", [params.id]);
     if (existingTransfer && !requireCurrencyAccess(user, res, existingTransfer.currency)) return;
+    if (existingTransfer && !accountAccess.require(user, res, [{ accountId: existingTransfer.from_account_id, action: "manage" }, { accountId: existingTransfer.to_account_id, action: "manage" }])) return;
     let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
     const amount = toNumber(body.amount);
     if (!body.fromAccountId || !body.toAccountId) return badRequest(res, "Both a source and a destination account are required.");
@@ -215,6 +222,7 @@ function register(router) {
     if (!newToAccount) return notFound(res, "Destination account not found.");
     if (!requireCurrencyAccess(user, res, newFromAccount.currency)) return;
     if (!requireCurrencyAccess(user, res, newToAccount.currency)) return;
+    if (!accountAccess.require(user, res, [{ accountId: newFromAccount.id, action: "manage" }, { accountId: newToAccount.id, action: "manage" }])) return;
     if (newFromAccount.status !== "active") return badRequest(res, `${newFromAccount.name}'s account is deactivated — reactivate it before transferring from it.`);
     if (newToAccount.status !== "active") return badRequest(res, `${newToAccount.name}'s account is deactivated — reactivate it before transferring into it.`);
     if (newFromAccount.currency !== newToAccount.currency) {

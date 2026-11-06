@@ -304,6 +304,7 @@ function register(router) {
       tx(() => {
         run("UPDATE users SET role_id = ?, permissions_version = permissions_version + 1 WHERE role_id = ?", [target.id, role.id]);
         run("DELETE FROM role_permissions WHERE role_id = ?", [role.id]);
+        run("DELETE FROM role_account_access WHERE role_id = ?", [role.id]); // ACCOUNT-LEVEL ACCESS round
         run("DELETE FROM roles WHERE id = ?", [role.id]);
       });
       addAudit(user, "Role deleted (users reassigned)", `${role.name} -> ${affected.length} user(s) moved to ${target.name}`);
@@ -311,6 +312,7 @@ function register(router) {
     }
     tx(() => {
       run("DELETE FROM role_permissions WHERE role_id = ?", [role.id]);
+      run("DELETE FROM role_account_access WHERE role_id = ?", [role.id]); // ACCOUNT-LEVEL ACCESS round
       run("DELETE FROM roles WHERE id = ?", [role.id]);
     });
     addAudit(user, "Role deleted", role.name);

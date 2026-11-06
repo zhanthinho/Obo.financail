@@ -2446,5 +2446,22 @@
  "USD Account": "Akoonka USD",
  "SLSH Account": "Akoonka SLSH",
  "Loading customer profiles…": "Astaamaha macaamiisha waa la soo rarayaa…",
- "Loading customer profile…": "Astaanta macmiilka waa la soo rarayaa…"
+ "Loading customer profile…": "Astaanta macmiilka waa la soo rarayaa…",
+ "Account Access": "Gelitaanka Akoonnada",
+ "Full Access": "Gelitaan Buuxa",
+ "View Only": "Eegis Kaliya",
+ "View + Credit Only": "Eegis + Credit Kaliya",
+ "View + Debit Only": "Eegis + Debit Kaliya",
+ "No Access": "Gelitaan Ma Leh",
+ "Access permission": "Ogolaanshaha gelitaanka",
+ "From role": "Ka yimid role-ka",
+ "Effective": "Dhaqan-gal",
+ "Only restricted": "Kuwa la xaddiday kaliya",
+ "Set Full Access": "Sii Gelitaan Buuxa",
+ "Set View Only": "Sii Eegis Kaliya",
+ "Set No Access": "Ka qaad gelitaanka",
+ "Remove access": "Ka qaad gelitaanka",
+ "Go back": "Dib u noqo",
+ "You do not have permission to create transactions for this account.": "Uma lihid ogolaansho aad dhaqdhaqaaq ugu sameyso akoonkan.",
+ "No accounts match.": "Akoon ku habboon lama helin."
 }

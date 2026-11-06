@@ -19,6 +19,8 @@ const { accountBasic: cashAccountBasic, validatePaymentCashAccount, hasActiveCas
 const accountImport = require("../account-import");
 // CROSS-CURRENCY CUSTOMER LINKING round — see src/customers.js.
 const customers = require("../customers");
+// ACCOUNT-LEVEL ACCESS round — see src/account-access.js.
+const accountAccess = require("../account-access");
 
 // The one real, pre-existing "opening balance" record for an account: the
 // single account_ledger row POST /api/accounts inserts at creation time
@@ -67,6 +69,9 @@ function buildAccountsFilter(user, query) {
   if (allowed.length === 0) return null;
   const clauses = ["status = 'active'", "deleted_at IS NULL"], sqlParams = [];
   if (allowed.length < 2) { clauses.push("currency = ?"); sqlParams.push(allowed[0]); }
+  // Accounts this user has "No Access" to are never listed or exported.
+  const hidden = [...accountAccess.hiddenIds(user)];
+  if (hidden.length) { clauses.push(`id NOT IN (${hidden.map(() => "?").join(",")})`); sqlParams.push(...hidden); }
   if (query.currency && ["USD", "SLSH"].includes(query.currency)) { clauses.push("currency = ?"); sqlParams.push(query.currency); }
   if (query.type && ["customer", "company"].includes(query.type)) { clauses.push("account_type = ?"); sqlParams.push(query.type); }
   if (query.from) { clauses.push("date(created_at) >= date(?)"); sqlParams.push(query.from); }
@@ -115,13 +120,19 @@ function serialize(c) {
     reactivatedAt: c.reactivated_at, reactivatedBy: c.reactivated_by,
   };
 }
+// ACCOUNT-LEVEL ACCESS round: each listed account carries this user's access
+// level, so screens can hide Credit / Debit where the account doesn't allow it.
+function withAccess(user, list) {
+  if (accountAccess.isUnrestricted(user)) return list;
+  return list.map((a) => ({ ...a, access: accountAccess.describe(user, a.id) }));
+}
 function customerSummary(user, c) {
   if (!c.customer_id) return null;
   const cu = get("SELECT * FROM customers WHERE id = ?", [c.customer_id]);
   if (!cu) return null;
   const allowed = allowedCurrencies(user);
   const linked = customers.linkedAccounts(cu.id);
-  const visible = linked.filter((a) => allowed.includes(a.currency));
+  const visible = linked.filter((a) => allowed.includes(a.currency) && accountAccess.canView(user, a.id));
   return {
     id: cu.id, customerNumber: cu.customer_number, name: cu.name,
     accounts: visible.map((a) => ({ id: a.id, accountNumber: a.account_number, name: a.name, currency: a.currency, balance: a.currency === "USD" ? a.balance_usd : a.balance_slsh, status: a.status || "active", current: a.id === c.id })),
@@ -238,6 +249,9 @@ function register(router) {
     if (allowed.length === 0) return sendJSON(res, 200, { accounts: [] });
     const clauses = ["status = 'active'", "deleted_at IS NULL"], sqlParams = [];
     if (allowed.length < 2) { clauses.push("currency = ?"); sqlParams.push(allowed[0]); }
+    // ACCOUNT-LEVEL ACCESS round: "No Access" accounts are never listed,
+    // searched or offered in a picker.
+    { const hidden = [...accountAccess.hiddenIds(user)]; if (hidden.length) { clauses.push(`id NOT IN (${hidden.map(() => "?").join(",")})`); sqlParams.push(...hidden); } }
     if (query.currency && ["USD", "SLSH"].includes(query.currency)) { clauses.push("currency = ?"); sqlParams.push(query.currency); }
     if (query.type && ["customer", "company"].includes(query.type)) { clauses.push("account_type = ?"); sqlParams.push(query.type); }
     if (query.from) { clauses.push("date(created_at) >= date(?)"); sqlParams.push(query.from); }
@@ -268,11 +282,11 @@ function register(router) {
       END), name ASC`;
       sqlParams.push(query.search, query.search, `${query.search}%`);
       const rows = all(`SELECT * FROM clients ${where} ORDER BY ${orderBy}`, sqlParams);
-      return sendJSON(res, 200, { accounts: rows.map(serialize) });
+      return sendJSON(res, 200, { accounts: withAccess(user, rows.map(serialize)) });
     }
     const rows = all(`SELECT * FROM clients ${where} ORDER BY ${orderBy}`, sqlParams);
-    if (query.withTotals === "1") return sendJSON(res, 200, withLedgerTotals(rows, allowed, query.currency));
-    sendJSON(res, 200, { accounts: rows.map(serialize) });
+    if (query.withTotals === "1") { const out = withLedgerTotals(rows, allowed, query.currency); out.accounts = withAccess(user, out.accounts); return sendJSON(res, 200, out); }
+    sendJSON(res, 200, { accounts: withAccess(user, rows.map(serialize)) });
   });
 
   // Registered before the generic "/:id" route below, since the router
@@ -285,7 +299,7 @@ function register(router) {
     if (allowed.length === 0) return sendJSON(res, 200, { accounts: [] });
     const clauses = ["status = 'deactivated'", "deleted_at IS NULL"], sqlParams = [];
     if (allowed.length < 2) { clauses.push("currency = ?"); sqlParams.push(allowed[0]); }
-    const rows = all(`SELECT * FROM clients WHERE ${clauses.join(" AND ")} ORDER BY deactivated_at DESC`, sqlParams);
+    const rows = accountAccess.filterRows(user, all(`SELECT * FROM clients WHERE ${clauses.join(" AND ")} ORDER BY deactivated_at DESC`, sqlParams), (r) => [r.id]);
     sendJSON(res, 200, { accounts: rows.map(serialize) });
   });
 
@@ -423,7 +437,7 @@ function register(router) {
     if (!requirePerm(user, res, "accounts.export")) return;
     const allowed = allowedCurrencies(user);
     const rows = allowed.length
-      ? all(`SELECT * FROM clients WHERE deleted_at IS NULL AND currency IN (${allowed.map(() => "?").join(",")}) ORDER BY account_number ASC`, allowed)
+      ? accountAccess.filterRows(user, all(`SELECT * FROM clients WHERE deleted_at IS NULL AND currency IN (${allowed.map(() => "?").join(",")}) ORDER BY account_number ASC`, allowed), (r) => [r.id])
       : [];
     const xlsx = await buildProfessionalWorkbook({
       company: getCompanySettings(),
@@ -596,6 +610,11 @@ function register(router) {
           // ever move here (spec section 11, Balance Safety) — currency,
           // balance_usd, balance_slsh, and account_number are never touched.
           const existing = get("SELECT * FROM clients WHERE id = ?", [row.existingAccount.id]);
+          if (!accountAccess.can(user, existing.id, "manage")) {
+            errorCount += 1;
+            report.push({ row: row.rowNumber, accountNumber: accountAccess.canView(user, existing.id) ? existing.account_number : null, accountName: row.name, result: "Error", reason: "You do not have permission to change this account — left unchanged." });
+            continue;
+          }
           run(
             "UPDATE clients SET name=?, account_type=?, contact=?, email=?, notes=? WHERE id=?",
             [row.name || existing.name, row.accountType || existing.account_type, row.phone || existing.contact, row.email || existing.email, row.notes || existing.notes, existing.id]
@@ -707,6 +726,7 @@ function register(router) {
     const user = requireAuth(req, res); if (!user) return;
     const c = get("SELECT * FROM clients WHERE id = ?", [params.id]);
     if (!c) return notFound(res, "Account not found.");
+    if (!accountAccess.require(user, res, [{ accountId: c.id, action: "view" }])) return;
     // A direct URL/API hit on an account whose currency this user isn't
     // permitted to see must be denied server-side, not just hidden from the
     // list above (spec item 16's explicit "USD-only user hits an SLSH
@@ -873,6 +893,9 @@ function register(router) {
       // belongs to and its other currency accounts (only currencies this
       // user may see; each balance stays in its own currency).
       customer: customerSummary(user, c),
+      // ACCOUNT-LEVEL ACCESS round: what this user may do on THIS account
+      // (the role permissions still apply on top).
+      access: accountAccess.describe(user, c.id),
       summary: {
         totalDeposited, totalWithdrawn, netMovement: totalDeposited - totalWithdrawn, entryCount: agg.n || 0, turnover: totalDeposited + totalWithdrawn,
         totalCharges, totalExchanges, totalTransfers, availableBalance: c.currency === "USD" ? c.balance_usd : c.balance_slsh,
@@ -952,6 +975,7 @@ function register(router) {
     const existing = get("SELECT * FROM clients WHERE id = ?", [params.id]);
     if (!existing) return notFound(res, "Account not found.");
     if (!requireCurrencyAccess(user, res, existing.currency)) return;
+    if (!accountAccess.require(user, res, [{ accountId: existing.id, action: "manage" }])) return;
     let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
     { const why = badTextField(body); if (why) return badRequest(res, why); }
     const accountType = body.accountType !== undefined ? (body.accountType === "company" ? "company" : "customer") : existing.account_type;
@@ -1024,6 +1048,7 @@ function register(router) {
       const c = get("SELECT * FROM clients WHERE id = ?", [params.id]);
       if (!c) return notFound(res, "Account not found.");
       if (!requireCurrencyAccess(user, res, c.currency)) return;
+      if (!accountAccess.require(user, res, [{ accountId: c.id, action: type === "withdrawal" ? "debit" : "credit" }])) return;
       if (c.status !== "active") return badRequest(res, "This account is deactivated — reactivate it before making new transactions.");
       let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
       // MARK AS PAID round: validation and posting now live in src/payments.js,
@@ -1086,8 +1111,9 @@ function register(router) {
       const type = ["withdraw", "withdrawal", "debit"].includes(item.type) ? "withdrawal" : ["deposit", "credit"].includes(item.type) ? "deposit" : null;
       if (!type) { itemErrors.push({ index, error: "Transaction type must be credit or debit." }); continue; }
       const c = item.accountId ? get("SELECT * FROM clients WHERE id = ?", [item.accountId]) : null;
-      if (!c) { itemErrors.push({ index, error: "Account not found." }); continue; }
+      if (!c || !accountAccess.canView(user, c.id)) { itemErrors.push({ index, error: "Account not found." }); continue; }
       if (!hasCurrencyAccess(user, c.currency)) { itemErrors.push({ index, error: `Your role does not have access to ${c.currency} accounts.` }); continue; }
+      if (!accountAccess.can(user, c.id, type === "withdrawal" ? "debit" : "credit")) { itemErrors.push({ index, error: `You do not have permission to create ${type === "withdrawal" ? "debits" : "credits"} for ${c.account_number}.` }); continue; }
       if (c.status !== "active") { itemErrors.push({ index, error: `${c.account_number} is deactivated — reactivate it before making new transactions.` }); continue; }
       const amount = toNumber(item.amount);
       const currency = c.currency;
@@ -1146,6 +1172,7 @@ function register(router) {
     if (!c) return notFound(res, "Account not found.");
     if (c.deleted_at) return notFound(res, "Account not found.");
     if (!requireCurrencyAccess(user, res, c.currency)) return;
+    if (!accountAccess.require(user, res, [{ accountId: c.id, action: "manage" }])) return;
     if (c.status === "deactivated") return badRequest(res, "This account is already deactivated.");
     let body = {}; try { body = await readJSONBody(req); } catch (e) { /* reason is optional */ }
     const reason = (body && body.reason) || null;
@@ -1167,6 +1194,7 @@ function register(router) {
     if (!c) return notFound(res, "Account not found.");
     if (c.deleted_at) return notFound(res, "Account not found.");
     if (!requireCurrencyAccess(user, res, c.currency)) return;
+    if (!accountAccess.require(user, res, [{ accountId: c.id, action: "manage" }])) return;
     if (c.status !== "deactivated") return badRequest(res, "This account is not deactivated.");
     run(
       "UPDATE clients SET status = 'active', reactivated_at = ?, reactivated_by = ? WHERE id = ?",
@@ -1204,6 +1232,7 @@ function register(router) {
     const c = get("SELECT * FROM clients WHERE id = ?", [params.id]);
     if (!c || c.deleted_at) return notFound(res, "Account not found.");
     if (!requireCurrencyAccess(user, res, c.currency)) return;
+    if (!accountAccess.require(user, res, [{ accountId: c.id, action: "manage" }])) return;
     if (c.status !== "deactivated") return badRequest(res, "Only a deactivated account can be permanently deleted. Deactivate it first.");
     let body = {}; try { body = await readJSONBody(req); } catch (e) { /* confirmation text optional */ }
     // Normalize curly/smart quote variants the same way the frontend's

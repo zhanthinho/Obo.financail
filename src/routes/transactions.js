@@ -1,4 +1,6 @@
 "use strict";
+// ACCOUNT-LEVEL ACCESS round — see src/account-access.js.
+const accountAccess = require("../account-access");
 const payments = require("../payments");
 const fundAlloc = require("../fund-allocation");
 const { isValidAmount, MAX_AMOUNT, toNumber } = require("../util");
@@ -134,7 +136,14 @@ function queryTransactions(user, query) {
     params.push(query.currency);
   }
   const where = clauses.length ? "WHERE " + clauses.join(" AND ") : "";
-  return all(`SELECT * FROM exchange_transactions ${where} ORDER BY date DESC, id DESC`, params);
+  // Exchanges on an account this user has "No Access" to are left out.
+  return accountAccess.filterRows(user, all(`SELECT * FROM exchange_transactions ${where} ORDER BY date DESC, id DESC`, params), (t) => [t.client_id, t.from_account_id, t.to_account_id]);
+}
+// Refuses unless the user may change every account an existing exchange touches.
+function requireManageExchange(user, res, id) {
+  const t = get("SELECT client_id, from_account_id, to_account_id FROM exchange_transactions WHERE id = ?", [id]);
+  if (!t) return true; // the route answers "not found" itself
+  return accountAccess.require(user, res, [...new Set([t.client_id, t.from_account_id, t.to_account_id].filter(Boolean))].map((a) => ({ accountId: a, action: "manage" })));
 }
 
 function register(router) {
@@ -167,6 +176,7 @@ function register(router) {
     const account = query.accountId ? get("SELECT * FROM clients WHERE id = ?", [String(query.accountId)]) : null;
     if (!account || account.deleted_at) return notFound(res, "Account not found.");
     if (!requireCurrencyAccess(user, res, account.currency)) return;
+    if (!accountAccess.require(user, res, [{ accountId: account.id, action: "debit" }])) return;
     sendJSON(res, 200, fundAlloc.listAvailable(account, query));
   });
 
@@ -250,6 +260,10 @@ function register(router) {
       }
     }
 
+    // ACCOUNT-LEVEL ACCESS round: the From Account is debited and the
+    // Receiving Account credited — each checked on its own.
+    if (!accountAccess.require(user, res, [fromAccount && { accountId: fromAccount.id, action: "debit" }, toAccount && { accountId: toAccount.id, action: "credit" }])) return;
+
     // CUSTOMER TRANSACTION SELECTOR round: credits picked in View
     // Transactions. Only with a From Account (they're that account's own
     // credits); amounts and availability are checked again inside the save.
@@ -274,6 +288,8 @@ function register(router) {
       if (!fromAccount) return badRequest(res, "Mark as Paid needs a From Account — the Credit is recorded on the account the money comes from.");
       if (fundSelections) return badRequest(res, "An exchange paid now can't also be paid from earlier transactions — choose one.");
       if (!requirePerm(user, res, "accountsManage")) return;
+      // The payment is a Credit on the From Account.
+      if (!accountAccess.require(user, res, [{ accountId: fromAccount.id, action: "credit" }])) return;
       const p = body.payment && typeof body.payment === "object" && !Array.isArray(body.payment) ? body.payment : {};
       const prepared = payments.preparePayment({
         account: fromAccount, type: "deposit", amount: given, currency: currencyGiven,
@@ -386,6 +402,7 @@ function register(router) {
     if (allowedCurrencies(user).length < 2) {
       return sendJSON(res, 403, { error: "You need access to both USD and SLSH accounts to delete a currency exchange." });
     }
+    if (!requireManageExchange(user, res, params.id)) return;
     let body = {}; try { body = await readJSONBody(req); } catch (e) { /* an optional reason may be sent; no body at all is fine too */ }
 
     let deleted;
@@ -468,6 +485,7 @@ function register(router) {
     if (allowedCurrencies(user).length < 2) {
       return sendJSON(res, 403, { error: "You need access to both USD and SLSH accounts to edit a currency exchange." });
     }
+    if (!requireManageExchange(user, res, params.id)) return;
     let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
 
     const given = toNumber(body.amountGiven);
@@ -526,6 +544,7 @@ function register(router) {
         return badRequest(res, `${newToAccount.name}'s account is ${newToAccount.currency} — "Currency received" must match it.`);
       }
     }
+    if (!accountAccess.require(user, res, [newFromAccount && { accountId: newFromAccount.id, action: "manage" }, newToAccount && { accountId: newToAccount.id, action: "manage" }])) return;
 
     // EXCHANGE WORKSPACE round: same optional Cash in Hand validation as
     // create — an edit can re-point Cash Out/Cash In to different accounts
@@ -720,6 +739,7 @@ function register(router) {
     const row = get("SELECT * FROM exchange_transactions WHERE id = ?", [params.id]);
     if (!row) return notFound(res, "Transaction not found.");
     if (!can(user, "exchangeAll") && row.staff_id !== user.id) return notFound(res, "Transaction not found.");
+    if (![row.client_id, row.from_account_id, row.to_account_id].every((a) => !a || accountAccess.canView(user, a))) return notFound(res, "Transaction not found.");
     const canViewProfit = can(user, "profit.viewExchange");
     const tx = rowToJSON(row, canViewProfit);
     const pdf = await renderExchangeReceiptPDF({
@@ -735,6 +755,7 @@ function register(router) {
     const row = get("SELECT * FROM exchange_transactions WHERE id = ?", [params.id]);
     if (!row) return notFound(res, "Transaction not found.");
     if (!can(user, "exchangeAll") && row.staff_id !== user.id) return notFound(res, "Transaction not found.");
+    if (![row.client_id, row.from_account_id, row.to_account_id].every((a) => !a || accountAccess.canView(user, a))) return notFound(res, "Transaction not found.");
     const canViewProfit = can(user, "profit.viewExchange");
     const tx = rowToJSON(row, canViewProfit);
     const xlsx = await buildExchangeReceiptWorkbook({

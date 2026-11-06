@@ -112,38 +112,43 @@ function enumerateBuckets(from, to, unit) {
 // (drill-down: spec item 18) and, where relevant, the currency filter
 // (spec item 2 — "If Currency = USD, only USD financial data").
 // ---------------------------------------------------------------------
+// ACCOUNT-LEVEL ACCESS round: accounts the signed-in user has "No Access" to
+// are left out of every figure, chart and list below. Set at the start of
+// each (synchronous) buildDashboard() call.
+let HIDDEN = new Set();
+const visible = (...ids) => !ids.some((id) => id && HIDDEN.has(id));
 function ledgerRows(from, to, currency, accountId) {
   const clauses = ["date(l.date) >= date(?)", "date(l.date) <= date(?)", "c.deleted_at IS NULL"];
   const params = [from, to];
   if (currency) { clauses.push("l.currency = ?"); params.push(currency); }
   if (accountId) { clauses.push("l.client_id = ?"); params.push(accountId); }
-  return all(`SELECT l.* FROM account_ledger l JOIN clients c ON c.id = l.client_id WHERE ${clauses.join(" AND ")} ORDER BY l.date ASC`, params);
+  return all(`SELECT l.* FROM account_ledger l JOIN clients c ON c.id = l.client_id WHERE ${clauses.join(" AND ")} ORDER BY l.date ASC`, params).filter((l) => visible(l.client_id));
 }
 function allTimeLedgerRows(currency, accountId) {
   const clauses = ["c.deleted_at IS NULL"];
   const params = [];
   if (currency) { clauses.push("l.currency = ?"); params.push(currency); }
   if (accountId) { clauses.push("l.client_id = ?"); params.push(accountId); }
-  return all(`SELECT l.date, l.type, l.amount FROM account_ledger l JOIN clients c ON c.id = l.client_id WHERE ${clauses.join(" AND ")} ORDER BY l.date ASC`, params);
+  return all(`SELECT l.date, l.type, l.amount, l.client_id FROM account_ledger l JOIN clients c ON c.id = l.client_id WHERE ${clauses.join(" AND ")} ORDER BY l.date ASC`, params).filter((l) => visible(l.client_id));
 }
 function exchangeRows(from, to, accountId) {
   const clauses = ["status = 'active'", "date(date) >= date(?)", "date(date) <= date(?)"];
   const params = [from, to];
   if (accountId) { clauses.push("(client_id = ? OR from_account_id = ? OR to_account_id = ?)"); params.push(accountId, accountId, accountId); }
-  return all(`SELECT * FROM exchange_transactions WHERE ${clauses.join(" AND ")} ORDER BY date DESC, id DESC`, params);
+  return all(`SELECT * FROM exchange_transactions WHERE ${clauses.join(" AND ")} ORDER BY date DESC, id DESC`, params).filter((t) => visible(t.client_id, t.from_account_id, t.to_account_id));
 }
 function transferRows(from, to, accountId) {
   const clauses = ["status = 'active'", "date(date) >= date(?)", "date(date) <= date(?)"];
   const params = [from, to];
   if (accountId) { clauses.push("(from_account_id = ? OR to_account_id = ?)"); params.push(accountId, accountId); }
-  return all(`SELECT * FROM transfers WHERE ${clauses.join(" AND ")} ORDER BY date DESC, created_at DESC, id DESC`, params);
+  return all(`SELECT * FROM transfers WHERE ${clauses.join(" AND ")} ORDER BY date DESC, created_at DESC, id DESC`, params).filter((t) => visible(t.from_account_id, t.to_account_id));
 }
 function quotationRows(from, to, status, accountId) {
   const clauses = ["date(created_at) >= date(?)", "date(created_at) <= date(?)"];
   const params = [from, to];
   if (status) { clauses.push("status = ?"); params.push(status); }
   if (accountId) { clauses.push("charged_account_id = ?"); params.push(accountId); }
-  return all(`SELECT * FROM quotations WHERE ${clauses.join(" AND ")} ORDER BY created_at DESC`, params);
+  return all(`SELECT * FROM quotations WHERE ${clauses.join(" AND ")} ORDER BY created_at DESC`, params).filter((q) => visible(q.charged_account_id, q.client_id));
 }
 
 function sumByCurrency(rows, currencyField, amountField, predicate) {
@@ -203,9 +208,11 @@ function bucketedSeries(rows, dateField, unit, buckets, reducer) {
 // Main aggregation
 // ---------------------------------------------------------------------
 function buildDashboard(user, query) {
+  HIDDEN = require("../account-access").hiddenIds(user);
   const { range, from, to } = resolveDateRange(query.range, query.from, query.to);
   const currencyFilter = query.currency === "USD" || query.currency === "SLSH" ? query.currency : null;
-  const accountId = query.accountId || null;
+  // A hidden account can't be drilled into: it shows as an empty account.
+  const accountId = query.accountId ? (HIDDEN.has(String(query.accountId)) ? "__no_access__" : query.accountId) : null;
   const statusFilter = query.status && ["Pending", "Paid", "Refunded"].includes(query.status) ? query.status : null;
   const unit = pickBucketUnit(from, to, query.bucket);
   const buckets = enumerateBuckets(from, to, unit);
@@ -228,7 +235,7 @@ function buildDashboard(user, query) {
   // --- point-in-time (NOT date-filtered): current balances, account counts ---
   const clientClauses = ["deleted_at IS NULL"]; const clientParams = [];
   if (accountId) { clientClauses.push("id = ?"); clientParams.push(accountId); }
-  const clients = all(`SELECT id, name, account_number, currency, status, balance_usd, balance_slsh FROM clients WHERE ${clientClauses.join(" AND ")}`, clientParams);
+  const clients = all(`SELECT id, name, account_number, currency, status, balance_usd, balance_slsh FROM clients WHERE ${clientClauses.join(" AND ")}`, clientParams).filter((c) => visible(c.id));
   const usdAccounts = clients.filter((c) => c.currency === "USD");
   const slshAccounts = clients.filter((c) => c.currency === "SLSH");
   payload.accountOverview = accountId ? null : {

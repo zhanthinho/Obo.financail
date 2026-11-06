@@ -163,6 +163,8 @@ function clearCategory(key) {
       d.account_imports = run("DELETE FROM account_imports").changes;
       d.clients = run("DELETE FROM clients").changes;
       // Customer profiles only group these accounts — they go with them.
+      d.user_account_access = run("DELETE FROM user_account_access").changes;
+      d.role_account_access = run("DELETE FROM role_account_access").changes;
       d.customer_link_reviews = run("DELETE FROM customer_link_reviews").changes;
       d.customers = run("DELETE FROM customers").changes;
       break;
