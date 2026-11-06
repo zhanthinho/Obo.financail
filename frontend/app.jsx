@@ -12262,7 +12262,7 @@ function BulkTransactionWorkspace({ currency, call, notify, user, onBack }) {
   const searchSeq = useRef(0);
   const searchTerm = query.trim();
   useEffect(() => {
-    if (selected) { setResults([]); setResultsFor(null); return; }
+    if (selected || !searchTerm) { ++searchSeq.current; setResults([]); setResultsFor(selected ? null : ""); setSearching(false); return; }
     const seq = ++searchSeq.current;
     setSearching(true);
     const t = setTimeout(() => {
@@ -12429,8 +12429,8 @@ function BulkTransactionWorkspace({ currency, call, notify, user, onBack }) {
               <AccountSearchPanel label={`Search for ${currency === "USD" ? "a" : "an"} ${currency} account`} ariaLabel={`Search for a ${currency} account`} value={query} onChange={setQuery} inputId="bulk-acct-search">
                 <div className="gk-bulk-search-results gk-acard-list" role="listbox" aria-label="Matching accounts" style={{ marginTop: 6, maxHeight: 300, overflowY: "auto", paddingRight: 2 }}>
                   {shownResults.length === 0 && (searching && resultsFor !== searchTerm
-                    ? <div className="gk-bulk-search-note">Searching…</div>
-                    : <div className="gk-acombo-empty">{searchTerm ? "No matching accounts found." : `No ${currency} accounts found.`}</div>)}
+                    ? <div className="gk-bulk-search-note gk-acombo-empty is-loading"><NavIcon name="loaderCircle" size={16} className="gk-spin" />Searching…</div>
+                    : <div className="gk-acombo-empty">{searchTerm ? <><NavIcon name="searchX" size={16} />No matching accounts found</> : <><NavIcon name="search" size={16} />Type a name, account number, or phone number to find an account.</>}</div>)}
                   {shownResults.map((a) => <AccountResultCard key={a.id} a={{ ...a, currency: a.currency || currency }} term={searchTerm} onClick={() => setSelected(a)} />)}
                 </div>
               </AccountSearchPanel>

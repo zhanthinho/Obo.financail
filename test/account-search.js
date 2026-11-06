@@ -111,7 +111,7 @@ async function run() {
       assert(await panel.locator(".gk-asearch-label svg").count() === 1 && await panel.locator(".gk-asearch-box svg.gk-asearch-icon").count() === 1, "icons");
       assert((await box.getAttribute("placeholder")) === "Search by name, account number, or phone...", await box.getAttribute("placeholder"));
       assert(parseFloat(await style(box, "height")) >= 42, "input height");
-      assert(/Type to search — leave blank to see all\./.test(await panel.innerText()), "helper");
+      assert(/Type a name, account number, or phone number to search\./.test(await panel.innerText()), "helper");
     });
     await check("typing 'Abdi' shows only accounts with Abdi — never others, never hidden or other-company ones", async () => {
       await box.fill("  ABDI "); await p.waitForTimeout(700);
@@ -143,12 +143,11 @@ async function run() {
       await box.fill("634455667"); await p.waitForTimeout(700);
       assert((await names()).length === 1, `digits only: ${(await names()).join(" | ")}`);
     });
-    await check("no match → 'No matching accounts found.'; clearing shows every permitted account again", async () => {
+    await check("no match → 'No matching accounts found.'; clearing returns to the empty search (no list)", async () => {
       await box.fill("zz-nobody-zz"); await p.waitForTimeout(700);
       assert((await names()).length === 0 && /No matching accounts found/.test(await p.locator(".gk-bulk-search-results").innerText()), "no-match");
       await p.getByRole("button", { name: "Clear search" }).click(); await p.waitForTimeout(800);
-      const n = await names();
-      assert(n.length >= 3 && !n.some((x) => /hidden|other company/i.test(x)), n.join(" | "));
+      assert((await names()).length === 0 && /Type a name/.test(await p.locator(".gk-bulk-search-results").innerText()), "clearing listed every account");
     });
     await check("choosing a card continues to the Add Transaction form", async () => {
       await box.fill("Abdirahman"); await p.waitForTimeout(700);

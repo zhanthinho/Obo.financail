@@ -124,13 +124,15 @@ async function run() {
     await check("no match shows 'No matching accounts found.' and never the full list", async () => {
       await box.fill("zzqx-nobody"); await p.waitForTimeout(700);
       assert((await names()).length === 0, "results shown");
-      assert(/No matching accounts found\./.test(await list.innerText()), await list.innerText());
+      assert(/No matching accounts found/.test(await list.innerText()), await list.innerText());
     });
     await check("the clear button resets the search; nothing is selected automatically", async () => {
       await box.fill("Maxamed"); await p.waitForTimeout(700);
       assert(await p.getByText("Current balance:").count() === 0, "an account was selected automatically");
       await p.getByRole("button", { name: "Clear search" }).click(); await p.waitForTimeout(100);
       assert((await box.inputValue()) === "", "search not cleared");
+      await p.waitForTimeout(500);
+      assert((await names()).length === 0 && /Type a name/.test(await list.innerText()), "clearing listed accounts again");
     });
     await check("clicking an account continues to the existing Add Transaction form; Change goes back", async () => {
       await box.fill("Xuseen"); await p.waitForTimeout(700);
