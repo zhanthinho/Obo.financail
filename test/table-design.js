@@ -51,7 +51,7 @@ async function run() {
   const sa = (await api("/api/auth/login", { method: "POST", body: { username: "super.admin", password: process.env.SUPER_ADMIN_INITIAL_PASSWORD } })).json.token;
   const SA = (await api("/api/platform/switch-company", { method: "POST", token: sa, body: { companyId: "CMP-0001" } })).json.token;
   const amina = (await api("/api/users", { token: SA })).json.users.find((u) => u.username === "amina.yusuf");
-  const g = await api(`/api/users/${amina.id}/permissions`, { method: "PATCH", token: SA, body: { overrides: ["cash.view", "cash.update", "cash.deposit"].map((k) => ({ permissionKey: k, granted: true })), confirmCritical: true } });
+  const g = await api(`/api/users/${amina.id}/permissions`, { method: "PATCH", token: SA, body: { overrides: ["cash.view", "cash.update", "cash.deposit", "loans.view"].map((k) => ({ permissionKey: k, granted: true })), confirmCritical: true } });
   assert(g.status === 200, `grant ${g.status}`);
   const till = (await api("/api/cash/accounts", { method: "POST", token: SA, body: { name: "Td Till USD", type: "physical_cash", currency: "USD" } })).json.account;
   // More customer accounts than one page (10), so footers must cover every page.
@@ -60,6 +60,18 @@ async function run() {
     if (i % 3 === 0) await api(`/api/accounts/${a.id}/deposit`, { method: "POST", token: SA, body: { amount: 10 + i, currency: "USD", cashAccountId: till.id } });
     if (i === 4) await api(`/api/accounts/${a.id}/withdraw`, { method: "POST", token: SA, body: { amount: 7.25, currency: "USD", cashAccountId: till.id } });
   }
+  // A second USD Cash Account, a Cash Transfer, a Cash Exchange and a Loan.
+  const till2 = (await api("/api/cash/accounts", { method: "POST", token: SA, body: { name: "Td Bank USD", type: "bank", currency: "USD", openingBalance: 40 } })).json.account;
+  const tillS = (await api("/api/cash/accounts", { method: "POST", token: SA, body: { name: "Td Till SLSH", type: "physical_cash", currency: "SLSH", openingBalance: 500000 } })).json.account;
+  const trf = await api("/api/cash/transfers", { method: "POST", token: SA, body: { fromCashAccountId: till.id, toCashAccountId: till2.id, amount: 6.25, notes: "Td move to bank" } });
+  assert(trf.status < 300, `transfer ${trf.status} ${JSON.stringify(trf.json)}`);
+  const xch = await api("/api/cash/exchanges", { method: "POST", token: SA, body: { fromCashAccountId: tillS.id, toCashAccountId: till2.id, amountGiven: 87500, rateUsed: 8750 } });
+  assert(xch.status < 300, `exchange ${xch.status} ${JSON.stringify(xch.json)}`);
+  const loanCust = (await api("/api/accounts?currency=USD&search=Td%20Customer%2001", { token: SA })).json.accounts[0];
+  const ln = await api("/api/loans", { method: "POST", token: SA, body: { clientId: loanCust.id, cashAccountId: till2.id, amount: 20, notes: "Td short loan" } });
+  assert(ln.status < 300, `loan ${ln.status} ${JSON.stringify(ln.json)}`);
+  const rp = await api(`/api/loans/${ln.json.loan.id}/payments`, { method: "POST", token: SA, body: { amount: 5, cashAccountId: till2.id } });
+  assert(rp.status < 300, `repay ${rp.status} ${JSON.stringify(rp.json)}`);
   // A plain (editable) cash movement, made last — the newest entry.
   await new Promise((r) => setTimeout(r, 1100));
   const top = await api(`/api/cash/accounts/${till.id}/deposit`, { method: "POST", token: SA, body: { amount: 3.5, description: "Td float top-up" } });
@@ -192,8 +204,8 @@ async function run() {
       await p.getByText("Cash Movements", { exact: true }).first().click(); await p.waitForTimeout(1200);
       const t = p.locator("table.gk-table").first();
       const heads = (await t.locator("thead th").allInnerTexts()).map((x) => x.trim().toUpperCase());
-      for (const w of ["#", "DATE", "CASH ACCOUNT", "DESCRIPTION", "REFERENCE", "CREDIT", "DEBIT", "BALANCE"]) assert(heads.some((h) => h.startsWith(w)), `${w}: ${heads.join(" | ")}`);
-      const mv = (await api("/api/cash/ledger", { token: A })).json.entries.filter((e) => e.currency === "USD");
+      for (const w of ["#", "DATE", "FROM CASH ACCOUNT", "TO CASH ACCOUNT", "DESCRIPTION", "REFERENCE", "CREDIT", "DEBIT", "BALANCE"]) assert(heads.some((h) => h.startsWith(w)), `${w}: ${heads.join(" | ")}`);
+      const mv = (await api("/api/cash/ledger", { token: A })).json.entries.filter((e) => e.currency === "USD" && e.sourceType !== "cash_transfer"); // internal transfers are not credit/debit
       const cr = r2(mv.filter((e) => e.type === "deposit").reduce((n, e) => n + e.amount, 0));
       const foot = await t.locator('tfoot tr[data-currency="USD"]').innerText();
       assert(foot.includes(`+$${money(cr)}`), foot);
@@ -203,16 +215,19 @@ async function run() {
     await check("# | Date & Time | Description | Reference | Credit | Debit | Balance — no Actions column", async () => {
       await go("Cash Account");
       await p.getByText("Cash Accounts", { exact: true }).first().click(); await p.waitForTimeout(800);
-      await p.locator("table.gk-table tbody").getByText(/^Td Till/i).first().click(); await p.waitForTimeout(1500);
+      await p.locator("table.gk-table tbody").getByText(/^Td Till Usd/i).first().click(); await p.waitForTimeout(1500);
       const t = p.locator("table.gk-cash-view-table");
       const heads = (await t.locator("thead th").allInnerTexts()).map((x) => x.trim().toUpperCase()).filter(Boolean);
       assert(JSON.stringify(heads) === JSON.stringify(["#", "DATE & TIME", "DESCRIPTION", "REFERENCE", "CREDIT", "DEBIT", "BALANCE"]), heads.join(" | "));
       assert(await style(t.locator("thead th").nth(1), "backgroundColor") === EMERALD, "header color");
       assert(await t.locator("tbody td.gk-col-balance").count() === await t.locator("tbody tr").count(), "mint balance column");
     });
-    await check("newest first; credits green +, debits red -, amounts right-aligned", async () => {
+    await check("oldest first, newest at the bottom; credits green +, debits red -, amounts right-aligned", async () => {
       const t = p.locator("table.gk-cash-view-table");
-      assert(/Td float top-up/.test(await t.locator("tbody tr").first().innerText()), "newest not first");
+      assert(/Td float top-up/.test(await t.locator("tbody tr").last().innerText()), "newest not at the bottom");
+      assert(!/Td float top-up/.test(await t.locator("tbody tr").first().innerText()), "newest at the top");
+      const dates = await t.locator("tbody tr").evaluateAll((rs) => rs.length);
+      assert(dates > 1, "rows");
       const cr = t.locator('tbody td[data-col="credit"]').first();
       assert(await style(cr, "textAlign") === "right", "right aligned");
       assert(await style(cr.locator(".gk-amt-credit"), "color") === "rgb(22, 163, 74)", "credit color");
@@ -234,7 +249,7 @@ async function run() {
     });
     await check("the Reference opens the movement with its details, and Edit for a plain movement", async () => {
       const t = p.locator("table.gk-cash-view-table");
-      await t.locator("tbody tr").first().locator("button.gk-cash-ref-link").click();
+      await t.locator("tbody tr").filter({ hasText: "Td float top-up" }).first().locator("button.gk-cash-ref-link").click();
       const dlg = p.getByRole("dialog"); await dlg.waitFor({ timeout: 5000 });
       assert(/Td float top-up/.test(await dlg.innerText()), "details");
       assert(await dlg.getByRole("button", { name: "Edit", exact: true }).count() === 1, "edit missing");
@@ -244,6 +259,59 @@ async function run() {
       await d2.locator('[data-related-item="ledger"]').waitFor({ timeout: 5000 });
       assert(await d2.getByRole("button", { name: "Edit", exact: true }).count() === 0, "edit on a linked entry");
       await d2.getByRole("button", { name: "Close", exact: true }).first().click(); await p.waitForTimeout(300);
+    });
+
+    console.log("\nCash Transfers, Exchanges, Loans and Movements");
+    const openTab = async (name) => { await go("Cash Account"); await p.getByText(name, { exact: true }).first().click(); await p.waitForTimeout(1300); };
+    await check("Transfers: one row per transfer with From / To, Credit and Debit, both balances, and the footer", async () => {
+      await openTab("Transfers");
+      const t = p.locator("table.gk-cash-transfers-table");
+      const row = t.locator("tbody tr").filter({ hasText: "Td move to bank" });
+      assert(await row.count() === 1, "transfer listed once");
+      const txt = await row.innerText();
+      assert(/Td Till Usd/i.test(txt) && /Td Bank Usd/i.test(txt) && txt.includes("+$6.25") && txt.includes("-$6.25"), txt);
+      assert(await row.locator('td[data-col="balance"] .gk-bal').count() === 2, "both balances");
+      const foot = await t.locator("tfoot").innerText();
+      assert(/Total — 1 transfers/.test(foot) && foot.includes("+$6.25") && foot.includes("-$6.25"), foot);
+      await row.locator("button.gk-cash-ref-link").click();
+      const dlg = p.getByRole("dialog"); await dlg.waitFor({ timeout: 5000 });
+      assert(await dlg.locator("table.gk-cash-legs tbody tr").count() === 2, "two Cash Account entries");
+      await dlg.getByRole("button", { name: "Close", exact: true }).first().click(); await p.waitForTimeout(300);
+    });
+    await check("Exchanges: the given side is a Debit, the received side a Credit, per currency, at the recorded rate", async () => {
+      await openTab("Exchanges");
+      const t = p.locator("table.gk-cash-exchanges-table");
+      const txt = await t.locator("tbody tr").first().innerText();
+      assert(txt.includes("8,750") && /\+\$10\.00/.test(txt) && /-SLSH 87,500/.test(txt), txt);
+      const foot = await t.locator("tfoot").innerText();
+      assert(/Total — 1 exchanges/.test(foot) && foot.includes("+$10.00") && foot.includes("-SLSH 87,500"), foot);
+    });
+    await check("Loans: paid out as a Debit, repayments as a Credit (not a new loan), Outstanding from the loan", async () => {
+      await openTab("Loans");
+      const t = p.locator("table.gk-cash-loans-table");
+      const row = t.locator("tbody tr").filter({ hasText: "Td short loan" });
+      assert(await row.count() === 1, "loan listed once");
+      const txt = await row.innerText();
+      assert(txt.includes("-$20.00") && txt.includes("+$5.00") && /1 repayment/.test(txt) && txt.includes("$15.00"), txt);
+      assert(/Total — 1 loans/.test(await t.locator("tfoot").innerText()), await t.locator("tfoot").innerText());
+    });
+    await check("Cash Movements: oldest first; From / To shown; a transfer is counted once and not as credit or debit", async () => {
+      await openTab("Cash Movements");
+      const t = p.locator("table.gk-cash-moves-table");
+      const heads = (await t.locator("thead th").allInnerTexts()).map((x) => x.trim().toUpperCase());
+      for (const w of ["MOVEMENT TYPE", "FROM CASH ACCOUNT", "TO CASH ACCOUNT"]) assert(heads.some((h) => h.startsWith(w)), heads.join(" | "));
+      const mv = (await api("/api/cash/ledger?currency=USD", { token: A })).json.entries;
+      const real = mv.filter((e) => e.sourceType !== "cash_transfer");
+      const cr = r2(real.filter((e) => e.type === "deposit").reduce((n, e) => n + e.amount, 0));
+      const db = r2(real.filter((e) => e.type !== "deposit").reduce((n, e) => n + e.amount, 0));
+      await p.locator(".gk-filterbar select").filter({ has: p.locator('option[value="SLSH"]') }).first().selectOption("USD"); await p.waitForTimeout(1200);
+      const foot = await t.locator('tfoot tr[data-currency="USD"]').innerText();
+      assert(foot.includes(`+$${money(cr)}`) && foot.includes(`-$${money(db)}`), `${foot} vs +${cr} -${db}`);
+      assert(new RegExp(`Total — ${real.length + 1} transactions`).test(foot), `${foot} (expected ${real.length + 1})`);
+      const first = await t.locator("tbody tr").first().innerText();
+      assert(/Opening balance/i.test(first) || /CSHDEP-.*-0001/.test(first), `oldest first: ${first}`);
+      const tr = t.locator('tbody tr[data-source="cash_transfer"]');
+      if (await tr.count()) { const x = await tr.first().innerText(); assert(/Td Till Usd/i.test(x) && /Td Bank Usd/i.test(x), x); }
     });
 
     console.log("\nResponsive");

@@ -2508,5 +2508,17 @@
  "External reference": "Tixraac dibadda",
  "Counterparty": "Dhinaca kale",
  "Delete Payment": "Tirtir Lacag-bixinta",
- "Current balance of this Cash Account": "Haraaga hadda ee Akoonka Lacagtan"
+ "Current balance of this Cash Account": "Haraaga hadda ee Akoonka Lacagtan",
+ "From Cash Account": "Akoonka Lacagta laga qaaday",
+ "To Cash Account": "Akoonka Lacagta loo diray",
+ "Outstanding Balance": "Haraaga la leeyahay",
+ "Cash Account entries": "Diiwaannada Akoonka Lacagta",
+ "No Cash Account entries found for this record.": "Diiwaan Akoonka Lacagta ah looma helin diiwaankan.",
+ "Internal transfer": "Wareejin gudaha ah",
+ "loan paid out": "deyn la bixiyay",
+ "No cash transfers found.": "Wareejin lacageed lama helin.",
+ "No cash exchanges found.": "Sarrif lacageed lama helin.",
+ "Reference, account, notes…": "Tixraac, akoon, qoraal…",
+ "Company Expense": "Kharashka Shirkadda",
+ "Repaid": "La bixiyay"
 }
