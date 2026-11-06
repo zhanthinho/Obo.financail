@@ -256,6 +256,8 @@ function register(router) {
     if (query.type && ["customer", "company"].includes(query.type)) { clauses.push("account_type = ?"); sqlParams.push(query.type); }
     if (query.from) { clauses.push("date(created_at) >= date(?)"); sqlParams.push(query.from); }
     if (query.to) { clauses.push("date(created_at) <= date(?)"); sqlParams.push(query.to); }
+    // SMART ACCOUNT LIVE SEARCH round: leading/trailing spaces never stop a match.
+    if (typeof query.search === "string") query.search = query.search.trim();
     if (query.search) {
       clauses.push("(name LIKE ? OR contact LIKE ? OR email LIKE ? OR account_number LIKE ? OR id_number LIKE ?)");
       const s = `%${query.search}%`;

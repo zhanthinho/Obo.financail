@@ -2463,5 +2463,9 @@
  "Remove access": "Ka qaad gelitaanka",
  "Go back": "Dib u noqo",
  "You do not have permission to create transactions for this account.": "Uma lihid ogolaansho aad dhaqdhaqaaq ugu sameyso akoonkan.",
- "No accounts match.": "Akoon ku habboon lama helin."
+ "No accounts match.": "Akoon ku habboon lama helin.",
+ "No matching accounts found.": "Akoon ku habboon lama helin.",
+ "Searching…": "Waa la raadinayaa…",
+ "Clear search": "Tirtir raadinta",
+ "Matching accounts": "Akoonnada ku habboon"
 }

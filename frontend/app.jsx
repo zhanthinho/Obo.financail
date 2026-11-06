@@ -829,6 +829,11 @@ const THEME_CSS = `
   .gk-th-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 40px 16px; color: var(--c-slate); text-align: center; font-size: 12.5px; }
   .gk-th-empty b { color: var(--c-ink); font-size: 14px; }
   .gk-th-scope { font-size: 11.5px; color: var(--c-slate); margin-top: 8px; line-height: 1.45; }
+  /* SMART ACCOUNT LIVE SEARCH round (Bulk Entry) */
+  .gk-hl { background: color-mix(in srgb, #f59e0b 28%, transparent); color: inherit; border-radius: 2px; padding: 0 1px; }
+  .gk-bulk-search-clear { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 6px; background: transparent; color: var(--c-slate); cursor: pointer; }
+  .gk-bulk-search-clear:hover, .gk-bulk-search-clear:focus-visible { background: color-mix(in srgb, var(--c-navy) 10%, transparent); color: var(--c-ink); outline: none; }
+  .gk-bulk-search-note { font-size: 12px; color: var(--c-slate); padding: 10px 2px; }
   /* ACCOUNT-LEVEL ACCESS round */
   .gk-aa-counts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
   .gk-aa-count { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
@@ -11650,6 +11655,21 @@ function genDraftId() {
   return `d_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
+// SMART ACCOUNT LIVE SEARCH round — the same match the server makes (name,
+// account number, phone; case-insensitive, partial), used to narrow the list
+// instantly while the server answer is on its way.
+function accountMatchesSearch(a, term) {
+  const t = String(term || "").trim().toLowerCase();
+  if (!t) return true;
+  return [a.name, a.accountNumber, a.contact, a.email, a.idNumber].some((v) => v != null && String(v).toLowerCase().includes(t));
+}
+// Marks the part of `text` that matches the search (first occurrence).
+function HighlightMatch({ text, term }) {
+  const s = String(text || ""), t = String(term || "").trim();
+  const i = t ? s.toLowerCase().indexOf(t.toLowerCase()) : -1;
+  if (i < 0) return s;
+  return <>{s.slice(0, i)}<mark className="gk-hl">{s.slice(i, i + t.length)}</mark>{s.slice(i + t.length)}</>;
+}
 function BulkTransactionWorkspace({ currency, call, notify, user, onBack }) {
   const bulkNonceRef = useRef(newRequestId());
   // MULTI-COMPANY round: drafts are kept per user AND per company, so a Super
@@ -11687,13 +11707,32 @@ function BulkTransactionWorkspace({ currency, call, notify, user, onBack }) {
     try { localStorage.setItem(storageKey, JSON.stringify(drafts)); } catch (e) { /* storage unavailable/full — batch still works for this session */ }
   }, [drafts, storageKey]);
 
+  // SMART ACCOUNT LIVE SEARCH round: the list follows what is typed at once.
+  // The server search (company, currency and account-access rules applied
+  // there) runs debounced; while it is on its way the accounts already shown
+  // are narrowed locally to the ones that match, and an answer for an older
+  // query is ignored — so unrelated accounts never stay on screen.
+  const [resultsFor, setResultsFor] = useState(null); // trimmed query the server results belong to
+  const [searching, setSearching] = useState(false);
+  const searchSeq = useRef(0);
+  const searchTerm = query.trim();
   useEffect(() => {
-    if (selected) { setResults([]); return; }
+    if (selected) { setResults([]); setResultsFor(null); return; }
+    const seq = ++searchSeq.current;
+    setSearching(true);
     const t = setTimeout(() => {
-      call("/api/accounts" + qs({ currency, search: query })).then((d) => setResults((d.accounts || []).slice(0, 8))).catch(() => {});
-    }, 250);
+      call("/api/accounts" + qs({ currency, search: searchTerm || undefined }))
+        .then((d) => { if (seq !== searchSeq.current) return; setResults((d.accounts || []).slice(0, searchTerm ? 50 : 8)); setResultsFor(searchTerm); })
+        .catch(() => { if (seq === searchSeq.current) { setResults([]); setResultsFor(searchTerm); } })
+        .finally(() => { if (seq === searchSeq.current) setSearching(false); });
+    }, searchTerm ? 200 : 0);
     return () => clearTimeout(t);
-  }, [query, selected, call, currency]);
+  }, [searchTerm, selected, call, currency]);
+  const shownResults = useMemo(() => {
+    if (resultsFor === searchTerm) return results;
+    if (!searchTerm) return results.slice(0, 8);
+    return results.filter((a) => accountMatchesSearch(a, searchTerm));
+  }, [results, resultsFor, searchTerm]);
 
   useEffect(() => {
     call("/api/cash/accounts/for-payment" + qs({ currency })).then((d) => setCashAccounts(d.accounts || [])).catch(() => setCashAccounts([]));
@@ -11839,17 +11878,25 @@ function BulkTransactionWorkspace({ currency, call, notify, user, onBack }) {
           {!selected ? (
             <>
               <Field label={`Search for a ${currency} account`} hint="Name, account number, or phone — leave blank to see all">
-                <Input className="gk-bulk-mint-input" style={{ border: `1.5px solid ${C.line}`, borderRadius: 7, background: C.card, height: 40 }} placeholder="Start typing…" value={query} onChange={(e) => setQuery(e.target.value)} />
+                <div style={{ position: "relative" }}>
+                  <Input className="gk-bulk-mint-input" aria-label={`Search for a ${currency} account`} style={{ border: `1.5px solid ${C.line}`, borderRadius: 7, background: C.card, height: 40, paddingRight: query ? 34 : undefined }} placeholder="Start typing…" value={query} onChange={(e) => setQuery(e.target.value)} />
+                  {query && <button type="button" className="gk-bulk-search-clear" aria-label="Clear search" title="Clear search" onClick={() => setQuery("")}><NavIcon name="x" size={14} /></button>}
+                </div>
               </Field>
-              <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6, maxHeight: 220, overflowY: "auto" }}>
-                {results.length === 0 && <Empty text={`No ${currency} accounts found.`} />}
-                {results.map((a) => (
-                  <button key={a.id} onClick={() => setSelected(a)} style={{ textAlign: "left", padding: "10px 12px", border: `1px solid ${C.line}`, borderRadius: 7, background: C.card, cursor: "pointer" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ fontWeight: 600, fontSize: 13.5, color: C.ink }}>{toTitleCase(a.name)}</span>
+              <div className="gk-bulk-search-results" role="listbox" aria-label="Matching accounts" style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6, maxHeight: 220, overflowY: "auto" }}>
+                {shownResults.length === 0 && (searching && resultsFor !== searchTerm
+                  ? <div className="gk-bulk-search-note">Searching…</div>
+                  : <Empty text={searchTerm ? "No matching accounts found." : `No ${currency} accounts found.`} />)}
+                {shownResults.map((a) => (
+                  <button key={a.id} type="button" role="option" aria-selected="false" data-account={a.accountNumber} onClick={() => setSelected(a)} style={{ textAlign: "left", padding: "10px 12px", border: `1px solid ${C.line}`, borderRadius: 7, background: C.card, cursor: "pointer" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                      <span style={{ fontWeight: 600, fontSize: 13.5, color: C.ink }}><HighlightMatch text={toTitleCase(a.name)} term={searchTerm} /></span>
                       <Pill tone="navy">{a.accountType === "company" ? "Company" : "Customer"}</Pill>
                     </div>
-                    <div style={{ fontSize: 11.5, color: C.slate, marginTop: 3, fontFamily: FONT_MONO }}>{a.accountNumber} · {fmtMoney(a.balance, currency)}</div>
+                    <div style={{ fontSize: 11.5, color: C.slate, marginTop: 3, fontFamily: FONT_MONO }}>
+                      <HighlightMatch text={a.accountNumber || ""} term={searchTerm} /> · {a.currency || currency} · {fmtMoney(a.balance, a.currency || currency)}
+                      {a.contact && searchTerm && String(a.contact).toLowerCase().includes(searchTerm.toLowerCase()) && <> · <HighlightMatch text={a.contact} term={searchTerm} /></>}
+                    </div>
                   </button>
                 ))}
               </div>
