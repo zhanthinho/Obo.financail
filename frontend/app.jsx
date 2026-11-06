@@ -76,7 +76,10 @@ const THEME_CSS = `
     --c-status-pending: #c98a2e; --c-status-paid: #2f8f6a; --c-status-refunded: #42bfdd;
     /* POPPINS TABLE DESIGN round: Poppins is now the system default (was
        Inter) — see FONT_FAMILY_OPTIONS above for the full rationale. */
-    --c-font-family: "Poppins", "Segoe UI", Arial, sans-serif;
+    --c-font-family: "FINMAN Digits", "Poppins", "Segoe UI", Arial, sans-serif;
+    /* NUMERIC TYPOGRAPHY round: the font for numbers, amounts, rates,
+       dates, account numbers and references (Inter; see public/index.html). */
+    --c-font-num: "FINMAN Digits", "Inter", "Segoe UI", Arial, sans-serif;
     --c-zoom: 1;
   }
   html { zoom: var(--c-zoom); }
@@ -723,7 +726,7 @@ const THEME_CSS = `
   .gk-qx-ratetiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   .gk-qx-tile { border: 1px solid ${C.line}; border-radius: 9px; padding: 8px 10px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   .gk-qx-tile span { display: flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 600; color: ${C.slate}; }
-  .gk-qx-tile b { font-family: "JetBrains Mono", "SFMono-Regular", Menlo, monospace; font-size: 14px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .gk-qx-tile b { font-family: var(--c-font-num); font-size: 14px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
   .gk-qx-results { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   .gk-qx-chip:hover, .gk-qx-ghost:hover, .gk-qx-curcard:hover:not(:disabled) { border-color: var(--c-navy) !important; }
   .gk-qx-swap:hover:not(:disabled) { background: var(--c-navy) !important; color: #fff !important; }
@@ -852,7 +855,7 @@ const THEME_CSS = `
   .gk-cp-chip.is-off { opacity: .6; }
   .gk-cp-cur { font-size: 10.5px; font-weight: 700; letter-spacing: .03em; padding: 1px 6px; border-radius: 4px; background: color-mix(in srgb, var(--c-navy) 12%, var(--c-card)); color: var(--c-navy); }
   .gk-cp-cur--lg { font-size: 12px; padding: 2px 8px; }
-  .gk-cp-num { font-family: "JetBrains Mono", "SFMono-Regular", Menlo, monospace; color: var(--c-slate); }
+  .gk-cp-num { font-family: var(--c-font-num); color: var(--c-slate); }
   .gk-cp-bal { font-weight: 600; font-variant-numeric: tabular-nums; }
   .gk-cp-flag { margin-left: 8px; font-size: 10.5px; font-weight: 700; color: #7a5410; background: #fdf6e7; border: 1px solid #ecd2a4; border-radius: 10px; padding: 0 6px; }
   .gk-cp-hidden, .gk-cp-muted { font-size: 11.5px; color: var(--c-slate); }
@@ -862,7 +865,7 @@ const THEME_CSS = `
   .gk-cp-account.is-hidden { justify-content: center; border-style: dashed; }
   .gk-cp-account-head { display: flex; align-items: center; gap: 8px; }
   .gk-cp-account-head .gk-av-status { margin-left: auto; }
-  .gk-cp-account-num { font-family: "JetBrains Mono", "SFMono-Regular", Menlo, monospace; font-size: 13px; color: var(--c-slate); }
+  .gk-cp-account-num { font-family: var(--c-font-num); font-size: 13px; color: var(--c-slate); }
   .gk-cp-account-bal { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--c-ink); }
   .gk-cp-account-actions { display: flex; gap: 6px; flex-wrap: wrap; }
   .gk-cp-h2 { font-size: 15px; font-weight: 700; color: var(--c-ink); margin: 16px 0 8px; }
@@ -1025,7 +1028,7 @@ const THEME_CSS = `
   .gk-av-bar-fill { display: block; height: 100%; border-radius: 6px; min-width: 2px; }
   .gk-av-bar-fill--credit { background: #16a34a; }
   .gk-av-bar-fill--debit { background: #dc2626; }
-  .gk-av-bar-value { font-family: var(--font-mono, monospace); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--c-ink); }
+  .gk-av-bar-value { font-family: var(--c-font-num); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--c-ink); }
   .gk-av-share { display: flex; height: 22px; border-radius: 6px; overflow: hidden; background: var(--c-line); }
   .gk-av-share span { display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 700; }
   .gk-av-share-credit { background: #16a34a; }
@@ -1059,7 +1062,13 @@ const THEME_CSS = `
 // file picks up a Super Admin's chosen Font Family automatically, with no
 // per-component changes needed.
 const FONT_SANS = "var(--c-font-family)";
-const FONT_MONO = '"JetBrains Mono", "SFMono-Regular", Menlo, monospace';
+// NUMERIC TYPOGRAPHY round: FONT_MONO (the font every number, amount, date,
+// rate, account number and reference already uses) is now Inter with
+// tabular, lining figures instead of JetBrains Mono — one central change
+// that reaches every table, card, form and detail view. Name kept so the
+// hundreds of existing uses don't change.
+const FONT_MONO = "var(--c-font-num)";
+const FONT_NUM = FONT_MONO;
 // GLOBAL LOGIN round: the platform's own neutral identity — what the shared
 // login page shows. It is never a particular company's name or description.
 const COMPANY = { name: "OBO Financial System", tagline: "Multi-company financial management" };
@@ -2750,10 +2759,11 @@ function Spinner({ label }) {
 // screen, matching the denser table rows in the mockup.
 const th = { textAlign: "left", fontFamily: FONT_SANS, fontSize: 12, fontWeight: 700, color: "var(--c-thead-fg)", textTransform: "uppercase", letterSpacing: "0.04em", padding: "8px 12px", background: "var(--c-thead-bg)", borderBottom: `1px solid ${C.line}`, borderRight: `1px solid ${C.line}`, position: "sticky", top: 0, zIndex: 1, whiteSpace: "nowrap" };
 const td = { padding: "7px 12px", fontFamily: FONT_SANS, fontSize: 12.5, fontWeight: 500, color: C.ink, borderBottom: `1px solid ${C.line}`, borderRight: `1px solid ${C.line}`, verticalAlign: "top" };
-const tdMono = { ...td, fontFamily: FONT_MONO, fontWeight: 700, fontVariantNumeric: "tabular-nums", textAlign: "right" };
+// NUMERIC TYPOGRAPHY round: table figures 500 (Inter), totals 700.
+const tdMono = { ...td, fontFamily: FONT_MONO, fontWeight: 500, fontVariantNumeric: "lining-nums tabular-nums", fontFeatureSettings: '"tnum" 1, "lnum" 1', textAlign: "right", whiteSpace: "nowrap" };
 const tdName = { ...td, fontFamily: FONT_SANS, fontSize: 13.5, fontWeight: 700 };
 const tdFoot = { padding: "8px 12px", fontFamily: FONT_SANS, fontSize: 12, fontWeight: 600, color: "var(--c-tfoot-fg)", background: "var(--c-tfoot-bg)", borderBottom: "none", borderRight: `1px solid ${C.line}`, verticalAlign: "top" };
-const tdFootMono = { ...tdFoot, fontFamily: FONT_MONO, fontWeight: 700, fontVariantNumeric: "tabular-nums", textAlign: "right" };
+const tdFootMono = { ...tdFoot, fontFamily: FONT_MONO, fontWeight: 700, fontVariantNumeric: "lining-nums tabular-nums", fontFeatureSettings: '"tnum" 1, "lnum" 1', textAlign: "right", whiteSpace: "nowrap" };
 // Renders one or two currency totals stacked in a single bold footer cell —
 // USD and SLSH are NEVER added together (see "currency separation" rule),
 // so a cell with activity in both currencies shows both lines; a currency
@@ -4511,7 +4521,8 @@ function App() {
   useEffect(() => {
     const root = document.documentElement.style;
     const opt = FONT_FAMILY_OPTIONS.find((f) => f.key === company?.fontFamily);
-    if (opt && opt.key !== "poppins") root.setProperty("--c-font-family", opt.stack);
+    // "FINMAN Digits" stays first so numbers remain Inter in any UI font.
+    if (opt && opt.key !== "poppins") root.setProperty("--c-font-family", `"FINMAN Digits", ${opt.stack}`);
     else root.removeProperty("--c-font-family");
   }, [company?.fontFamily]);
   // APPEARANCE & BRANDING round 2: Font Size — applied as a CSS `zoom` on

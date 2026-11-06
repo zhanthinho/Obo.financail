@@ -11,7 +11,23 @@
   /* POPPINS TABLE DESIGN round: Poppins is now the default system font (was
      Inter) — Inter stays loaded too since it's still a selectable option
      under Settings > Typography. */
-  html, body { margin: 0; padding: 0; background: #f6fafa; font-family: "Poppins", "Segoe UI", Arial, sans-serif; }
+  /* NUMERIC TYPOGRAPHY round: every digit in the app is drawn in Inter.
+     "FINMAN Digits" is Inter (self-hosted, /fonts) limited to digits and
+     the characters numbers are written with ($ % + , - . / : and the minus
+     sign), and it is the FIRST font in every font stack — so numbers render
+     in Inter wherever they appear, while words keep the chosen UI font.
+     Tabular, lining figures line up in columns. */
+  @font-face { font-family: "FINMAN Digits"; src: url("/fonts/inter-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; unicode-range: U+0030-0039, U+0024, U+0025, U+002B-002F, U+003A, U+2212, U+2013; }
+  @font-face { font-family: "FINMAN Digits"; src: url("/fonts/inter-latin-500-normal.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; unicode-range: U+0030-0039, U+0024, U+0025, U+002B-002F, U+003A, U+2212, U+2013; }
+  @font-face { font-family: "FINMAN Digits"; src: url("/fonts/inter-latin-600-normal.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; unicode-range: U+0030-0039, U+0024, U+0025, U+002B-002F, U+003A, U+2212, U+2013; }
+  @font-face { font-family: "FINMAN Digits"; src: url("/fonts/inter-latin-700-normal.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; unicode-range: U+0030-0039, U+0024, U+0025, U+002B-002F, U+003A, U+2212, U+2013; }
+  @font-face { font-family: "FINMAN Digits"; src: url("/fonts/inter-latin-800-normal.woff2") format("woff2"); font-weight: 800; font-style: normal; font-display: swap; unicode-range: U+0030-0039, U+0024, U+0025, U+002B-002F, U+003A, U+2212, U+2013; }
+  html, body { margin: 0; padding: 0; background: #f6fafa; font-family: "FINMAN Digits", "Poppins", "Segoe UI", Arial, sans-serif; }
+  html { font-variant-numeric: lining-nums tabular-nums; font-feature-settings: "tnum" 1, "lnum" 1; font-kerning: normal; }
+  /* Form controls take the page font (numbers in Inter) instead of the
+     browser's own default font. */
+  input, select, textarea, button { font-family: inherit; }
+  input, select, textarea, button, option { font-variant-numeric: lining-nums tabular-nums; font-feature-settings: "tnum" 1, "lnum" 1; }
   #root { min-height: 100vh; }
   * { box-sizing: border-box; }
 </style>
@@ -20,6 +36,6 @@
 <div id="root">
   <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;color:#5b7480;">Loading OBO…</div>
 </div>
-<script src="/app.bundle.js?v=29a1748467c0"></script>
+<script src="/app.bundle.js?v=11a6b08833ec"></script>
 </body>
 </html>

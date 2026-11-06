@@ -50,24 +50,8 @@ async function api(p, { method = "GET", body, token } = {}) {
 }
 
 // Text drawn by pdf-lib is stored as hex strings inside Flate streams.
-function pdfText(buf) {
-  const s = buf.toString("latin1");
-  let out = "";
-  const re = /stream\r?\n/g;
-  let m;
-  while ((m = re.exec(s))) {
-    const start = m.index + m[0].length;
-    const end = s.indexOf("endstream", start);
-    if (end < 0) break;
-    let data = Buffer.from(s.slice(start, end), "latin1");
-    try { data = zlib.inflateSync(data); } catch (e) { /* not compressed */ }
-    const txt = data.toString("latin1");
-    for (const h of txt.matchAll(/<([0-9A-Fa-f\s]+)>\s*Tj/g)) out += Buffer.from(h[1].replace(/\s+/g, ""), "hex").toString("latin1") + "\n";
-    for (const h of txt.matchAll(/\(((?:\\.|[^\\)])*)\)\s*Tj/g)) out += h[1] + "\n";
-    re.lastIndex = end;
-  }
-  return out;
-}
+// Shared reader: also decodes the Inter (number) font's text.
+const { pdfText } = require("./helpers/pdf-text");
 async function pdfPage(buf) { const d = await PDFDocument.load(buf); const { width, height } = d.getPage(0).getSize(); return { width, height }; }
 async function xlsxCells(buf) {
   const wb = new ExcelJS.Workbook();
@@ -113,7 +97,7 @@ async function run() {
 
   const T = ctx.saA;
   const before = {
-    acctPdf: pdfText((await api(ctx.acctPdf, { token: ctx.adm })).buf),
+    acctPdf: await pdfText((await api(ctx.acctPdf, { token: ctx.adm })).buf),
     acctXlsx: await xlsxCells((await api(ctx.acctXlsx, { token: ctx.adm })).buf),
     balance: (await api(`/api/accounts/${acc.id}`, { token: ctx.adm })).json,
   };
@@ -146,13 +130,13 @@ async function run() {
   await check("the preview of a template is rendered from its saved settings", async () => {
     const r = await api(`/api/pdf-templates/${ctx.pA.id}/preview.pdf`, { token: T });
     assert(r.status === 200, `preview ${r.status}`);
-    const txt = pdfText(r.buf);
+    const txt = await pdfText(r.buf);
     assert(/TPL-ACCT-FOOTER/.test(txt) && /TPL-HEADER-NOTE/.test(txt), "preview misses the saved footer / header note");
   });
 
   console.log("\nOnly the default template is used — and then it really is");
   await check("a template that is not the default does not change real documents", async () => {
-    const txt = pdfText((await api(ctx.acctPdf, { token: ctx.adm })).buf);
+    const txt = await pdfText((await api(ctx.acctPdf, { token: ctx.adm })).buf);
     assert(!/TPL-ACCT-FOOTER/.test(txt), "non-default template leaked into the statement");
   });
   await check("after Set default, the real account statement PDF uses the saved footer, header note, paper size and orientation", async () => {
@@ -160,7 +144,7 @@ async function run() {
     assert(d.status === 200 && d.json.template.isDefault, `set-default ${d.status}`);
     const r = await api(ctx.acctPdf, { token: ctx.adm });
     assert(r.status === 200, `statement ${r.status}`);
-    const txt = pdfText(r.buf);
+    const txt = await pdfText(r.buf);
     assert(/TPL-ACCT-FOOTER/.test(txt), "footer not applied");
     assert(!/\{\{company_name\}\}/.test(txt), "placeholder not filled in");
     assert(/TPL-HEADER-NOTE/.test(txt), "header note not applied to the account statement");
@@ -176,21 +160,21 @@ async function run() {
     assert(Math.abs(legacy.red - 0xc9 / 255) < 1e-6, "older preset rows must still work");
   });
   await check("other document types do not use the Account Statement template", async () => {
-    const txt = pdfText((await api(ctx.exchPdf, { token: ctx.adm })).buf);
+    const txt = await pdfText((await api(ctx.exchPdf, { token: ctx.adm })).buf);
     assert(!/TPL-ACCT-FOOTER/.test(txt), "exchange receipt used the account template");
   });
   await check("the Global default applies to types without their own template; a type's own default wins over it", async () => {
     const g = (await api("/api/pdf-templates?kind=global", { token: T })).json.templates.find((t) => t.isDefault);
     const r = await api(`/api/pdf-templates/${g.id}`, { method: "PATCH", token: T, body: { footerCustomText: "TPL-GLOBAL-FOOTER" } });
     assert(r.status === 200, `patch global ${r.status}`);
-    assert(/TPL-GLOBAL-FOOTER/.test(pdfText((await api(ctx.exchPdf, { token: ctx.adm })).buf)), "exchange receipt ignores the Global default");
-    const acct = pdfText((await api(ctx.acctPdf, { token: ctx.adm })).buf);
+    assert(/TPL-GLOBAL-FOOTER/.test(await pdfText((await api(ctx.exchPdf, { token: ctx.adm })).buf)), "exchange receipt ignores the Global default");
+    const acct = await pdfText((await api(ctx.acctPdf, { token: ctx.adm })).buf);
     assert(/TPL-ACCT-FOOTER/.test(acct) && !/TPL-GLOBAL-FOOTER/.test(acct), "account statement should use its own default");
   });
   await check("switching the default to another template switches the output", async () => {
     const b = (await api("/api/pdf-templates", { method: "POST", token: T, body: { kind: "account", name: "Statement B", footerCustomText: "TPL-ACCT-B" } })).json.template;
     await api(`/api/pdf-templates/${b.id}/set-default`, { method: "POST", token: T });
-    const txt = pdfText((await api(ctx.acctPdf, { token: ctx.adm })).buf);
+    const txt = await pdfText((await api(ctx.acctPdf, { token: ctx.adm })).buf);
     assert(/TPL-ACCT-B/.test(txt) && !/TPL-ACCT-FOOTER/.test(txt), "statement did not follow the new default");
     const list = (await api("/api/pdf-templates?kind=account", { token: T })).json.templates;
     assert(list.filter((t) => t.isDefault).length === 1, "more than one default for one kind");
@@ -236,12 +220,12 @@ async function run() {
     await api(`/api/pdf-templates/${p.json.template.id}/set-default`, { method: "POST", token: T });
     await api(`/api/excel-templates/${x.json.template.id}/set-default`, { method: "POST", token: T });
     const pdf = await api(`/api/cash/accounts/${cashId}/statement.pdf`, { token: T });
-    assert(pdf.status === 200 && /TPL-CASH-PDF/.test(pdfText(pdf.buf)), `cash pdf ${pdf.status}`);
+    assert(pdf.status === 200 && /TPL-CASH-PDF/.test(await pdfText(pdf.buf)), `cash pdf ${pdf.status}`);
     const xl = await api(`/api/cash/accounts/${cashId}/statement.xlsx`, { token: T });
     const wb = await xlsxCells(xl.buf);
     assert(xl.status === 200 && /TPL-CASH-XL/.test(wb.text + wb.headerFooter), `cash xlsx ${xl.status}`);
     const prev = await api(`/api/pdf-templates/${p.json.template.id}/preview.pdf`, { token: T });
-    assert(/CASH ACCOUNT STATEMENT/.test(pdfText(prev.buf)), "cash template preview should show a cash statement");
+    assert(/CASH ACCOUNT STATEMENT/.test(await pdfText(prev.buf)), "cash template preview should show a cash statement");
   });
   await check("the database upgrade widens an older template-kind CHECK without touching rows", async () => {
     const { SyncMysql } = require("../src/mysql/sync-client");
@@ -334,7 +318,7 @@ async function run() {
   });
   await check("the Company Admin can still generate documents (which use the saved templates)", async () => {
     const r = await api(ctx.acctPdf, { token: ctx.adm });
-    assert(r.status === 200 && /TPL-ACCT-FOOTER/.test(pdfText(r.buf)), `statement ${r.status}`);
+    assert(r.status === 200 && /TPL-ACCT-FOOTER/.test(await pdfText(r.buf)), `statement ${r.status}`);
   });
 
   console.log("\nCompany isolation");
@@ -359,13 +343,13 @@ async function run() {
     const acc = await api("/api/accounts", { method: "POST", token: bAdm, body: { name: "Beta Customer", accountType: "customer", currency: "USD", openingBalance: 10 } });
     assert(acc.status === 201 || acc.status === 200, `account ${acc.status} ${JSON.stringify(acc.json)}`);
     const id = (acc.json.account || acc.json).id;
-    let txt = pdfText((await api(`/api/accounts/${id}/statement.pdf`, { token: bAdm })).buf);
+    let txt = await pdfText((await api(`/api/accounts/${id}/statement.pdf`, { token: bAdm })).buf);
     assert(!/TPL-ACCT|TPL-GLOBAL|TPL-HEADER-NOTE/.test(txt), "B's statement used A's template");
     const bt = (await api("/api/pdf-templates", { method: "POST", token: ctx.saB, body: { kind: "account", name: "Beta statement", footerCustomText: "BETA-OWN-FOOTER" } })).json.template;
     await api(`/api/pdf-templates/${bt.id}/set-default`, { method: "POST", token: ctx.saB });
-    txt = pdfText((await api(`/api/accounts/${id}/statement.pdf`, { token: bAdm })).buf);
+    txt = await pdfText((await api(`/api/accounts/${id}/statement.pdf`, { token: bAdm })).buf);
     assert(/BETA-OWN-FOOTER/.test(txt) && /Template Beta Ltd/.test(txt), "B's statement does not use B's template / name");
-    const aTxt = pdfText((await api(ctx.acctPdf, { token: ctx.adm })).buf);
+    const aTxt = await pdfText((await api(ctx.acctPdf, { token: ctx.adm })).buf);
     assert(!/BETA-OWN-FOOTER/.test(aTxt) && /TPL-ACCT-FOOTER/.test(aTxt), "A's statement changed because of B");
     assert((await api(`/api/pdf-templates/${bt.id}`, { token: T })).status === 404, "A can open B's template");
   });
@@ -379,7 +363,7 @@ async function run() {
     const pick = (j) => JSON.stringify([(j.account || j).balance, (j.account || j).currentBalance]);
     assert(pick(bal) === pick(before.balance), `balance changed ${pick(before.balance)} -> ${pick(bal)}`);
     const money = (t) => (t.match(/\$[\d,]+\.\d{2}/g) || []).sort().join(" ");
-    const now = pdfText((await api(ctx.acctPdf, { token: ctx.adm })).buf);
+    const now = await pdfText((await api(ctx.acctPdf, { token: ctx.adm })).buf);
     assert(money(now) === money(before.acctPdf), "amounts printed in the PDF statement changed");
   });
 }
@@ -442,7 +426,7 @@ async function browserPart() {
       await p.locator('[data-usage="not-default"]').getByRole("button", { name: "Set as default" }).click();
       await p.waitForSelector('[data-usage="default"]', { timeout: 8000 });
       if (process.env.TEMPLATES_SHOT) await p.screenshot({ path: process.env.TEMPLATES_SHOT });
-      assert(/UI-SAVED-FOOTER/.test(pdfText((await api(ctx.acctPdf, { token: ctx.adm })).buf)), "statement does not use it");
+      assert(/UI-SAVED-FOOTER/.test(await pdfText((await api(ctx.acctPdf, { token: ctx.adm })).buf)), "statement does not use it");
     });
     await check("the editor stacks into one column at tablet width without horizontal scrolling", async () => {
       await p.setViewportSize({ width: 820, height: 1000 }); await p.waitForTimeout(300);

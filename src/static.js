@@ -10,6 +10,9 @@ const MIME = {
   ".svg": "image/svg+xml",
   ".ico": "image/x-icon",
   ".png": "image/png",
+  // NUMERIC TYPOGRAPHY round: the self-hosted Inter digits (public/fonts).
+  ".woff2": "font/woff2",
+  ".txt": "text/plain; charset=utf-8",
 };
 
 function serveStatic(publicDir) {
@@ -32,6 +35,7 @@ function serveStatic(publicDir) {
       // bundle); everything else may be cached normally.
       const headers = { "Content-Type": MIME[ext] || "application/octet-stream" };
       if (ext === ".html") headers["Cache-Control"] = "no-cache";
+      else if (ext === ".woff2") headers["Cache-Control"] = "public, max-age=31536000, immutable";
       res.writeHead(200, headers);
       res.end(data);
     });

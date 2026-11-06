@@ -40,16 +40,8 @@ async function waitFor(fn, ms = 15000, what = "condition") {
   const t0 = Date.now();
   for (;;) { const v = await fn(); if (v) return v; if (Date.now() - t0 > ms) throw new Error(`timed out waiting for ${what}`); await sleep(300); }
 }
-function pdfText(buf) {
-  const s = buf.toString("latin1"); let out = ""; const re = /stream\r?\n/g; let m;
-  while ((m = re.exec(s))) {
-    const start = m.index + m[0].length, end = s.indexOf("endstream", start); if (end < 0) break;
-    let data = Buffer.from(s.slice(start, end), "latin1"); try { data = zlib.inflateSync(data); } catch (e) { /* raw */ }
-    for (const h of data.toString("latin1").matchAll(/<([0-9A-Fa-f\s]+)>\s*Tj/g)) out += Buffer.from(h[1].replace(/\s+/g, ""), "hex").toString("latin1") + "\n";
-    re.lastIndex = end;
-  }
-  return out;
-}
+// Shared reader: also decodes the Inter (number) font's text.
+const { pdfText } = require("./helpers/pdf-text");
 async function xlsxText(buf) {
   const wb = new ExcelJS.Workbook(); await wb.xlsx.load(buf);
   const out = [];
@@ -281,7 +273,7 @@ async function phaseA() {
     const today = tzNow().date;
     const pdf = await api(`/api/daily-reports/snapshots/export.pdf?from=${today}&to=${today}&source=manual`, { token: T });
     assert(pdf.status === 200 && pdf.buf.slice(0, 4).toString() === "%PDF", `pdf ${pdf.status}`);
-    const t = pdfText(pdf.buf);
+    const t = await pdfText(pdf.buf);
     assert(/CMP-0001/.test(t) && /Manual/.test(t) && !/Automatic/.test(t), "PDF ignores the source filter or lacks the company");
     const x = await api(`/api/daily-reports/snapshots/export.xlsx?from=${today}&to=${today}`, { token: T });
     const xt = await xlsxText(x.buf);
@@ -296,9 +288,9 @@ async function phaseA() {
         assert(r.status === 200 && r.buf.length > 500, `${p}.${f} -> ${r.status}`);
       }
     }
-    const det = pdfText((await api(`/api/daily-reports/snapshots/${ctx.auto.id}/report.pdf`, { token: T })).buf);
+    const det = await pdfText((await api(`/api/daily-reports/snapshots/${ctx.auto.id}/report.pdf`, { token: T })).buf);
     assert(/DAILY FINANCIAL SNAPSHOT/.test(det) && det.includes(ctx.auto.businessDate) && /11,000/.test(det), "detail PDF lacks the date or the stored rate");
-    const bh = pdfText((await api(`/api/daily-reports/balance-history/export.pdf?from=${ctx.yesterday}&to=${today}`, { token: T })).buf);
+    const bh = await pdfText((await api(`/api/daily-reports/balance-history/export.pdf?from=${ctx.yesterday}&to=${today}`, { token: T })).buf);
     assert(/No snapshot \(missed\)/.test(bh) && bh.includes(ctx.yesterday), `history PDF hides the missed day: ${bh.slice(0, 600)}`);
   });
 
@@ -345,7 +337,7 @@ async function phaseA() {
     }
     const r = await api(`/api/daily-reports/runs/${ctx.missedRun.id}/retry`, { method: "POST", token: ctx.B });
     assert(r.status === 404, `retry A's run from B -> ${r.status}`);
-    const exp = pdfText((await api(`/api/daily-reports/snapshots/export.pdf?from=2000-01-01`, { token: ctx.B })).buf);
+    const exp = await pdfText((await api(`/api/daily-reports/snapshots/export.pdf?from=2000-01-01`, { token: ctx.B })).buf);
     assert(!/CMP-0001/.test(exp) && new RegExp(ctx.bId).test(exp), "B's export names the wrong company");
   });
   await check("a manual snapshot in Company B stores only B's figures", async () => {

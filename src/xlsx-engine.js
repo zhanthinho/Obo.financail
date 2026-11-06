@@ -1,4 +1,6 @@
 "use strict";
+// NUMERIC TYPOGRAPHY round: the font for numbers in exported workbooks.
+const NUMBER_FONT = "Inter";
 // MASTER PROMPT — shared "Professional Document Engine" Excel counterpart of
 // pdf.js's renderProfessionalDocument. One config-driven builder used by every
 // module's .xlsx export so all documents share the same premium branded
@@ -385,7 +387,18 @@ async function buildProfessionalWorkbook(cfg) {
         if (c.wrap) {
           for (let rr = firstDataRow; rr <= lastDataRow; rr++) ws.getCell(`${letter}${rr}`).alignment = { wrapText: true, vertical: "top" };
         }
-        for (let rr = firstDataRow; rr <= lastDataRow; rr++) ws.getCell(`${letter}${rr}`).font = { name: style.font.family, size: style.font.sizeBody };
+        // NUMERIC TYPOGRAPHY round: number, money and date cells use Inter
+        // (Excel falls back to its default font where Inter isn't installed;
+        // the stored values and number formats are unchanged).
+        for (let rr = firstDataRow; rr <= lastDataRow; rr++) {
+          const cell = ws.getCell(`${letter}${rr}`);
+          const numeric = typeof cell.value === "number" || cell.value instanceof Date || !!numFmt;
+          cell.font = { name: numeric ? NUMBER_FONT : style.font.family, size: style.font.sizeBody };
+        }
+        if (totalsRow && dataRowCount > 0) {
+          const tcell = ws.getCell(`${letter}${lastDataRow + 1}`);
+          if (typeof tcell.value === "number" || (tcell.value && typeof tcell.value === "object" && tcell.value.formula) || numFmt) tcell.font = { name: NUMBER_FONT, bold: true, size: style.font.sizeBody };
+        }
       });
       ws.getRow(headerRow).font = { name: style.font.family, bold: true, color: style.colors.tableHeaderText ? { argb: hexToArgb(style.colors.tableHeaderText) } : undefined };
       if (style.colors.tableHeader) {

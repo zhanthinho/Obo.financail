@@ -1,4 +1,6 @@
 "use strict";
+const fs = require("fs");
+const path = require("path");
 const { PDFDocument, PDFPage, PDFFont, StandardFonts, rgb } = require("pdf-lib");
 const { fmtMoney, convert } = require("./util");
 
@@ -9,6 +11,79 @@ const { fmtMoney, convert } = require("./util");
 // references, amounts) never matches the dictionary and is drawn as-is.
 // A translation the standard PDF fonts cannot encode falls back to English.
 const { tr: trReq, isSomali } = require("./i18n/request");
+
+// ---------------------------------------------------------------------------
+// NUMERIC TYPOGRAPHY round — numbers in Inter in every generated PDF.
+// Every PDF here embeds its text fonts through embedTextFonts(): the
+// template's font (Helvetica / Times / Courier) for words, and Inter
+// (assets/fonts, subset into the file) for any piece of text that is a
+// number — amounts, rates, balances, totals, dates, account numbers and
+// references. Layout is still measured with the template font and each
+// number is drawn in Inter scaled to that same width, so columns, alignment
+// and truncation are unchanged. If the font files or fontkit are missing the
+// documents render exactly as before.
+// ---------------------------------------------------------------------------
+const INTER_FILES = { regular: path.join(__dirname, "..", "assets", "fonts", "Inter-400.ttf"), bold: path.join(__dirname, "..", "assets", "fonts", "Inter-700.ttf") };
+let interBytes = null;
+function loadInter() {
+  if (interBytes === null) {
+    try {
+      interBytes = { regular: fs.readFileSync(INTER_FILES.regular), bold: fs.readFileSync(INTER_FILES.bold), fontkit: require("@pdf-lib/fontkit") };
+    } catch (e) {
+      console.warn("[pdf] Inter number font unavailable — using the standard fonts:", e.message);
+      interBytes = false;
+    }
+  }
+  return interBytes;
+}
+// "Number-like" text: has a digit, and every word in it is a number, a
+// currency code / short unit (USD, SLSH, Nov, PM) or a reference such as
+// EX-2026-0001 or ACC-0006.
+function isNumericText(text) {
+  const s = String(text == null ? "" : text).trim();
+  if (!s || !/\d/.test(s)) return false;
+  return s.split(/\s+/).every((tok) => !/[A-Za-z]/.test(tok) || /^[A-Z0-9#/._-]+[,.:)]?$/.test(tok) || /^\(?[A-Za-z]{1,4}[.,:)]?$/.test(tok));
+}
+async function embedTextFonts(doc, regularStd, boldStd) {
+  const font = await doc.embedFont(regularStd);
+  const bold = await doc.embedFont(boldStd);
+  const inter = loadInter();
+  if (!inter) return { font, bold };
+  try {
+    doc.registerFontkit(inter.fontkit);
+    const ir = await doc.embedFont(inter.regular, { subset: true });
+    const ib = await doc.embedFont(inter.bold, { subset: true });
+    const swap = new Map([[font, ir], [bold, ib]]);
+    if (!doc.__numberFonts) {
+      doc.__numberFonts = swap;
+      const addPage = doc.addPage.bind(doc);
+      doc.addPage = (...args) => {
+        const page = addPage(...args);
+        const draw = page.drawText.bind(page);
+        page.drawText = (text, opts = {}) => {
+          const num = opts.font && doc.__numberFonts.get(opts.font);
+          if (!num || !isNumericText(text)) return draw(text, opts);
+          // Same width as the layout measured (with the template font), so
+          // columns, right-alignment and truncation stay exactly as before:
+          // Inter's figures are a little wider, so the size is trimmed to fit.
+          const size = opts.size || 12;
+          let fit = size;
+          try {
+            const want = opts.font.widthOfTextAtSize(String(text), size), have = num.widthOfTextAtSize(String(text), size);
+            if (have > want && have > 0) fit = size * (want / have);
+          } catch (e) { /* not measurable in the template font: keep the size */ }
+          return draw(text, { ...opts, font: num, size: fit });
+        };
+        return page;
+      };
+    } else {
+      for (const [k, v] of swap) doc.__numberFonts.set(k, v);
+    }
+  } catch (e) {
+    console.warn("[pdf] Inter number font not embedded:", e.message);
+  }
+  return { font, bold };
+}
 const WINANSI_EXTRA = "—–…‘’“”•€™ŠšŽžŒœŸˆ˜‚„†‡‰‹›";
 function pdfSafe(original, translated) {
   for (const ch of translated) {
@@ -122,8 +197,7 @@ function fitLogoBox(img, maxDim) {
 async function renderTablePDF({ title, meta, columns, rows, generatedBy, company }) {
   const NAVY = hexToRgb(company?.pdf_accent_color); // shadows the module default with the company's chosen accent, if any
   const doc = await PDFDocument.create();
-  const font = await doc.embedFont(StandardFonts.Helvetica);
-  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const { font, bold } = await embedTextFonts(doc, StandardFonts.Helvetica, StandardFonts.HelveticaBold);
   const logoImg = await embedLogo(doc, company);
   const logoBox = fitLogoBox(logoImg, 26);
   const companyName = company?.name || "Company";
@@ -228,8 +302,7 @@ async function renderQuotationPDF({ quotation, items, totals, statusLabel, compa
 
   const NAVY = hexToRgb(company?.pdf_accent_color); // shadows the module default with the company's chosen accent, if any
   const doc = await PDFDocument.create();
-  const font = await doc.embedFont(StandardFonts.Helvetica);
-  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const { font, bold } = await embedTextFonts(doc, StandardFonts.Helvetica, StandardFonts.HelveticaBold);
   const logoImg = await embedLogo(doc, company);
   const logoBox = fitLogoBox(logoImg, 30);
   const companyName = company?.name || "Company";
@@ -545,8 +618,7 @@ async function renderProfessionalDocument(cfg) {
   if (tplHeaderNote && !subtitleLines.includes(tplHeaderNote)) subtitleLines = [truncate(tplHeaderNote.replace(/\s*\n\s*/g, " · "), 140), ...subtitleLines];
 
   const doc = await PDFDocument.create();
-  const font = await doc.embedFont(S.fonts.regular);
-  const bold = await doc.embedFont(S.fonts.bold);
+  const { font, bold } = await embedTextFonts(doc, S.fonts.regular, S.fonts.bold);
   const logoImg = S.header.showLogo ? await embedLogo(doc, company) : null;
   const logoBox = fitLogoBox(logoImg, S.header.logoMaxSize);
   const companyName = company?.name || "Company";
@@ -1307,6 +1379,7 @@ async function renderCashAccountStatementPDF({ company, account, rows, summary, 
 }
 
 module.exports = {
+  isNumericText,
   renderTablePDF, renderQuotationPDF, renderAccountStatementPDF,
   renderProfessionalDocument, renderQuotationDocumentPDF, renderExchangeReceiptPDF, renderTransactionStatementPDF,
   renderLedgerReceiptPDF, renderTransferReceiptPDF, renderReportPDF, renderCashAccountStatementPDF,

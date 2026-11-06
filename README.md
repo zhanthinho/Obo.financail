@@ -298,6 +298,17 @@ Idempotency-Key behaviour:
 - **Same key, different body after a success:** refused with 422.
 - **Session that is no longer valid:** gets no stored answer.
 
+## Numbers typography (Inter)
+
+Every number in FINMAN is shown in **Inter**, with tabular, lining figures. That covers amounts, balances, rates, totals, dates, account numbers and references.
+
+- **Screens:** `public/index.html` defines a `"FINMAN Digits"` font: Inter (self-hosted in `public/fonts`), restricted to digits and `$ % + , - . / :`. It is first in every font stack, so numbers render in Inter everywhere while words keep the chosen UI font (Settings › Typography still works). `FONT_MONO` / `--c-font-num` (amounts, references, dates) are Inter too.
+- **PDFs:** numbers are drawn in Inter, embedded and subset from `assets/fonts` through `@pdf-lib/fontkit`. Each number is scaled to the width the layout measured, so columns and alignment are unchanged.
+- **Excel:** number and date cells use the Inter font name. Excel falls back to its default font where Inter isn't installed.
+- **Unchanged:** no value or format changes anywhere.
+- **Fonts:** licensed under the SIL Open Font License; see `assets/fonts/Inter-LICENSE.txt`.
+- **Tests:** `npm run test:numeric-typography`.
+
 ## API reference
 
 All endpoints except `/api/health` and `/api/auth/login` require
