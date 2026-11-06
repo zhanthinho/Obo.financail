@@ -9523,7 +9523,7 @@ function ImportAccountsModal({ onClose, call, dl, notify, onImported, canImportO
                     <td style={td}>{r.rowNumber}</td>
                     <td style={td}>{r.name || <em style={{ color: C.slate }}>(blank)</em>}</td>
                     <td style={td}>{r.currency || "—"}</td>
-                    <td style={{ ...td, fontFamily: FONT_MONO }}>{r.currency ? fmtMoney(r.openingBalance, r.currency) : r.openingBalance}</td>
+                    <td style={{ ...td, fontFamily: FONT_MONO, textAlign: "right", fontWeight: 600, color: Number(r.openingBalance) < 0 ? C.withdrawRed : undefined }} data-opening={r.openingBalance}>{r.currency ? fmtMoney(r.openingBalance, r.currency) : r.openingBalance}</td>
                     <td style={td}><Pill tone={IMPORT_RESULT_TONE[r.result]}>{IMPORT_RESULT_LABEL[r.result]}</Pill></td>
                     <td style={{ ...td, fontSize: 11.5, color: C.slate, maxWidth: 260 }}>
                       {r.errors.map((e, i) => <div key={i} style={{ color: C.red }}>{e}</div>)}

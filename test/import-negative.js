@@ -51,6 +51,10 @@ async function run() {
     ",Neg Brackets Co,company,SLSH,,,active,\"(250,000)\"\r\n" +
     ",Neg Unicode,customer,USD,,,active,− 12.50\r\n" +
     ",Pos Faarax,customer,USD,,,active,40\r\n" +
+    ",Zero Cali,customer,USD,,,active,0\r\n" +
+    ",Neg Slsh Plain,customer,SLSH,,,active,\"-500,000\"\r\n" +
+    ",Neg Usd Dollar,customer,USD,,,active,-$500.00\r\n" +
+    ",Missing Currency,customer,EUR,,,active,-10\r\n" +
     ",Bad Value,customer,USD,,,active,(-5)\r\n";
   const file = { fileName: "neg.csv", fileBase64: Buffer.from(csv).toString("base64") };
   const byName = (rows) => Object.fromEntries(rows.map((r) => [r.name, r]));
@@ -61,11 +65,13 @@ async function run() {
     const r = await api("/api/accounts/import/preview", { method: "POST", token: SA, body: file });
     assert(r.status === 200, `preview ${r.status} ${JSON.stringify(r.json)}`);
     pv = byName(r.json.rows);
-    for (const [n, v] of [["Neg Hodan", -100], ["Neg Brackets Co", -250000], ["Neg Unicode", -12.5], ["Pos Faarax", 40]]) {
+    for (const [n, v] of [["Neg Hodan", -100], ["Neg Brackets Co", -250000], ["Neg Unicode", -12.5], ["Pos Faarax", 40], ["Zero Cali", 0], ["Neg Slsh Plain", -500000], ["Neg Usd Dollar", -500]]) {
       assert(pv[n] && pv[n].result === "valid" && pv[n].openingBalance === v, `${n}: ${JSON.stringify(pv[n])}`);
     }
     assert(pv["Neg Hodan"].warnings.some((w) => /Negative opening balance/.test(w)), "warning");
     assert(pv["Bad Value"].result === "invalid", "a malformed value is still refused");
+    assert(pv["Missing Currency"].result === "invalid", "currency rule still applies to a negative row");
+    assert(!JSON.stringify(r.json).includes("not allowed"), "old 'not allowed' message");
   });
 
   console.log("\nImport");
@@ -85,6 +91,15 @@ async function run() {
     assert(l.length === 1 && l[0].type === "withdrawal" && l[0].amount === 100 && l[0].notes === "Opening balance" && l[0].balanceAfter === -100, JSON.stringify(l));
     const acc = (await api(`/api/accounts/${usd.id}`, { token: SA })).json;
     assert(((acc.account || acc).openingBalance) === -100, `openingBalance ${JSON.stringify((acc.account || acc).openingBalance)}`);
+  });
+  await check("Transaction History and the account statement show the negative opening balance; SLSH stays SLSH", async () => {
+    const h = (await api(`/api/history?currency=SLSH&withSummary=1&search=${encodeURIComponent("Neg Slsh Plain")}`, { token: SA })).json;
+    const e = h.entries.find((x) => x.recordType === "ledger" && /Opening balance/.test(x.notes || x.description || ""));
+    assert(e && e.ledgerType === "withdrawal" && e.debit === 500000, JSON.stringify(h.entries.map((x) => [x.recordType, x.ledgerType, x.debit, x.notes])));
+    const acc = (await api("/api/accounts?currency=SLSH&search=Neg%20Slsh%20Plain", { token: SA })).json.accounts[0];
+    assert(acc.balance === -500000 && acc.currency === "SLSH", JSON.stringify(acc));
+    const z = (await api("/api/accounts?currency=USD&search=Zero%20Cali", { token: SA })).json.accounts[0];
+    assert(z && z.balance === 0, "zero balance account");
   });
   await check("the report says what was created; the bad row is reported, not imported", async () => {
     const txt = JSON.stringify(report);
