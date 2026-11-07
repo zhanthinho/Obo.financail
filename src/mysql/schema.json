@@ -2139,6 +2139,15 @@
      "isCompanyId": false
     },
     {
+     "name": "stamp_data_url",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
      "name": "secondary_color",
      "sqliteType": "TEXT",
      "notNull": false,
@@ -4022,6 +4031,18 @@
      "name": "show_signature_lines",
      "sqliteType": "INTEGER",
      "notNull": true,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "show_stamp",
+     "sqliteType": "INTEGER",
+     "notNull": false,
      "default": {
       "kind": "number",
       "value": 1

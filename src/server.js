@@ -147,6 +147,12 @@ const server = http.createServer(async (req, res) => {
       "font-src 'self' https://fonts.gstatic.com; " +
       "img-src 'self' data:; " +
       "connect-src 'self'; " +
+      // PDF previews are shown in an <iframe> from a blob: URL made in the
+      // page (the PDF is fetched with the user's token first). Without this,
+      // frame-src fell back to default-src 'self' and the browser showed
+      // "This content is blocked" in every PDF Live preview.
+      "frame-src 'self' blob:; " +
+      "object-src 'self' blob:; " +
       "frame-ancestors 'none'; " +
       "base-uri 'self'; " +
       "form-action 'self'"

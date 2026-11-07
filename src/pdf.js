@@ -183,6 +183,19 @@ async function embedLogo(doc, company) {
     return null; // malformed image data — fall back to text-only header rather than failing the export
   }
 }
+// COMPANY STAMP round: the company's stamp / seal (Settings → General).
+async function embedStamp(doc, company) {
+  const dataUrl = company?.stamp_data_url;
+  if (!dataUrl) return null;
+  const match = /^data:image\/(png|jpe?g);base64,(.+)$/i.exec(dataUrl);
+  if (!match) return null;
+  try {
+    const bytes = Buffer.from(match[2], "base64");
+    return /png/i.test(match[1]) ? await doc.embedPng(bytes) : await doc.embedJpg(bytes);
+  } catch (e) {
+    return null; // malformed image — the document is still produced, without the stamp
+  }
+}
 function fitLogoBox(img, maxDim) {
   if (!img) return { w: 0, h: 0 };
   const ratio = Math.min(maxDim / img.width, maxDim / img.height, 1);
@@ -408,6 +421,8 @@ async function renderQuotationPDF({ quotation, items, totals, statusLabel, compa
 
   y = 110;
   if (showSignatureLines) {
+    const stampImg = (template ? template.show_stamp !== 0 : true) ? await embedStamp(doc, company) : null;
+    if (stampImg) { const b = fitLogoBox(stampImg, 78); page.drawImage(stampImg, { x: MARGIN + 60, y: y + 2, width: b.w, height: b.h, opacity: 0.9 }); }
     page.drawLine({ start: { x: MARGIN, y }, end: { x: MARGIN + 180, y }, thickness: 0.8, color: INK });
     page.drawText("Authorized signature", { x: MARGIN, y: y - 12, size: 8, font, color: SLATE });
     page.drawLine({ start: { x: PAGE_W - MARGIN - 180, y }, end: { x: PAGE_W - MARGIN, y }, thickness: 0.8, color: INK });
@@ -541,6 +556,7 @@ function resolveStyle(template, company) {
     showTerms: !!t.show_terms,
     signatureStyle: t.signature_style || "auto",
     signatureLabels,
+    showStamp: t.show_stamp !== 0,
   };
 }
 
@@ -835,9 +851,11 @@ async function renderProfessionalDocument(cfg) {
     y -= 20;
   }
 
+  const stampImg = effectiveSignatures && S.showStamp ? await embedStamp(doc, company) : null;
   if (effectiveSignatures === "lines") {
     const sigY = Math.min(y - 20, 110);
     const right = S.pageW - S.margin.right;
+    if (stampImg) { const b = fitLogoBox(stampImg, 78); page.drawImage(stampImg, { x: S.margin.left + 60, y: sigY + 2, width: b.w, height: b.h, opacity: 0.9 }); }
     const labels = S.signatureLabels && S.signatureLabels.length >= 2 ? S.signatureLabels : ["Authorized signature", "Client acceptance"];
     page.drawLine({ start: { x: S.margin.left, y: sigY }, end: { x: S.margin.left + 180, y: sigY }, thickness: 0.8, color: S.colors.text });
     page.drawText(labels[0], { x: S.margin.left, y: sigY - 12, size: 8, font, color: S.colors.muted });
@@ -901,6 +919,9 @@ async function renderProfessionalDocument(cfg) {
       page.drawLine({ start: { x, y: y - 42 }, end: { x: x + sigColW - 20, y: y - 42 }, thickness: 0.8, color: S.colors.text });
       page.drawText("Signature", { x, y: y - 52, size: 7.5, font, color: S.colors.muted });
     });
+    // The stamp goes on the approving signature (the last column).
+    // Sits on the signature line at the right end of the column, like a real stamp.
+    if (stampImg) { const b = fitLogoBox(stampImg, 64); const x = S.margin.left + 3 * sigColW - 20 - b.w; page.drawImage(stampImg, { x, y: y - 42 - b.h / 2, width: b.w, height: b.h, opacity: 0.85 }); }
   }
 
   if (S.footer.show) {

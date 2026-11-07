@@ -13897,6 +13897,7 @@ function SettingsModule({ call, notify, company, onSaved }) {
   const [address, setAddress] = useState(""); const [phone, setPhone] = useState(""); const [email, setEmail] = useState(""); const [website, setWebsite] = useState("");
   const [logoDataUrl, setLogoDataUrl] = useState(null); const [saving, setSaving] = useState(false);
   const [faviconDataUrl, setFaviconDataUrl] = useState(null);
+  const [stampDataUrl, setStampDataUrl] = useState(null);
   const [pdfAccentColor, setPdfAccentColor] = useState("#084b83"); const [pdfSaving, setPdfSaving] = useState(false);
   // BRAND COLOR MANAGEMENT round: one centralized Brand Theme replaces the
   // old separate "Brand color" + "Theme presets" + "Secondary/Accent color"
@@ -13921,7 +13922,7 @@ function SettingsModule({ call, notify, company, onSaved }) {
     if (!company) return;
     setName(company.name || ""); setTagline(company.tagline || ""); setAddress(company.address || "");
     setPhone(company.phone || ""); setEmail(company.email || ""); setWebsite(company.website || "");
-    setLogoDataUrl(company.logoDataUrl || null); setFaviconDataUrl(company.faviconDataUrl || null);
+    setLogoDataUrl(company.logoDataUrl || null); setFaviconDataUrl(company.faviconDataUrl || null); setStampDataUrl(company.stampDataUrl || null);
     setPdfAccentColor(company.pdfAccentColor || "#084b83");
     // company.brandThemeKey is the source of truth for which card shows
     // "✓ Selected". Older rows (saved before this round) have no
@@ -13968,11 +13969,21 @@ function SettingsModule({ call, notify, company, onSaved }) {
     reader.readAsDataURL(file);
   }
 
+  function onStampFile(e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!/^image\/(png|jpeg)$/.test(file.type)) return notify("The company stamp must be a PNG or JPEG image.", true);
+    if (file.size > 1_300_000) return notify("That stamp image is too large — please use a file under ~1MB.", true);
+    const reader = new FileReader();
+    reader.onload = () => setStampDataUrl(reader.result);
+    reader.readAsDataURL(file);
+  }
   async function save() {
     if (!name.trim()) return notify("Company name is required.", true);
     setSaving(true);
     try {
-      await call("/api/settings/company", { method: "PATCH", body: { name, tagline, address, phone, email, website, logoDataUrl, faviconDataUrl } });
+      await call("/api/settings/company", { method: "PATCH", body: { name, tagline, address, phone, email, website, logoDataUrl, faviconDataUrl, stampDataUrl } });
       notify("Company settings saved.");
       onSaved();
     } catch (e) { notify(e.message, true); } finally { setSaving(false); }
@@ -14073,6 +14084,18 @@ function SettingsModule({ call, notify, company, onSaved }) {
           </label>
           {faviconDataUrl && <div style={{ marginTop: 8 }}><Btn size="sm" tone="ghost" onClick={() => setFaviconDataUrl(null)}>Remove favicon</Btn></div>}
           <div style={{ fontSize: 11, color: C.slate, marginTop: 8 }}>Small icon (PNG, JPEG, or ICO) shown on the browser tab.</div>
+
+          {/* COMPANY STAMP round: the stamp / seal printed beside the signature on PDF documents. */}
+          <div style={{ fontSize: 12.5, fontWeight: 600, color: C.ink, marginTop: 22, marginBottom: 8 }} id="company-stamp-label">Company stamp</div>
+          <div data-stamp-preview style={{ width: 120, height: 120, borderRadius: 10, border: `1px dashed ${C.line}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10, background: C.paper, overflow: "hidden" }}>
+            {stampDataUrl ? <img src={stampDataUrl} alt="Company stamp" style={{ maxWidth: 108, maxHeight: 108, objectFit: "contain" }} /> : <span style={{ fontSize: 11, color: C.slate, textAlign: "center", padding: 8 }}>No stamp yet</span>}
+          </div>
+          <label style={{ display: "inline-block" }}>
+            <input type="file" aria-labelledby="company-stamp-label" accept="image/png,image/jpeg" onChange={onStampFile} style={{ display: "none" }} />
+            <span style={{ display: "inline-block", background: C.paper, border: `1px solid ${C.line}`, borderRadius: 5, padding: "6px 12px", fontSize: 12.5, fontWeight: 600, cursor: "pointer", color: C.ink }}>{stampDataUrl ? "Change stamp…" : "Upload stamp…"}</span>
+          </label>
+          {stampDataUrl && <div style={{ marginTop: 8 }}><Btn size="sm" tone="ghost" onClick={() => setStampDataUrl(null)}>Remove stamp</Btn></div>}
+          <div style={{ fontSize: 11, color: C.slate, marginTop: 8 }}>PNG (transparent background works best) or JPEG, under ~1MB. Printed beside the signature on PDF documents — switch it on or off per template in PDF Templates → Signatures. Click Save to keep it.</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <Field label="Company name"><Input value={name} onChange={(e) => setName(e.target.value)} /></Field>
@@ -14352,6 +14375,8 @@ const PDF_FIELD_CATALOG = [
   { group: "Signatures", key: "signatureStyle", label: "Signature style", type: "enum", options: ["auto", "lines", "full", "none"] },
   { group: "Signatures", key: "signatureLabels", label: "Signature labels", type: "list", nullable: true },
   { group: "Signatures", key: "showSignatureLines", label: "Show signature lines (legacy documents)", type: "bool" },
+  // COMPANY STAMP round: the stamp is uploaded once in Settings → General.
+  { group: "Signatures", key: "showStamp", label: "Show company stamp beside the signature", type: "bool", hint: "Upload or change the stamp in Settings → General → Company stamp." },
 ];
 const PDF_FIELD_GROUPS = Array.from(new Set(PDF_FIELD_CATALOG.map((f) => f.group)));
 const pdfCheckboxLabel = { display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: C.ink };
@@ -14361,7 +14386,8 @@ const pdfTabBtnActive = { background: C.navy, borderColor: C.navy, color: "#fff"
 function PdfField({ def, value, onChange }) {
   const inherited = def.nullable && (value === null || value === undefined || value === "");
   if (def.type === "bool") {
-    return <label style={pdfCheckboxLabel}><input type="checkbox" checked={!!value} onChange={(e) => onChange(e.target.checked)} /> {def.label}</label>;
+    const box = <label style={pdfCheckboxLabel}><input type="checkbox" checked={!!value} onChange={(e) => onChange(e.target.checked)} /> {def.label}</label>;
+    return def.hint ? <div>{box}<div style={{ fontSize: 11, color: C.slate, margin: "3px 0 0 26px" }}>{def.hint}</div></div> : box;
   }
   if (def.type === "enum") {
     return <Field label={def.label}><Select value={value || def.options[0]} onChange={(e) => onChange(e.target.value)}>{def.options.map((o) => <option key={o} value={o}>{o}</option>)}</Select></Field>;

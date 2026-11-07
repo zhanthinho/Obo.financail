@@ -2687,5 +2687,13 @@
  "This company": "Shirkaddan",
  "Viewer / Read-Only": "Daawade / Akhris-keliya",
  "Exchange Operator": "Hawlwadeenka Sarrifka",
- "Company Admin": "Maamulaha Shirkadda"
+ "Company Admin": "Maamulaha Shirkadda",
+ "Company stamp": "Shaabadda shirkadda",
+ "No stamp yet": "Shaabad weli lama gelin",
+ "Upload stamp…": "Soo geli shaabadda…",
+ "Change stamp…": "Beddel shaabadda…",
+ "Remove stamp": "Ka saar shaabadda",
+ "Show company stamp beside the signature": "Tus shaabadda shirkadda saxeexa agtiisa",
+ "Upload or change the stamp in Settings → General → Company stamp.": "Shaabadda ka geli ama ka beddel Settings → General → Company stamp.",
+ "PNG (transparent background works best) or JPEG, under ~1MB. Printed beside the signature on PDF documents — switch it on or off per template in PDF Templates → Signatures. Click Save to keep it.": "PNG (asal aan muuqan ayaa ugu fiican) ama JPEG, ka yar ~1MB. Waxay ka soo baxdaa saxeexa agtiisa dukumentiyada PDF — template kasta ka shid ama ka dami PDF Templates → Signatures. Riix Save si loo kaydiyo."
 }

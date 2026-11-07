@@ -23,7 +23,10 @@ function serialize(row) {
   return {
     name: row.name, tagline: row.tagline || "", address: row.address || "", phone: row.phone || "",
     email: row.email || "", website: row.website || "", logoDataUrl: row.logo_data_url || null,
-    faviconDataUrl: row.favicon_data_url || null, pdfAccentColor: row.pdf_accent_color || "#084b83",
+    faviconDataUrl: row.favicon_data_url || null,
+    // COMPANY STAMP round: the company's stamp / seal, printed beside the
+    // signatures on PDF documents (template option "Show company stamp").
+    stampDataUrl: row.stamp_data_url || null, pdfAccentColor: row.pdf_accent_color || "#084b83",
     brandColor: row.brand_color || null, secondaryColor: row.secondary_color || null,
     accentColor: row.accent_color || null, statusPendingColor: row.status_pending_color || null,
     statusPaidColor: row.status_paid_color || null, statusRefundedColor: row.status_refunded_color || null,
@@ -149,6 +152,12 @@ function register(router) {
     if (body.faviconDataUrl && !require("../image-validate").isRealImageDataUrl(body.faviconDataUrl, ["png", "jpeg", "ico"])) {
       return badRequest(res, "Favicon must be a PNG, JPEG, or ICO image.");
     }
+    if (body.stampDataUrl && (typeof body.stampDataUrl !== "string" || body.stampDataUrl.length > MAX_LOGO_CHARS)) {
+      return badRequest(res, "That stamp image is too large. Please use a smaller file (under ~1MB).");
+    }
+    if (body.stampDataUrl && !require("../image-validate").isRealImageDataUrl(body.stampDataUrl, ["png", "jpeg"])) {
+      return badRequest(res, "The company stamp must be a PNG or JPEG image.");
+    }
     const tagline = body.tagline !== undefined ? body.tagline : current.tagline;
     const address = body.address !== undefined ? body.address : current.address;
     const phone = body.phone !== undefined ? body.phone : current.phone;
@@ -156,6 +165,7 @@ function register(router) {
     const website = body.website !== undefined ? body.website : current.website;
     const logoDataUrl = body.logoDataUrl !== undefined ? body.logoDataUrl : current.logo_data_url;
     const faviconDataUrl = body.faviconDataUrl !== undefined ? body.faviconDataUrl : current.favicon_data_url;
+    const stampDataUrl = body.stampDataUrl !== undefined ? (body.stampDataUrl || null) : current.stamp_data_url;
     const pdfAccentColor = body.pdfAccentColor !== undefined ? body.pdfAccentColor : current.pdf_accent_color;
     const brandColor = body.brandColor !== undefined ? body.brandColor : current.brand_color;
     const secondaryColor = body.secondaryColor !== undefined ? body.secondaryColor : current.secondary_color;
@@ -172,15 +182,18 @@ function register(router) {
     const registrationNumber = body.registrationNumber !== undefined ? body.registrationNumber : current.registration_number;
     const taxNumber = body.taxNumber !== undefined ? body.taxNumber : current.tax_number;
     run(
-      `UPDATE company_settings SET name=?, tagline=?, address=?, phone=?, email=?, website=?, logo_data_url=?, favicon_data_url=?,
+      `UPDATE company_settings SET name=?, tagline=?, address=?, phone=?, email=?, website=?, logo_data_url=?, favicon_data_url=?, stamp_data_url=?,
        pdf_accent_color=?, brand_color=?, secondary_color=?, accent_color=?, status_pending_color=?, status_paid_color=?,
        status_refunded_color=?, font_family=?, font_size=?, primary_dark=?, primary_light=?, accent_bright=?,
        brand_theme_key=?, registration_number=?, tax_number=?, updated_by=?, updated_at=? WHERE id=1`,
-      [name, tagline, address, phone, email, website, logoDataUrl, faviconDataUrl, pdfAccentColor, brandColor,
+      [name, tagline, address, phone, email, website, logoDataUrl, faviconDataUrl, stampDataUrl, pdfAccentColor, brandColor,
        secondaryColor, accentColor, statusPendingColor, statusPaidColor, statusRefundedColor, fontFamily, fontSize,
        primaryDark, primaryLight, accentBright, brandThemeKey, registrationNumber, taxNumber, user.name, nowISO()]
     );
     addAudit(user, "Company settings updated", `${name}`);
+    if (body.stampDataUrl !== undefined && (body.stampDataUrl || null) !== (current.stamp_data_url || null)) {
+      addAudit(user, stampDataUrl ? (current.stamp_data_url ? "Company stamp replaced" : "Company stamp uploaded") : "Company stamp removed", name);
+    }
     // Keep the Super Admin's Companies registry in step with this company's
     // own branding (name/logo/contact).
     require("../tenancy").syncRegistryFromSettings();

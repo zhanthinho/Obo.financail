@@ -50,6 +50,7 @@ const FIELD_DEFS = [
   { key: "headerNote", col: "header_note", type: "text", max: 400 },
   { key: "footerText", col: "footer_text", type: "text", max: 400 },
   { key: "showSignatureLines", col: "show_signature_lines", type: "bool" },
+  { key: "showStamp", col: "show_stamp", type: "bool" },
   { key: "showNotes", col: "show_notes", type: "bool" },
   { key: "showBillToAddress", col: "show_bill_to_address", type: "bool" },
   { key: "showBillToContact", col: "show_bill_to_contact", type: "bool" },
@@ -129,7 +130,7 @@ const COLUMN_DEFAULTS = {
   footer_show_email: 0, footer_show_website: 0, footer_show_generated_by: 1, footer_show_generated_date: 1,
   footer_show_page_number: 1, footer_show_signature: 1, footer_align: "'left'", table_alt_rows: 0, table_border_style: "'none'",
   table_row_padding: 0, show_summary_cards: 1, show_terms: 0, signature_style: "'auto'",
-  show_signature_lines: 1, show_notes: 1, show_bill_to_address: 1, show_bill_to_contact: 1,
+  show_signature_lines: 1, show_stamp: 1, show_notes: 1, show_bill_to_address: 1, show_bill_to_contact: 1,
 };
 const RESET_SQL = FIELD_DEFS.map((def) => `${def.col} = ${Object.prototype.hasOwnProperty.call(COLUMN_DEFAULTS, def.col) ? COLUMN_DEFAULTS[def.col] : "NULL"}`).join(", ");
 
@@ -183,7 +184,7 @@ function serialize(row) {
   };
   for (const def of FIELD_DEFS) {
     const raw = row[def.col];
-    if (def.type === "bool") out[def.key] = !!raw;
+    if (def.type === "bool") out[def.key] = raw === null || raw === undefined ? COLUMN_DEFAULTS[def.col] === 1 : !!raw; // a column added later reads as its default until saved
     else if (def.type === "json") { try { out[def.key] = raw ? JSON.parse(raw) : null; } catch (e) { out[def.key] = null; } }
     else if (def.type === "text") out[def.key] = raw || "";
     else out[def.key] = raw ?? null;
