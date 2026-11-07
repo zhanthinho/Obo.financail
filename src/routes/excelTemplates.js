@@ -286,7 +286,7 @@ async function buildPreviewXLSX(kind, template, company, user, useReal) {
 function register(router) {
   router.get("/api/excel-templates/kinds", (req, res) => {
     const user = requireAuth(req, res); if (!user) return;
-    if (!requirePerm(user, res, "excelTemplates.manage")) return;
+    if (!requirePerm(user, res, "excelTemplates.view")) return;
     const kinds = Object.entries(KIND_LABELS).map(([key, label]) => {
       const def = get("SELECT id, name FROM excel_templates WHERE kind = ? AND is_default = 1 AND is_archived = 0", [key]);
       const count = get("SELECT COUNT(*) as n FROM excel_templates WHERE kind = ? AND is_archived = 0", [key]).n;
@@ -297,13 +297,13 @@ function register(router) {
 
   router.get("/api/excel-templates/presets", (req, res) => {
     const user = requireAuth(req, res); if (!user) return;
-    if (!requirePerm(user, res, "excelTemplates.manage")) return;
+    if (!requirePerm(user, res, "excelTemplates.view")) return;
     sendJSON(res, 200, { presets: Object.entries(PRESETS).map(([key, p]) => ({ key, name: p.name, description: p.description, swatch: p.columns.color_primary || null, accent: p.columns.color_accent || null })) });
   });
 
   router.get("/api/excel-templates", (req, res, params, query) => {
     const user = requireAuth(req, res); if (!user) return;
-    if (!requirePerm(user, res, "excelTemplates.manage")) return;
+    if (!requirePerm(user, res, "excelTemplates.view")) return;
     const kind = query && query.kind;
     if (!kind || !VALID_KINDS.has(kind)) return badRequest(res, "Unknown or missing template kind.");
     const includeArchived = query && (query.includeArchived === "1" || query.includeArchived === "true");
@@ -315,7 +315,7 @@ function register(router) {
 
   router.get("/api/excel-templates/:id", (req, res, params) => {
     const user = requireAuth(req, res); if (!user) return;
-    if (!requirePerm(user, res, "excelTemplates.manage")) return;
+    if (!requirePerm(user, res, "excelTemplates.view")) return;
     const row = get("SELECT * FROM excel_templates WHERE id = ?", [params.id]);
     if (!row) return notFound(res, "Template not found.");
     sendJSON(res, 200, { template: serialize(row) });
@@ -323,7 +323,7 @@ function register(router) {
 
   router.post("/api/excel-templates", async (req, res) => {
     const user = requireAuth(req, res); if (!user) return;
-    if (!requirePerm(user, res, "excelTemplates.manage")) return;
+    if (!requirePerm(user, res, "excelTemplates.create")) return;
     let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
     if (!body || typeof body !== "object" || Array.isArray(body)) return badRequest(res, "Template settings must be a JSON object.");
     { const bad = unknownKeys(body, ["name"]); if (bad.length) return badRequest(res, `Unknown template setting(s): ${bad.slice(0, 5).join(", ")}.`); }
@@ -357,7 +357,7 @@ function register(router) {
 
   router.patch("/api/excel-templates/:id", async (req, res, params) => {
     const user = requireAuth(req, res); if (!user) return;
-    if (!requirePerm(user, res, "excelTemplates.manage")) return;
+    if (!requirePerm(user, res, "excelTemplates.update")) return;
     const current = get("SELECT * FROM excel_templates WHERE id = ?", [params.id]);
     if (!current) return notFound(res, "Template not found.");
     let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
@@ -384,7 +384,7 @@ function register(router) {
 
   router.post("/api/excel-templates/:id/duplicate", async (req, res, params) => {
     const user = requireAuth(req, res); if (!user) return;
-    if (!requirePerm(user, res, "excelTemplates.manage")) return;
+    if (!requirePerm(user, res, "excelTemplates.create")) return;
     const src = get("SELECT * FROM excel_templates WHERE id = ?", [params.id]);
     if (!src) return notFound(res, "Template not found.");
     let body = {}; try { body = (await readJSONBody(req)) || {}; } catch (e) { /* body is optional here */ }
@@ -400,7 +400,7 @@ function register(router) {
 
   router.post("/api/excel-templates/:id/set-default", (req, res, params) => {
     const user = requireAuth(req, res); if (!user) return;
-    if (!requirePerm(user, res, "excelTemplates.manage")) return;
+    if (!requirePerm(user, res, "excelTemplates.update")) return;
     const row = get("SELECT * FROM excel_templates WHERE id = ?", [params.id]);
     if (!row) return notFound(res, "Template not found.");
     if (row.is_archived) return badRequest(res, "An archived template can't be set as the default — restore it first.");
@@ -413,7 +413,7 @@ function register(router) {
 
   router.post("/api/excel-templates/:id/archive", (req, res, params) => {
     const user = requireAuth(req, res); if (!user) return;
-    if (!requirePerm(user, res, "excelTemplates.manage")) return;
+    if (!requirePerm(user, res, "excelTemplates.update")) return;
     const row = get("SELECT * FROM excel_templates WHERE id = ?", [params.id]);
     if (!row) return notFound(res, "Template not found.");
     if (row.is_default) return badRequest(res, "Can't archive the default template — set a different one as default first.");
@@ -425,7 +425,7 @@ function register(router) {
 
   router.post("/api/excel-templates/:id/restore", (req, res, params) => {
     const user = requireAuth(req, res); if (!user) return;
-    if (!requirePerm(user, res, "excelTemplates.manage")) return;
+    if (!requirePerm(user, res, "excelTemplates.update")) return;
     const row = get("SELECT * FROM excel_templates WHERE id = ?", [params.id]);
     if (!row) return notFound(res, "Template not found.");
     if (!row.is_archived) return sendJSON(res, 200, { template: serialize(row) });
@@ -436,7 +436,7 @@ function register(router) {
 
   router.post("/api/excel-templates/:id/reset", (req, res, params) => {
     const user = requireAuth(req, res); if (!user) return;
-    if (!requirePerm(user, res, "excelTemplates.manage")) return;
+    if (!requirePerm(user, res, "excelTemplates.update")) return;
     const row = get("SELECT * FROM excel_templates WHERE id = ?", [params.id]);
     if (!row) return notFound(res, "Template not found.");
     run(`UPDATE excel_templates SET ${RESET_SQL}, preset_key = NULL, version = version + 1, updated_at = ?, updated_by = ? WHERE id = ?`, [nowISO(), user.name, params.id]);
@@ -446,7 +446,7 @@ function register(router) {
 
   router.delete("/api/excel-templates/:id", (req, res, params) => {
     const user = requireAuth(req, res); if (!user) return;
-    if (!requirePerm(user, res, "excelTemplates.manage")) return;
+    if (!requirePerm(user, res, "excelTemplates.delete")) return;
     const row = get("SELECT * FROM excel_templates WHERE id = ?", [params.id]);
     if (!row) return notFound(res, "Template not found.");
     if (row.is_builtin) return badRequest(res, "The built-in default template can't be deleted.");
@@ -462,7 +462,7 @@ function register(router) {
   // preview.pdf endpoint.
   router.get("/api/excel-templates/:id/preview.xlsx", async (req, res, params, query) => {
     const user = requireAuth(req, res); if (!user) return;
-    if (!requirePerm(user, res, "excelTemplates.manage")) return;
+    if (!requirePerm(user, res, "excelTemplates.view")) return;
     const template = get("SELECT * FROM excel_templates WHERE id = ?", [params.id]);
     if (!template) return notFound(res, "Template not found.");
     const useReal = !!(query && (query.real === "1" || query.real === "true"));

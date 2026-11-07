@@ -384,6 +384,7 @@ const THEME_CSS = `
   .gk-txsort-opt.is-selected { background: #ECFDF5; color: #065F46; font-weight: 700; } .gk-txsort-check { color: #10B981 !important; }
   @media (max-width: 640px) { .gk-txsort, .gk-txsort-btn { width: 100%; } .gk-txsort-btn { justify-content: flex-start; } .gk-txsort-chev { margin-left: auto; } .gk-txsort-menu { left: 0; right: 0; } }
   :root[data-theme="dark"] .gk-txsort-btn, :root[data-theme="dark"] .gk-txsort-menu { background: var(--c-card); color: var(--c-ink); }
+  .gk-user-company { display: inline-flex; align-items: center; gap: 5px; color: var(--c-slate); white-space: nowrap; }
   .gk-acombo-sel { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 9px; padding: 3px 4px; }
   .gk-acombo-sel .gk-acard-avatar { flex-basis: 32px; width: 32px; height: 32px; font-size: 11.5px; }
   .gk-acombo-sel-main { min-width: 0; flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; }
@@ -5551,7 +5552,7 @@ function App() {
       // user.isSuperAdmin boolean (routes/auth.js), which is the correct and
       // only way to gate this Super-Admin-only page in the UI. See
       // PdfTemplatesModule for the full scope decision.
-      { key: "settings-pdf-templates", label: "PDF Templates", icon: "document", show: !!user.isSuperAdmin },
+      { key: "settings-pdf-templates", label: "PDF Templates", icon: "document", show: !!user.isSuperAdmin || hasRaw("pdfTemplates.view") },
       // EXCEL TEMPLATE & CUSTOMIZATION ENGINE round: same exact gating
       // rationale as settings-pdf-templates above — excelTemplates.manage is
       // a brand-new granular key with no LEGACY_KEY_MAP entry and no seeded
@@ -5560,7 +5561,7 @@ function App() {
       // every /api/excel-templates route. Gating the menu item on the same
       // user.isSuperAdmin flag just keeps a non-Super-Admin from seeing a
       // page every request to which would 403 anyway.
-      { key: "settings-excel-templates", label: "Excel Templates", icon: "document", show: !!user.isSuperAdmin },
+      { key: "settings-excel-templates", label: "Excel Templates", icon: "document", show: !!user.isSuperAdmin || hasRaw("excelTemplates.view") },
       { key: "settings-deactivated", label: "Deactivated Accounts", icon: "deactivated", show: perm("accountsManage") },
       // DATA RESET round: Super Admin only (same gating as the template pages).
       { key: "settings-data-reset", label: "Reset Data", icon: "settings", show: !!user.isSuperAdmin },
@@ -5842,8 +5843,8 @@ function App() {
             {view === "roles" && hasRaw("roles.view") && <RolesModule call={call} notify={notify} currentUser={user} hasRaw={hasRaw} />}
             {view === "usersRoles-overview" && perm("users") && <SystemOverviewModule call={call} notify={notify} />}
             {view === "settings-general" && perm("settingsManage") && <SettingsModule call={call} notify={notify} company={company} onSaved={refreshCompany} />}
-            {view === "settings-pdf-templates" && !!user.isSuperAdmin && <PdfTemplatesModule call={call} dl={dl} preview={preview} print={print} notify={notify} token={token} user={user} />}
-            {view === "settings-excel-templates" && !!user.isSuperAdmin && <ExcelTemplatesModule call={call} dl={dl} notify={notify} token={token} user={user} />}
+            {view === "settings-pdf-templates" && (!!user.isSuperAdmin || hasRaw("pdfTemplates.view")) && <PdfTemplatesModule call={call} dl={dl} preview={preview} print={print} notify={notify} token={token} user={user} />}
+            {view === "settings-excel-templates" && (!!user.isSuperAdmin || hasRaw("excelTemplates.view")) && <ExcelTemplatesModule call={call} dl={dl} notify={notify} token={token} user={user} />}
             {view === "settings-data-reset" && !!user.isSuperAdmin && <DataResetModule call={call} notify={notify} />}
             {view === "settings-deactivated" && perm("accountsManage") && <DeactivatedAccountsModule call={call} dl={dl} preview={preview} print={print} notify={notify} perm={perm} hasRaw={hasRaw} onOpenAccountView={openAccountView} />}
             {/* ACCOUNT VIEW FULL-PAGE round: the dedicated full page, reached
@@ -14675,7 +14676,10 @@ function CreatePdfTemplateModal({ kind, presets, call, notify, onClose, onCreate
   );
 }
 
-function PdfTemplatesModule({ call, dl, preview, notify, token }) {
+function PdfTemplatesModule({ call, dl, preview, notify, token, user }) {
+  // USER ROLES & PERMISSIONS UPDATE round: buttons follow the granular
+  // pdfTemplates.view / create / update / delete permissions (the server checks them too).
+  const tcan = (a) => !!(user && (user.isSuperAdmin || user.rawKeys === null || (user.rawKeys || []).includes(`pdfTemplates.${a}`)));
   const [kind, setKind] = useState("global");
   const [kinds, setKinds] = useState([]);
   const [presets, setPresets] = useState([]);
@@ -14734,7 +14738,7 @@ function PdfTemplatesModule({ call, dl, preview, notify, token }) {
             <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: C.slate, fontWeight: 600 }}>
               <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} /> Show archived
             </label>
-            <Btn tone="primary" onClick={() => setCreateOpen(true)}>+ New template</Btn>
+            {tcan("create") && <Btn tone="primary" onClick={() => setCreateOpen(true)}>+ New template</Btn>}
           </>
         } />
 
@@ -14782,14 +14786,14 @@ function PdfTemplatesModule({ call, dl, preview, notify, token }) {
                   <td style={td}>{t.updatedAt ? fmtDateTime(t.updatedAt) : "—"}</td>
                   <td style={td}>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      <Btn size="sm" tone="primary" disabled={busyId === t.id} onClick={() => setEditingId(t.id)}>Customize</Btn>
+                      {tcan("update") && <Btn size="sm" tone="primary" disabled={busyId === t.id} onClick={() => setEditingId(t.id)}>Customize</Btn>}
                       <Btn size="sm" tone="subtle" disabled={busyId === t.id} onClick={() => preview(`/api/pdf-templates/${t.id}/preview.pdf`)}>Preview</Btn>
                       <Btn size="sm" tone="subtle" disabled={busyId === t.id} onClick={() => dl(`/api/pdf-templates/${t.id}/preview.pdf?real=1`, `${t.name}-test.pdf`)}>Test PDF (real data)</Btn>
-                      <Btn size="sm" tone="ghost" disabled={busyId === t.id} onClick={() => action(t, "/duplicate", `Duplicated "${t.name}".`)}>Duplicate</Btn>
-                      {!t.isDefault && !t.isArchived && <Btn size="sm" tone="ghost" disabled={busyId === t.id} onClick={() => action(t, "/set-default", `"${t.name}" is now the default.`)}>Set default</Btn>}
-                      {!t.isDefault && !t.isArchived && <Btn size="sm" tone="ghost" disabled={busyId === t.id} onClick={() => action(t, "/archive", `"${t.name}" archived.`)}>Archive</Btn>}
-                      {t.isArchived && <Btn size="sm" tone="ghost" disabled={busyId === t.id} onClick={() => action(t, "/restore", `"${t.name}" restored.`)}>Restore</Btn>}
-                      {!t.isBuiltin && !t.isDefault && <Btn size="sm" tone="danger" disabled={busyId === t.id} onClick={() => setDeleteTarget(t)}>Delete</Btn>}
+                      {tcan("create") && <Btn size="sm" tone="ghost" disabled={busyId === t.id} onClick={() => action(t, "/duplicate", `Duplicated "${t.name}".`)}>Duplicate</Btn>}
+                      {tcan("update") && !t.isDefault && !t.isArchived && <Btn size="sm" tone="ghost" disabled={busyId === t.id} onClick={() => action(t, "/set-default", `"${t.name}" is now the default.`)}>Set default</Btn>}
+                      {tcan("update") && !t.isDefault && !t.isArchived && <Btn size="sm" tone="ghost" disabled={busyId === t.id} onClick={() => action(t, "/archive", `"${t.name}" archived.`)}>Archive</Btn>}
+                      {tcan("update") && t.isArchived && <Btn size="sm" tone="ghost" disabled={busyId === t.id} onClick={() => action(t, "/restore", `"${t.name}" restored.`)}>Restore</Btn>}
+                      {tcan("delete") && !t.isBuiltin && !t.isDefault && <Btn size="sm" tone="danger" disabled={busyId === t.id} onClick={() => setDeleteTarget(t)}>Delete</Btn>}
                     </div>
                   </td>
                 </tr>
@@ -15007,7 +15011,10 @@ function CreateExcelTemplateModal({ kind, presets, call, notify, onClose, onCrea
   );
 }
 
-function ExcelTemplatesModule({ call, dl, notify, token }) {
+function ExcelTemplatesModule({ call, dl, notify, token, user }) {
+  // USER ROLES & PERMISSIONS UPDATE round: buttons follow the granular
+  // excelTemplates.view / create / update / delete permissions (the server checks them too).
+  const tcan = (a) => !!(user && (user.isSuperAdmin || user.rawKeys === null || (user.rawKeys || []).includes(`excelTemplates.${a}`)));
   const [kind, setKind] = useState("global");
   const [kinds, setKinds] = useState([]);
   const [presets, setPresets] = useState([]);
@@ -15066,7 +15073,7 @@ function ExcelTemplatesModule({ call, dl, notify, token }) {
             <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: C.slate, fontWeight: 600 }}>
               <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} /> Show archived
             </label>
-            <Btn tone="primary" onClick={() => setCreateOpen(true)}>+ New template</Btn>
+            {tcan("create") && <Btn tone="primary" onClick={() => setCreateOpen(true)}>+ New template</Btn>}
           </>
         } />
 
@@ -15114,14 +15121,14 @@ function ExcelTemplatesModule({ call, dl, notify, token }) {
                   <td style={td}>{t.updatedAt ? fmtDateTime(t.updatedAt) : "—"}</td>
                   <td style={td}>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      <Btn size="sm" tone="primary" disabled={busyId === t.id} onClick={() => setEditingId(t.id)}>Customize</Btn>
+                      {tcan("update") && <Btn size="sm" tone="primary" disabled={busyId === t.id} onClick={() => setEditingId(t.id)}>Customize</Btn>}
                       <Btn size="sm" tone="subtle" disabled={busyId === t.id} onClick={() => dl(`/api/excel-templates/${t.id}/preview.xlsx`, `${t.name}-preview.xlsx`)}>Preview</Btn>
                       <Btn size="sm" tone="subtle" disabled={busyId === t.id} onClick={() => dl(`/api/excel-templates/${t.id}/preview.xlsx?real=1`, `${t.name}-test.xlsx`)}>Test Excel (real data)</Btn>
-                      <Btn size="sm" tone="ghost" disabled={busyId === t.id} onClick={() => action(t, "/duplicate", `Duplicated "${t.name}".`)}>Duplicate</Btn>
-                      {!t.isDefault && !t.isArchived && <Btn size="sm" tone="ghost" disabled={busyId === t.id} onClick={() => action(t, "/set-default", `"${t.name}" is now the default.`)}>Set default</Btn>}
-                      {!t.isDefault && !t.isArchived && <Btn size="sm" tone="ghost" disabled={busyId === t.id} onClick={() => action(t, "/archive", `"${t.name}" archived.`)}>Archive</Btn>}
-                      {t.isArchived && <Btn size="sm" tone="ghost" disabled={busyId === t.id} onClick={() => action(t, "/restore", `"${t.name}" restored.`)}>Restore</Btn>}
-                      {!t.isBuiltin && !t.isDefault && <Btn size="sm" tone="danger" disabled={busyId === t.id} onClick={() => setDeleteTarget(t)}>Delete</Btn>}
+                      {tcan("create") && <Btn size="sm" tone="ghost" disabled={busyId === t.id} onClick={() => action(t, "/duplicate", `Duplicated "${t.name}".`)}>Duplicate</Btn>}
+                      {tcan("update") && !t.isDefault && !t.isArchived && <Btn size="sm" tone="ghost" disabled={busyId === t.id} onClick={() => action(t, "/set-default", `"${t.name}" is now the default.`)}>Set default</Btn>}
+                      {tcan("update") && !t.isDefault && !t.isArchived && <Btn size="sm" tone="ghost" disabled={busyId === t.id} onClick={() => action(t, "/archive", `"${t.name}" archived.`)}>Archive</Btn>}
+                      {tcan("update") && t.isArchived && <Btn size="sm" tone="ghost" disabled={busyId === t.id} onClick={() => action(t, "/restore", `"${t.name}" restored.`)}>Restore</Btn>}
+                      {tcan("delete") && !t.isBuiltin && !t.isDefault && <Btn size="sm" tone="danger" disabled={busyId === t.id} onClick={() => setDeleteTarget(t)}>Delete</Btn>}
                     </div>
                   </td>
                 </tr>
@@ -15358,6 +15365,10 @@ function UsersModule({ call, notify, currentUser, hasRaw }) {
     { key: "roleLabel", label: "Role", sortField: "roleLabel", render: (u) => <Pill tone={u.isSuperAdmin ? "amber" : "navy"}>{u.roleLabel}</Pill> },
     { key: "status", label: "Status", sortField: "active", render: (u) => u.status === "suspended" ? <Pill tone="amber">Suspended</Pill> : u.active ? <Pill tone="green">Active</Pill> : <Pill tone="red">Deactivated</Pill> },
     { key: "lastLogin", label: "Last login", sortField: "lastLogin", render: (u) => u.lastLogin ? fmtDateTime(u.lastLogin) : "Never" },
+    // USER ROLES & PERMISSIONS UPDATE round: the company the account belongs
+    // to (every company keeps its own users) and when it was created.
+    { key: "company", label: "Company", render: () => <span className="gk-user-company"><NavIcon name="building2" size={13} />{(currentUser && currentUser.company && currentUser.company.name) || "This company"}</span> },
+    { key: "createdAt", label: "Created", sortField: "createdAt", render: (u) => u.createdAt ? <DateTimeCell value={u.createdAt} /> : "—" },
   ];
   const columns = resolveColumns(USERS_COLUMNS, layoutState.effective);
 
@@ -15379,12 +15390,14 @@ function UsersModule({ call, notify, currentUser, hasRaw }) {
           <TableScrollShell height={460}>
           <ResizableTable tableKey="users" className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead><tr>
+              <SortTh label="#" resizeKey="__rowno_u" />
               {columns.map((c) => <SortTh key={c.key} label={c.label} field={c.sortField} {...userSort} onSort={userSort.toggleSort} />)}
               <SortTh label="" resizeKey="__actions9" /><SortTh label="" resizeKey="__actions10" /><SortTh label="" resizeKey="__actions11" /><SortTh label="" resizeKey="__actions12" />
             </tr></thead>
             <tbody>
-              {userPg.pageRows.map((u) => (
+              {userPg.pageRows.map((u, rowI) => (
                 <tr key={u.id}>
+                  <td style={densityStyle(td, density)} className="gk-rowno">{userPg.firstIdx + rowI}</td>
                   {columns.map((c) => <td key={c.key} style={tableCellStyle(c, density)}>{c.render(u)}</td>)}
                   <td style={densityStyle(td, density)}><Btn size="sm" tone="ghost" onClick={() => setEditUser(u)}>Edit</Btn></td>
                   <td style={densityStyle(td, density)}>{canManagePerms && <span style={{ display: "inline-flex", gap: 6 }}><Btn size="sm" tone="subtle" onClick={() => setPermsUser(u)}>Permissions</Btn>{!u.isSuperAdmin && u.id !== currentUser.id && <Btn size="sm" tone="subtle" onClick={() => setAccessUser(u)}>Account Access</Btn>}</span>}</td>
@@ -15684,6 +15697,8 @@ function RolesModule({ call, notify, currentUser, hasRaw }) {
       </span>) : "—" },
     { key: "status", label: "Status", sortField: "status", render: (r) => r.status === "inactive" ? <Pill tone="slate">Inactive</Pill> : <Pill tone="green">Active</Pill> },
     { key: "createdAt", label: "Created", sortField: "createdAt", render: (r) => <DateTimeCell value={r.createdAt} /> },
+    // USER ROLES & PERMISSIONS UPDATE round: where the role applies.
+    { key: "scope", label: "Scope", render: (r) => r.isSuperAdmin ? <Pill tone="amber">All companies</Pill> : <Pill tone="slate">This company</Pill> },
   ];
   const columns = resolveColumns(ROLES_COLUMNS, layoutState.effective);
 
@@ -15699,12 +15714,14 @@ function RolesModule({ call, notify, currentUser, hasRaw }) {
           <TableScrollShell height={460}>
           <ResizableTable tableKey="roles" className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead><tr>
+              <SortTh label="#" resizeKey="__rowno_r" />
               {columns.map((c) => <SortTh key={c.key} label={c.label} field={c.sortField} {...roleSort} onSort={roleSort.toggleSort} />)}
               <SortTh label="" resizeKey="__actions13" />
             </tr></thead>
             <tbody>
-              {rolePg.pageRows.map((r) => (
+              {rolePg.pageRows.map((r, rowI) => (
                 <tr key={r.id}>
+                  <td style={densityStyle(td, density)} className="gk-rowno">{rolePg.firstIdx + rowI}</td>
                   {columns.map((c) => <td key={c.key} style={tableCellStyle(c, density)}>{c.render(r)}</td>)}
                   <td style={densityStyle(td, density)}>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -16063,8 +16080,22 @@ function RoleFormModal({ role, catalog, allRoles, templates, currentUser, onClos
     if (confirmCritical) body.confirmCritical = true;
     try { await onSubmit(body); } finally { setSaving(false); }
   }
-  function save() {
+  // USER ROLES & PERMISSIONS UPDATE round: an edited role shows what will
+  // change (added / removed permissions) before anything is saved.
+  function save(reviewed) {
     if (!name.trim()) return;
+    if (isEdit && !reviewed) {
+      const before = new Set(role?.permissions || []);
+      const added = selected.filter((k) => !before.has(k)), removed = [...before].filter((k) => !checked.has(k));
+      if (added.length || removed.length) {
+        const lab = (k) => (catalog.find((c) => c.key === k) || {}).label || k;
+        const list = (arr) => arr.slice(0, 6).map(lab).join(", ") + (arr.length > 6 ? ` and ${arr.length - 6} more` : "");
+        setConfirm({ kind: "warn", review: { added: added.length, removed: removed.length },
+          message: `Review changes to "${name.trim()}" (${role?.userCount || 0} user(s) affected — their sessions must sign in again): ${added.length ? `+${added.length} added: ${list(added)}. ` : ""}${removed.length ? `−${removed.length} removed: ${list(removed)}.` : ""}`,
+          yes: "Confirm changes", onYes: () => save(true) });
+        return;
+      }
+    }
     if (newCritical.length) {
       setConfirm({ kind: "critical", message: `This role will be able to perform ${newCritical.length} critical action(s): ${newCritical.map((k) => (catalog.find((c) => c.key === k) || {}).label || k).join(", ")}. Anyone with this role can delete or reverse financial records, administer users or change configuration. Save anyway?`, yes: "Save with critical permissions", onYes: () => doSubmit(true) });
       return;
@@ -16165,7 +16196,7 @@ function RoleFormModal({ role, catalog, allRoles, templates, currentUser, onClos
         <div className="gk-role-actions">
           {dirty && <span className="gk-role-dirty" data-save-status="dirty">Unsaved changes</span>}
           <Btn tone="ghost" onClick={requestClose}>Cancel</Btn>
-          <Btn tone="primary" icon="save" disabled={saving || !name.trim() || (isEdit && !dirty)} onClick={save}>{saving ? "Saving…" : isEdit ? "Save Role" : "Create Role"}</Btn>
+          <Btn tone="primary" icon="save" disabled={saving || !name.trim() || (isEdit && !dirty)} onClick={() => save(false)}>{saving ? "Saving…" : isEdit ? "Save Role" : "Create Role"}</Btn>
         </div>
       </div>
     </Modal>

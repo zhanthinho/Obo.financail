@@ -2681,5 +2681,11 @@
  "Review and reconcile USD transactions.": "Dib u eeg oo isu-dheelli tir dhaqdhaqaaqa USD.",
  "Review and reconcile SLSH transactions.": "Dib u eeg oo isu-dheelli tir dhaqdhaqaaqa SLSH.",
  "More tabs": "Qaybo kale",
- "More categories": "Qaybo kale"
+ "More categories": "Qaybo kale",
+ "Scope": "Baaxadda",
+ "All companies": "Dhammaan shirkadaha",
+ "This company": "Shirkaddan",
+ "Viewer / Read-Only": "Daawade / Akhris-keliya",
+ "Exchange Operator": "Hawlwadeenka Sarrifka",
+ "Company Admin": "Maamulaha Shirkadda"
 }

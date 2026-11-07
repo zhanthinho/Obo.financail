@@ -35,7 +35,7 @@ function publicUser(u) {
     roleId: u.role_id,
     roleLabel: resolved.roleLabel, isSuperAdmin: resolved.isSuperAdmin, perms: resolved.perms,
     rawKeys: resolved.rawKeys,
-    active: !!u.active, lastLogin: u.last_login, quotationColumnPrefs: columnPrefs,
+    active: !!u.active, lastLogin: u.last_login, createdAt: u.created_at || null, quotationColumnPrefs: columnPrefs,
   };
 }
 

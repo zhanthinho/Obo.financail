@@ -167,6 +167,17 @@ const MODULES = {
   // ALL_ACCESS. Entering a transaction there still needs that
   // transaction's own permission (payments.create, exchange.create, …),
   // and USD / SLSH stay behind currency.usd / currency.slsh.
+  // USER ROLES & PERMISSIONS UPDATE round: each company's own PDF / Excel
+  // templates (tenant tables pdf_templates / excel_templates). These replace
+  // the single unregistered "pdfTemplates.manage" / "excelTemplates.manage"
+  // keys, which no role could ever be granted (only Super Admin passed them);
+  // the old names stay valid as legacy keys meaning "all four".
+  //   view   — list, open and preview templates
+  //   create — new template, duplicate
+  //   update — edit, set default, archive, restore, reset
+  //   delete — delete a template
+  pdfTemplates: { label: "PDF Templates", actions: ["view", "create", "update", "delete"] },
+  excelTemplates: { label: "Excel Templates", actions: ["view", "create", "update", "delete"] },
   dailyOps: { label: "Daily Operations", actions: ["view", "create", "viewReconciliation", "reconcile", "snapshot", "updateHistory", "close", "reopen", "print", "export"] },
 };
 
@@ -192,6 +203,7 @@ const CRITICAL = new Set([
   "roles.create", "roles.update", "roles.delete", "roles.managePermissions",
   "rates.delete", "cash.delete", "loans.writeOff", "loans.delete", "expenses.cancel",
   "dailyOps.reopen", "dailyOps.updateHistory",
+  "pdfTemplates.delete", "excelTemplates.delete",
 ]);
 const SENSITIVE = new Set([
   "accounts.deactivate", "accounts.activate", "accounts.export", "accounts.import",
@@ -209,6 +221,7 @@ const SENSITIVE = new Set([
   "expenses.create", "expenses.update", "expenses.manageCategories", "expenses.export",
   "dailyReports.view", "dailyReports.export", "dailyReports.manage",
   "customers.link",
+  "pdfTemplates.create", "pdfTemplates.update", "excelTemplates.create", "excelTemplates.update",
   "dailyOps.view", "dailyOps.create", "dailyOps.viewReconciliation", "dailyOps.reconcile", "dailyOps.snapshot", "dailyOps.close", "dailyOps.print", "dailyOps.export",
 ]);
 function permissionLevel(key) {
@@ -310,6 +323,9 @@ const LEGACY_KEY_MAP = {
   // flag), so settings.view has to come from the same legacy key as
   // settings.update, not from a universal grant.
   settingsManage: ["settings.view", "settings.update"],
+  // USER ROLES & PERMISSIONS UPDATE round: the former single template keys.
+  "pdfTemplates.manage": ["pdfTemplates.view", "pdfTemplates.create", "pdfTemplates.update", "pdfTemplates.delete"],
+  "excelTemplates.manage": ["excelTemplates.view", "excelTemplates.create", "excelTemplates.update", "excelTemplates.delete"],
 };
 
 // ADVANCED RBAC round — ROLE TEMPLATES: starting points offered when a
@@ -320,38 +336,51 @@ const ALL_KEYS = PERMISSION_CATALOG.map((p) => p.key);
 const pick = (pred) => ALL_KEYS.filter(pred);
 const isReadOnlyAction = (k) => /\.(view|viewAll|viewHistory|print|usd|slsh)$/.test(k);
 const ROLE_TEMPLATES = [
+  // USER ROLES & PERMISSIONS UPDATE round: the seven recommended roles. Super
+  // Admin is the protected built-in role (ALL_ACCESS) and is never a template;
+  // the other six are starting points a Super Admin can adjust freely.
   {
     key: "company_admin", name: "Company Admin",
-    description: "Runs one company's users, accounts and daily operations. No role/permission administration, no deletions of financial records, no company settings changes.",
+    description: "Runs one company: its users, accounts, payments, exchange, quotations, cash accounts, transfers, loans, expenses, reports and its own PDF / Excel templates. No role administration and no critical (delete / reverse / settings) permissions until granted one by one.",
     permissions: pick((k) => permissionLevel(k) !== "critical" && !k.startsWith("roles.")),
   },
   {
+    key: "manager", name: "Manager",
+    description: "Operational oversight: views the dashboard, accounts and balances, payments, exchange, cash accounts and movements, transfers, loans, quotations, expenses and reports. Create / edit / delete are granted individually.",
+    permissions: pick((k) => [
+      "accounts.view", "accounts.print", "exchange.view", "exchange.viewAll", "exchange.print", "transfers.view", "quotations.view", "quotations.print",
+      "payments.view", "payments.print", "reports.view", "reports.print", "currency.usd", "currency.slsh", "rates.view", "rates.viewHistory",
+      "cash.view", "loans.view", "expenses.view", "dailyReports.view", "dailyOps.view", "dailyOps.viewReconciliation", "customers.view",
+    ].includes(k)),
+  },
+  {
     key: "accountant", name: "Accountant",
-    description: "Views financial records, records permitted credits and debits, and runs financial reports. No users, roles, settings or deletions.",
+    description: "Views financial records, records permitted credits and debits and cash movements, takes quotation payments and runs / exports financial reports. No company, user, role or security settings, and no deletions.",
     permissions: pick((k) => [
       "accounts.view", "accounts.export", "accounts.print", "exchange.view", "exchange.viewAll", "exchange.print", "transfers.view",
-      "quotations.view", "quotations.print", "payments.view", "payments.create", "payments.update", "payments.export", "payments.print",
+      "quotations.view", "quotations.print", "quotations.settle", "payments.view", "payments.create", "payments.update", "payments.export", "payments.print",
       "reports.view", "reports.export", "reports.print", "currency.usd", "currency.slsh", "rates.view", "rates.viewHistory",
-      "cash.view", "expenses.view", "expenses.export", "dailyReports.view", "dailyReports.export",
+      "cash.view", "cash.deposit", "cash.withdraw", "loans.view", "expenses.view", "expenses.export", "dailyReports.view", "dailyReports.export",
     ].includes(k)),
   },
   {
     key: "cashier", name: "Cashier",
-    description: "Daily cash operations and customer transactions. No cost rates, profit, reports, roles or configuration.",
+    description: "Daily cash work: views cash accounts and movements, records cash in and cash out, views payments and customer transactions. No cost rates, profit, reports, users, roles or settings.",
     permissions: pick((k) => [
       "accounts.view", "accounts.print", "payments.view", "payments.create", "payments.print", "exchange.view", "exchange.create", "exchange.print",
       "transfers.view", "transfers.create", "quotations.view", "currency.usd", "currency.slsh", "rates.view",
+      "cash.view", "cash.deposit", "cash.withdraw",
     ].includes(k)),
   },
   {
     key: "exchange_operator", name: "Exchange Operator",
-    description: "Creates and views their own money exchanges at the rates already set. Cannot change rates, delete exchanges, see profit or manage roles.",
-    permissions: pick((k) => ["exchange.view", "exchange.create", "exchange.print", "accounts.view", "currency.usd", "currency.slsh", "rates.view"].includes(k)),
+    description: "Creates and views money exchanges at the rates already set and sees their history. Cannot change rates, edit or delete completed exchanges, see profit or manage roles unless separately granted.",
+    permissions: pick((k) => ["exchange.view", "exchange.create", "exchange.print", "accounts.view", "currency.usd", "currency.slsh", "rates.view", "rates.viewHistory"].includes(k)),
   },
   {
-    key: "auditor", name: "Auditor / Read-Only",
-    description: "Views authorized records, reports and the audit log. Cannot create, change, delete, settle or approve anything.",
-    permissions: pick((k) => (isReadOnlyAction(k) || k === "auditLog.view") && !k.startsWith("users.") && !k.startsWith("roles.") && !k.startsWith("settings.")),
+    key: "auditor", name: "Viewer / Read-Only",
+    description: "Read-only: views authorized dashboards, accounts, transactions, reports and the audit log. No create, edit, delete, approve, import or export unless individually granted.",
+    permissions: pick((k) => (isReadOnlyAction(k) || k === "auditLog.view") && !k.startsWith("users.") && !k.startsWith("roles.") && !k.startsWith("settings.") && !k.startsWith("pdfTemplates.") && !k.startsWith("excelTemplates.") && !k.startsWith("dailyOps.")),
   },
 ];
 
