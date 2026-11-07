@@ -145,6 +145,8 @@ async function browserChecks() {
         assert(t.notes === "Paid in cash at branch" && t.amountGiven === 100, JSON.stringify({ notes: t.notes, amt: t.amountGiven }));
       });
       await check("6/8. reopening the saved record: Notes already open with the note", async () => {
+        // UNIFIED SORTING round: show the newest exchange first so "first Update" is the one just saved.
+        if (await p.locator("#exchange-sort").count()) { await p.click("#exchange-sort"); await p.locator('.gk-txsort-menu [data-sort-option="newest"]').click(); await p.waitForTimeout(400); }
         await p.getByRole("button", { name: "Update", exact: true }).first().click();
         await p.waitForSelector("#qx-amount", { timeout: 10000 }); await p.waitForTimeout(300);
         assert(await notesBox(p).getAttribute("data-open") === "true", "collapsed although a note exists");

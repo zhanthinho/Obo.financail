@@ -63,4 +63,59 @@ No database migration was needed. No record was changed.
 
 ## 5. Test results
 
-See the final section filled in after the full regression run.
+Executed on throw-away databases (MySQL 8 + Chromium), 48 suites, 1012 checks passed, failing suites: none.
+
+| Suite | Result |
+|---|---|
+| account-access | 19 checks passed, 0 failed. |
+| account-fields | 7 checks passed, 0 failed. |
+| account-search | 11 checks passed, 0 failed. |
+| account-view | 20 checks passed, 0 failed. |
+| account-view-order | 10 checks passed, 0 failed. (re-run after fixes) |
+| accounts-console | 19 checks passed, 0 failed. |
+| audit | 14 checks passed, 0 failed. |
+| audit-fixes | 15 checks passed, 0 failed. |
+| balance-sheet | 36 checks passed, 0 failed. |
+| bulk-search | 9 checks passed, 0 failed. |
+| company-branding | 21 checks passed, 0 failed. |
+| company-day | 7 checks passed, 0 failed. |
+| copy-to-online | 6 checks passed, 0 failed. |
+| customer-linking | 25 checks passed, 0 failed. |
+| daily-history | 19 checks passed, 0 failed. |
+| daily-ops | 27 checks passed, 0 failed. (re-run after fixes) |
+| daily-reports | 42 checks passed, 0 failed. |
+| dashboard | 23 checks passed, 0 failed. (re-run after fixes) |
+| data-reset | 12 checks passed, 0 failed. |
+| exchange-margin | 25 checks passed, 0 failed. |
+| expenses | 39 checks passed, 0 failed. (re-run after fixes) |
+| fund-selector | 26 checks passed, 0 failed. |
+| global-login | 19 checks passed, 0 failed. |
+| header | 43 checks passed, 0 failed. |
+| history-console | 18 checks passed, 0 failed. (re-run after fixes) |
+| import-negative | 6 checks passed, 0 failed. |
+| integrity-security | 31 checks passed, 0 failed. |
+| language | 25 checks passed, 0 failed. |
+| mark-paid | 19 checks passed, 0 failed. |
+| migration | 13 checks passed, 0 failed. |
+| mysql | 22 checks passed, 0 failed. |
+| numeric-typography | 13 checks passed, 0 failed. |
+| opening-balance | 16 checks passed, 0 failed. |
+| optional-notes | 14 checks passed, 0 failed. (re-run after fixes) |
+| quick-exchange | 19 checks passed, 0 failed. |
+| rbac | All RBAC checks passed. |
+| rbac-advanced | 28 checks passed, 0 failed. |
+| rbac-update | 17 checks passed, 0 failed. (re-run after fixes) |
+| reconciliation | 14 checks passed, 0 failed. (re-run after fixes) |
+| route-sweep | 12 checks passed, 0 failed. |
+| same-name | 15 checks passed, 0 failed. |
+| security | 29 checks passed, 0 failed. |
+| table-design | 23 checks passed, 0 failed. |
+| templates | 31 checks passed, 0 failed. |
+| tenancy | 68 checks passed, 0 failed. |
+| terminology | 12 checks passed, 0 failed. |
+| transaction-history-unified | 34 checks passed, 0 failed. (re-run after fixes) |
+| tx-sort | 39 checks passed, 0 failed. |
+
+Also adjusted while running the suite:  now chooses "Newest First" before opening the latest exchange (the default in-page order is Oldest First since the sorting round); the integrity check's duplicate-reference rule ignores the legs an exchange / transfer / quotation posts under one shared reference.
+
+Not run:  (pre-existing failure: it expects the old brand name "Geeska Exchange" on the sign-in page — unrelated). Manual verification recommended: printing on the office printer, and the app on a real phone.
