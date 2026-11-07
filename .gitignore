@@ -39,3 +39,5 @@ ca.pem
 
 # Local database backups (contain financial data) — never commit
 Backups/
+integrity-report.txt
+roles-review.txt

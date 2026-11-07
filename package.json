@@ -17,6 +17,7 @@
     "migrate:sqlite:execute": "node --experimental-sqlite scripts/migrate-sqlite-to-mysql.js --execute",
     "backup": "node scripts/backup.js",
     "integrity-check": "node scripts/integrity-check.js",
+    "roles-review": "node scripts/roles-review.js",
     "schema:generate": "node --experimental-sqlite scripts/dev/generate-mysql-schema.js",
     "test:mysql": "node test/mysql.js",
     "test:migration": "node --experimental-sqlite test/migration.js",
@@ -66,7 +67,8 @@
     "test:daily-ops": "node test/daily-ops.js",
     "test:tx-sort": "node test/tx-sort.js",
     "test:rbac-update": "node test/rbac-update.js",
-    "test:company-day": "node test/company-day.js"
+    "test:company-day": "node test/company-day.js",
+    "test:backup-restore": "node test/backup-restore.js"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",

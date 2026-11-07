@@ -32,6 +32,7 @@ function waitFor(url, timeoutMs = 8000) {
   });
 }
 
+const e2eFailures = [];
 async function main() {
   let chromium;
   try {
@@ -44,6 +45,8 @@ async function main() {
   console.log("Starting server on a scratch database...");
   // MYSQL round: a disposable MySQL database (test/helpers/mysql.js).
   const TESTDB = require("./helpers/mysql").createTestDatabase("e2e");
+  // A throw-away signing key for this scratch install (never a real secret).
+  process.env.JWT_SECRET = process.env.JWT_SECRET || require("crypto").randomBytes(32).toString("hex");
   const server = spawn(process.execPath, [path.join(__dirname, "..", "scripts", "seed.js")], {
     env: { ...process.env, ...TESTDB.env },
     stdio: "inherit",
@@ -51,7 +54,8 @@ async function main() {
   await new Promise((r) => server.on("exit", r));
 
   const srv = spawn(process.execPath, [path.join(__dirname, "..", "src", "server.js")], {
-    env: { ...process.env, ...TESTDB.env, PORT: String(PORT) },
+    // A throw-away signing key for this scratch server (never a real secret).
+    env: { ...process.env, ...TESTDB.env, PORT: String(PORT), JWT_SECRET: process.env.JWT_SECRET || require("crypto").randomBytes(32).toString("hex") },
     stdio: "inherit",
   });
 
@@ -67,7 +71,11 @@ async function main() {
 
     async function check(label, fn) {
       process.stdout.write(`  ${label} ... `);
-      await fn();
+      try { await fn(); } catch (e) {
+        if (process.env.E2E_SHOT) await page.screenshot({ path: process.env.E2E_SHOT }).catch(() => {});
+        if (!process.env.E2E_CONTINUE) throw e;
+        console.log("FAILED — " + String(e.message).split("\n")[0]); e2eFailures.push(label); await page.keyboard.press("Escape").catch(() => {}); return;
+      }
       console.log("ok");
     }
     // Sidebar groups stay expanded once opened (by design). Clicking an
@@ -95,9 +103,9 @@ async function main() {
     }
 
     await page.goto(BASE, { waitUntil: "networkidle" });
-    await check("login screen renders", () => page.waitForSelector("text=Geeska Exchange", { timeout: 5000 }));
+    await check("login screen renders", () => page.waitForSelector('input[type="password"]', { timeout: 5000 }));
 
-    await page.fill('input[placeholder="e.g. amina.yusuf"]', "amina.yusuf");
+    await page.locator("input").first().fill("amina.yusuf");
     await page.fill('input[type="password"]', DEMO_PW);
     await page.click('button:has-text("Sign in")');
     await check("admin logs in and sees dashboard", () => page.waitForSelector("text=Welcome back", { timeout: 8000 }));
@@ -2826,7 +2834,7 @@ async function main() {
     await page.waitForTimeout(200);
     await page.click('button:has-text("Sign out")');
     await page.waitForSelector('input[placeholder="e.g. amina.yusuf"]');
-    await page.fill('input[placeholder="e.g. amina.yusuf"]', "amina.yusuf");
+    await page.locator("input").first().fill("amina.yusuf");
     await page.fill('input[type="password"]', DEMO_PW);
     await page.click('button:has-text("Sign in")');
     await check("back to admin for the remaining checks", () => page.waitForSelector("text=Welcome back", { timeout: 8000 }));
@@ -2914,7 +2922,7 @@ async function main() {
     await page.waitForTimeout(200);
     await page.click('button:has-text("Sign out")');
     await page.waitForSelector('input[placeholder="e.g. amina.yusuf"]');
-    await page.fill('input[placeholder="e.g. amina.yusuf"]', "amina.yusuf");
+    await page.locator("input").first().fill("amina.yusuf");
     await page.fill('input[type="password"]', DEMO_PW);
     await page.click('button:has-text("Sign in")');
     await check("back to admin after the Super Admin check", () => page.waitForSelector("text=Welcome back", { timeout: 8000 }));

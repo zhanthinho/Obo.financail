@@ -119,3 +119,9 @@ Executed on throw-away databases (MySQL 8 + Chromium), 48 suites, 1012 checks pa
 Also adjusted while running the suite: `test/optional-notes.js` now chooses "Newest First" before opening the latest exchange (the default in-page order is Oldest First since the sorting round); the integrity check's duplicate-reference rule ignores the legs an exchange / transfer / quotation posts under one shared reference.
 
 Not run: `e2e` (pre-existing failure: it expects the old brand name "Geeska Exchange" on the sign-in page — unrelated). Manual verification recommended: printing on the office printer, and the app on a real phone.
+
+## 6. Follow-up (same day)
+
+- **Backup restore verified** — `test/backup-restore.js` (6 checks passed): a company backup restores exactly (balances, cash, history); a "prerestore" copy of the replaced data is kept; restoring without `--confirm` or into another company is refused; the other company is untouched; the integrity check passes afterwards.
+- **Real-data checks, read-only** — `INTEGRITY-CHECK.bat` (balances vs ledgers, orphans, currencies, duplicates, exchange arithmetic) and `ROLES-REVIEW.bat` (each role, its active users, its critical permissions, and the difference from the recommended template). Both write a text report next to the program and change nothing.
+- **e2e** — the legacy 2,959-line scenario now starts (its own signing key, the new sign-in form) and passes its first 21 checks, then stops at an old button label ("New USD deposit / withdrawal") from an earlier interface. Its flows are covered by the 49 current suites; it should be retired or rewritten rather than patched label by label.
