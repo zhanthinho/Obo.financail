@@ -2895,6 +2895,18 @@
      "pk": 0,
      "mysqlType": "VARCHAR(255)",
      "isCompanyId": true
+    },
+    {
+     "name": "show_stamp",
+     "sqliteType": "INTEGER",
+     "notNull": false,
+     "default": {
+      "kind": "number",
+      "value": 1
+     },
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
     }
    ],
    "primaryKey": [
@@ -8698,6 +8710,122 @@
      "default": null,
      "pk": 0,
      "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "company_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": {
+      "kind": "companyId"
+     },
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": true
+    }
+   ]
+  },
+  {
+   "name": "template_versions",
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [],
+   "checks": [
+    "template_type IN ('pdf','excel')"
+   ],
+   "indexes": [
+    {
+     "name": "idx_template_versions_template",
+     "unique": false,
+     "columns": [
+      "template_type",
+      "template_id"
+     ],
+     "where": null,
+     "expression": null
+    }
+   ],
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "template_type",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "template_id",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "version",
+     "sqliteType": "INTEGER",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "BIGINT",
+     "isCompanyId": false
+    },
+    {
+     "name": "name",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "data",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "reason",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_at",
+     "sqliteType": "TEXT",
+     "notNull": true,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "created_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
      "isCompanyId": false
     },
     {

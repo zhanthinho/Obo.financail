@@ -9,7 +9,8 @@
 // granted to any other role). Every mutation here only changes ROWS in the
 // brand-new excel_templates table — it never touches pdf_templates, so the
 // existing PDF Template system is completely unaffected.
-const { get, all, run } = require("../db");
+const { get, all, run, tx } = require("../db");
+const TV = require("../template-versions");
 const { sendJSON, badRequest, notFound, readJSONBody } = require("../http-helpers");
 const { requireAuth, requirePerm } = require("../rbac");
 const { addAudit, getCompanySettings, getDefaultExcelTemplate, quotationTotals } = require("../domain");
@@ -54,6 +55,7 @@ const FIELD_DEFS = [
   { key: "showNotes", col: "show_notes", type: "bool" },
   { key: "showBillToAddress", col: "show_bill_to_address", type: "bool" },
   { key: "showBillToContact", col: "show_bill_to_contact", type: "bool" },
+  { key: "showStamp", col: "show_stamp", type: "bool" },
   { key: "colorPrimary", col: "color_primary", type: "color" },
   { key: "colorSecondary", col: "color_secondary", type: "color" },
   { key: "colorAccent", col: "color_accent", type: "color" },
@@ -87,7 +89,7 @@ const FIELD_DEFS = [
 const COLUMN_DEFAULTS = {
   show_logo: 1, show_company_name: 1, show_company_subtitle: 1, show_company_address: 1, show_company_phone: 1,
   show_company_email: 1, show_company_website: 1, show_doc_title: 1, show_doc_number: 1, show_generated_date: 1,
-  show_generated_by: 1, show_date_range: 1, show_notes: 1, show_bill_to_address: 1, show_bill_to_contact: 1,
+  show_generated_by: 1, show_date_range: 1, show_notes: 1, show_bill_to_address: 1, show_bill_to_contact: 1, show_stamp: 1,
   font_family: "'Calibri'", font_size_title: 16, font_size_heading: 13, font_size_body: 10,
   table_theme: "'medium_blue'", table_alt_rows: 1, freeze_header: 1, enable_filters: 1, date_format: "'dd mmm yyyy'",
   show_footer: 1, footer_show_company_name: 1, footer_show_generated_by: 1, footer_show_generated_date: 1,
@@ -144,7 +146,7 @@ function serialize(row) {
   };
   for (const def of FIELD_DEFS) {
     const raw = row[def.col];
-    if (def.type === "bool") out[def.key] = !!raw;
+    if (def.type === "bool") out[def.key] = raw === null || raw === undefined ? COLUMN_DEFAULTS[def.col] === 1 : !!raw; // a column added later reads as its default until saved
     else if (def.type === "text") out[def.key] = raw || "";
     else out[def.key] = raw ?? null;
   }
@@ -377,7 +379,13 @@ function register(router) {
       vals.push(value);
     }
     vals.push(params.id);
-    run(`UPDATE excel_templates SET ${setCols.join(", ")} WHERE id = ?`, vals);
+    // TEMPLATE VERSION HISTORY: keep the look it had before this save.
+    const willChange = (body.name !== undefined && String(body.name).trim() !== current.name)
+      || FIELD_DEFS.some((def, i) => Object.prototype.hasOwnProperty.call(body, def.key) && (validateAndConvert(def, body[def.key]).value ?? null) !== (current[def.col] ?? null));
+    tx(() => {
+      if (willChange) TV.snapshot("excel", current, FIELD_DEFS, user, "Before save");
+      run(`UPDATE excel_templates SET ${setCols.join(", ")} WHERE id = ?`, vals);
+    });
     addAudit(user, "Excel template updated", body.name !== undefined ? String(body.name).trim() : current.name);
     sendJSON(res, 200, { template: serialize(get("SELECT * FROM excel_templates WHERE id = ?", [params.id])) });
   });
@@ -439,7 +447,10 @@ function register(router) {
     if (!requirePerm(user, res, "excelTemplates.update")) return;
     const row = get("SELECT * FROM excel_templates WHERE id = ?", [params.id]);
     if (!row) return notFound(res, "Template not found.");
-    run(`UPDATE excel_templates SET ${RESET_SQL}, preset_key = NULL, version = version + 1, updated_at = ?, updated_by = ? WHERE id = ?`, [nowISO(), user.name, params.id]);
+    tx(() => {
+      TV.snapshot("excel", row, FIELD_DEFS, user, "Before reset to defaults");
+      run(`UPDATE excel_templates SET ${RESET_SQL}, preset_key = NULL, version = version + 1, updated_at = ?, updated_by = ? WHERE id = ?`, [nowISO(), user.name, params.id]);
+    });
     addAudit(user, "Excel template reset to defaults", row.name);
     sendJSON(res, 200, { template: serialize(get("SELECT * FROM excel_templates WHERE id = ?", [params.id])) });
   });
@@ -460,6 +471,42 @@ function register(router) {
   // doubles as "Preview Template" (dummy data) and "Generate Test Excel"
   // (?real=1, most recent genuine record), same split as the PDF system's
   // preview.pdf endpoint.
+  // ---- TEMPLATE VERSION HISTORY round ----
+  router.get("/api/excel-templates/:id/versions", (req, res, params) => {
+    const user = requireAuth(req, res); if (!user) return;
+    if (!requirePerm(user, res, "excelTemplates.view")) return;
+    const row = get("SELECT * FROM excel_templates WHERE id = ?", [params.id]);
+    if (!row) return notFound(res, "Template not found.");
+    sendJSON(res, 200, { current: { version: row.version, updatedAt: row.updated_at, updatedBy: row.updated_by }, versions: TV.list("excel", row.id) });
+  });
+
+  router.get("/api/excel-templates/:id/versions/:vid/preview.xlsx", async (req, res, params) => {
+    const user = requireAuth(req, res); if (!user) return;
+    if (!requirePerm(user, res, "excelTemplates.view")) return;
+    const row = get("SELECT * FROM excel_templates WHERE id = ?", [params.id]);
+    if (!row) return notFound(res, "Template not found.");
+    const found = TV.find("excel", row.id, params.vid);
+    if (!found) return notFound(res, "Version not found.");
+    const out = await buildPreviewXLSX(row.kind, TV.rowAsOf(row, found, FIELD_DEFS), getCompanySettings(), user, false);
+    res.writeHead(200, {
+      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "Content-Disposition": `attachment; filename="excel-template-version-${found.row.version}.xlsx"`,
+    });
+    res.end(out);
+  });
+
+  router.post("/api/excel-templates/:id/versions/:vid/restore", (req, res, params) => {
+    const user = requireAuth(req, res); if (!user) return;
+    if (!requirePerm(user, res, "excelTemplates.update")) return;
+    const row = get("SELECT * FROM excel_templates WHERE id = ?", [params.id]);
+    if (!row) return notFound(res, "Template not found.");
+    const found = TV.find("excel", row.id, params.vid);
+    if (!found) return notFound(res, "Version not found.");
+    tx(() => TV.restore("excel", row, found, FIELD_DEFS, user));
+    addAudit(user, "Excel template version restored", `${row.name}: version ${found.row.version} (saved ${String(found.row.created_at).slice(0, 16).replace("T", " ")})`);
+    sendJSON(res, 200, { template: serialize(get("SELECT * FROM excel_templates WHERE id = ?", [params.id])) });
+  });
+
   router.get("/api/excel-templates/:id/preview.xlsx", async (req, res, params, query) => {
     const user = requireAuth(req, res); if (!user) return;
     if (!requirePerm(user, res, "excelTemplates.view")) return;

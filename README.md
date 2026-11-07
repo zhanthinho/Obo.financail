@@ -131,10 +131,13 @@ anywhere real.
   `npm start` works immediately without a build step. If you edit
   `frontend/app.jsx`, run `npm run build:frontend` to rebuild it (needs the
   dev dependencies: `npm install --include=dev`).
-- **`test/e2e.js`** — a real end-to-end test: it starts the server against a
-  scratch MySQL database, drives an actual headless browser (Playwright) through
-  login, every module, a role-restriction check, and a file download. Run it
-  with `npm run test:e2e` (needs `npx playwright install chromium` once).
+- **`test/*.js`** — one test suite per area (`npm run test:<name>`, e.g.
+  `test:reconciliation`, `test:rbac-update`, `test:template-versions`). Each
+  starts the server against its own scratch MySQL database and, where the
+  screen matters, drives a headless browser (Playwright). The old single
+  `test/e2e.js` scenario (November 2026) was retired: it was written for an
+  earlier interface and every flow it covered has its own suite. Older notes
+  below that mention `test:e2e` describe that retired test.
 
 ### Why this dependency footprint
 

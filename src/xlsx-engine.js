@@ -118,6 +118,9 @@ function resolveExcelStyle(template, company) {
     },
     header: {
       showLogo: template ? !!t.show_logo : true,
+      // COMPANY STAMP round: nullable column — a template saved before it
+      // existed reads as "on", like the PDF templates.
+      showStamp: template ? t.show_stamp !== 0 && t.show_stamp !== false : true,
       showCompanyName: template ? t.show_company_name !== 0 : true,
       showCompanySubtitle: template ? t.show_company_subtitle !== 0 : true,
       showCompanyAddress: template ? t.show_company_address !== 0 : false,
@@ -535,6 +538,24 @@ async function buildProfessionalWorkbook(cfg) {
     ws.getCell(`A${r}`).font = { name: style.font.family };
     ws.getCell(`A${r}`).alignment = { wrapText: true, vertical: "top" };
     r++;
+  }
+
+  // ---------------- Company stamp (COMPANY STAMP round) ----------------
+  // The uploaded company stamp (Settings → General → Company stamp), placed
+  // bottom-right under the document, when the template wants it and a stamp
+  // is configured. Nothing is drawn when no stamp was uploaded.
+  if (style.header.showStamp && company?.stamp_data_url && /^data:image\/(png|jpe?g);base64,/.test(company.stamp_data_url)) {
+    try {
+      const ext = company.stamp_data_url.match(/^data:image\/(png|jpe?g);/)[1] === "png" ? "png" : "jpeg";
+      r++;
+      const stampCol = Math.max(0, colCount - 2);
+      ws.getCell(`${colLetter(stampCol)}${r}`).value = "Company stamp";
+      ws.getCell(`${colLetter(stampCol)}${r}`).font = { name: style.font.family, bold: true, color: { argb: style.colors.muted } };
+      r++;
+      const imgId = wb.addImage({ base64: company.stamp_data_url, extension: ext });
+      ws.addImage(imgId, { tl: { col: stampCol, row: r - 1 }, ext: { width: 110, height: 110 } });
+      r += 7; // the rows the stamp covers
+    } catch (e) { /* a malformed stamp never breaks the export */ }
   }
 
   // ---------------- Native Excel print footer (spec item 18) ----------------

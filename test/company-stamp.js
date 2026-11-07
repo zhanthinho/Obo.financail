@@ -109,6 +109,18 @@ async function run() {
     assert(ni === nf + 1, `images on ${ni} / off ${nf}`);
     ok(await api(`/api/pdf-templates/${tpl.id}`, { method: "PATCH", token: A, body: { showStamp: true } }), "on again");
   });
+  await check("Excel templates: 'Show company stamp' option, on by default; the stamp is in the .xlsx only when on", async () => {
+    const ExcelJS = require("exceljs");
+    const look = async (buf) => { const wb = new ExcelJS.Workbook(); await wb.xlsx.load(buf); const ws = wb.worksheets[0]; let txt = false; ws.eachRow((row) => row.eachCell((c) => { if (c.value === "Company stamp") txt = true; })); return { images: ws.getImages().length, txt }; };
+    const xt = ok(await api("/api/excel-templates", { method: "POST", token: A, body: { kind: "account", name: "Stamp test sheet" } }), "create xl").template;
+    assert(xt && xt.showStamp === true, `showStamp ${xt && xt.showStamp}`);
+    const on = await api(`/api/excel-templates/${xt.id}/preview.xlsx`, { token: A, raw: true });
+    assert(on.status === 200, `preview ${on.status}`);
+    ok(await api(`/api/excel-templates/${xt.id}`, { method: "PATCH", token: A, body: { showStamp: false } }), "xl off");
+    const off = await api(`/api/excel-templates/${xt.id}/preview.xlsx`, { token: A, raw: true });
+    const a = await look(on.buf), b = await look(off.buf);
+    assert(a.txt && !b.txt && a.images === b.images + 1, `on ${JSON.stringify(a)} / off ${JSON.stringify(b)}`);
+  });
   await check("removing the stamp leaves documents without it (and is audited)", async () => {
     ok(await api("/api/settings/company", { method: "PATCH", token: A, body: { name: company.name, stampDataUrl: null } }), "remove");
     const r = await api(`/api/pdf-templates/${tpl.id}/preview.pdf`, { token: A, raw: true });

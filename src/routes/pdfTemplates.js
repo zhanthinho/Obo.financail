@@ -16,7 +16,8 @@
 // exactly the spec's "SUPER ADMIN ONLY" requirement. Every other PDF action
 // (preview/generate/download/print an actual document) is untouched and
 // still gated by whatever permission already governed that document.
-const { get, all, run } = require("../db");
+const { get, all, run, tx } = require("../db");
+const TV = require("../template-versions");
 const { sendJSON, badRequest, notFound, sendPDF, readJSONBody } = require("../http-helpers");
 const { requireAuth, requirePerm } = require("../rbac");
 const { addAudit, getCompanySettings, getDefaultPdfTemplate, quotationTotals } = require("../domain");
@@ -448,7 +449,13 @@ function register(router) {
       vals.push(value);
     }
     vals.push(params.id);
-    run(`UPDATE pdf_templates SET ${setCols.join(", ")} WHERE id = ?`, vals);
+    // TEMPLATE VERSION HISTORY: keep the look it had before this save.
+    const willChange = (body.name !== undefined && String(body.name).trim() !== current.name)
+      || FIELD_DEFS.some((def, i) => Object.prototype.hasOwnProperty.call(body, def.key) && (validateAndConvert(def, body[def.key]).value ?? null) !== (current[def.col] ?? null));
+    tx(() => {
+      if (willChange) TV.snapshot("pdf", current, FIELD_DEFS, user, "Before save");
+      run(`UPDATE pdf_templates SET ${setCols.join(", ")} WHERE id = ?`, vals);
+    });
     addAudit(user, "PDF template updated", body.name !== undefined ? String(body.name).trim() : current.name);
     sendJSON(res, 200, { template: serialize(get("SELECT * FROM pdf_templates WHERE id = ?", [params.id])) });
   });
@@ -514,7 +521,10 @@ function register(router) {
     if (!requirePerm(user, res, "pdfTemplates.update")) return;
     const row = get("SELECT * FROM pdf_templates WHERE id = ?", [params.id]);
     if (!row) return notFound(res, "Template not found.");
-    run(`UPDATE pdf_templates SET ${RESET_SQL}, preset_key = NULL, version = version + 1, updated_at = ?, updated_by = ? WHERE id = ?`, [nowISO(), user.name, params.id]);
+    tx(() => {
+      TV.snapshot("pdf", row, FIELD_DEFS, user, "Before reset to defaults");
+      run(`UPDATE pdf_templates SET ${RESET_SQL}, preset_key = NULL, version = version + 1, updated_at = ?, updated_by = ? WHERE id = ?`, [nowISO(), user.name, params.id]);
+    });
     addAudit(user, "PDF template reset to defaults", row.name);
     sendJSON(res, 200, { template: serialize(get("SELECT * FROM pdf_templates WHERE id = ?", [params.id])) });
   });
@@ -540,6 +550,38 @@ function register(router) {
   // spec items share buildPreviewPDF above and are told apart by the query
   // flag alone. Not a fake HTML mockup — this is the exact PDF a real
   // document of this kind would produce.
+  // ---- TEMPLATE VERSION HISTORY round ----
+  router.get("/api/pdf-templates/:id/versions", (req, res, params) => {
+    const user = requireAuth(req, res); if (!user) return;
+    if (!requirePerm(user, res, "pdfTemplates.view")) return;
+    const row = get("SELECT * FROM pdf_templates WHERE id = ?", [params.id]);
+    if (!row) return notFound(res, "Template not found.");
+    sendJSON(res, 200, { current: { version: row.version, updatedAt: row.updated_at, updatedBy: row.updated_by }, versions: TV.list("pdf", row.id) });
+  });
+
+  router.get("/api/pdf-templates/:id/versions/:vid/preview.pdf", async (req, res, params) => {
+    const user = requireAuth(req, res); if (!user) return;
+    if (!requirePerm(user, res, "pdfTemplates.view")) return;
+    const row = get("SELECT * FROM pdf_templates WHERE id = ?", [params.id]);
+    if (!row) return notFound(res, "Template not found.");
+    const found = TV.find("pdf", row.id, params.vid);
+    if (!found) return notFound(res, "Version not found.");
+    const out = await buildPreviewPDF(row.kind, TV.rowAsOf(row, found, FIELD_DEFS), getCompanySettings(), user, false);
+    sendPDF(res, `pdf-template-version-${found.row.version}.pdf`, out);
+  });
+
+  router.post("/api/pdf-templates/:id/versions/:vid/restore", (req, res, params) => {
+    const user = requireAuth(req, res); if (!user) return;
+    if (!requirePerm(user, res, "pdfTemplates.update")) return;
+    const row = get("SELECT * FROM pdf_templates WHERE id = ?", [params.id]);
+    if (!row) return notFound(res, "Template not found.");
+    const found = TV.find("pdf", row.id, params.vid);
+    if (!found) return notFound(res, "Version not found.");
+    tx(() => TV.restore("pdf", row, found, FIELD_DEFS, user));
+    addAudit(user, "PDF template version restored", `${row.name}: version ${found.row.version} (saved ${String(found.row.created_at).slice(0, 16).replace("T", " ")})`);
+    sendJSON(res, 200, { template: serialize(get("SELECT * FROM pdf_templates WHERE id = ?", [params.id])) });
+  });
+
   router.get("/api/pdf-templates/:id/preview.pdf", async (req, res, params, query) => {
     const user = requireAuth(req, res); if (!user) return;
     if (!requirePerm(user, res, "pdfTemplates.view")) return;

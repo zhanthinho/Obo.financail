@@ -14572,12 +14572,74 @@ function TemplateUsageBanner({ tpl, kindLabel, isGlobal, busy, onSetDefault }) {
   );
 }
 
+// TEMPLATE VERSION HISTORY round: every earlier look of a template — saved
+// automatically before each editing session, reset or restore — listed with
+// Preview and Restore. Restoring keeps the current look as a version too.
+function TemplateVersionsModal({ type, id, name, call, notify, token, dl, onRestored, onClose }) {
+  const base = type === "pdf" ? "/api/pdf-templates" : "/api/excel-templates";
+  const [data, setData] = useState(null);
+  const [busy, setBusy] = useState(null);
+  const load = useCallback(() => { call(`${base}/${id}/versions`).then(setData).catch((e) => notify(e.message, true)); }, [base, id, call, notify]);
+  useEffect(() => { load(); }, [load]);
+  const when = (iso) => { try { return new Date(iso).toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); } catch (e) { return iso; } };
+  async function preview(v) {
+    setBusy(v.id);
+    try {
+      if (type === "pdf") { const url = await fetchBlobUrl(`${base}/${id}/versions/${v.id}/preview.pdf`, token); window.open(url, "_blank", "noopener"); }
+      else await dl(`${base}/${id}/versions/${v.id}/preview.xlsx`, `${name}-version-${v.version}.xlsx`);
+    } catch (e) { notify(e.message, true); } finally { setBusy(null); }
+  }
+  async function restore(v) {
+    if (!window.confirm(`Restore version ${v.version} of "${name}" (saved ${when(v.createdAt)})?\n\nThe current look is kept in the history, so you can switch back.`)) return;
+    setBusy(v.id);
+    try {
+      const res = await call(`${base}/${id}/versions/${v.id}/restore`, { method: "POST" });
+      notify(`Version ${v.version} restored.`);
+      onRestored(res.template);
+      load();
+    } catch (e) { notify(e.message, true); } finally { setBusy(null); }
+  }
+  return (
+    <Modal title="Version history" subtitle={name} onClose={onClose} wide>
+      {!data ? <Spinner /> : (
+        <div data-template-versions>
+          <div style={{ fontSize: 12.5, color: C.slate, marginBottom: 10 }}>
+            Current: <b style={{ color: C.ink }}>v{data.current.version}</b>{data.current.updatedBy ? ` · last changed by ${data.current.updatedBy}` : ""}{data.current.updatedAt ? ` · ${when(data.current.updatedAt)}` : ""}
+          </div>
+          {!data.versions.length ? (
+            <div style={{ padding: "18px 0", color: C.slate, fontSize: 13 }}>No earlier versions yet. A version is kept automatically each time this template is changed, reset or restored.</div>
+          ) : (
+            <table className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead><tr><th style={{ textAlign: "left", width: 70 }}>Version</th><th style={{ textAlign: "left" }}>Saved</th><th style={{ textAlign: "left" }}>By</th><th style={{ textAlign: "left" }}>Change</th><th style={{ textAlign: "right" }}>Actions</th></tr></thead>
+              <tbody>
+                {data.versions.map((v) => (
+                  <tr key={v.id} data-version-row={v.version}>
+                    <td className="num" style={{ fontWeight: 700 }}>v{v.version}</td>
+                    <td className="num" style={{ whiteSpace: "nowrap" }}>{when(v.createdAt)}</td>
+                    <td>{v.createdBy || "—"}</td>
+                    <td style={{ color: C.slate }}>{v.reason || "—"}</td>
+                    <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                      <Btn size="sm" tone="subtle" disabled={busy === v.id} onClick={() => preview(v)}>Preview</Btn>{" "}
+                      <Btn size="sm" tone="primary" disabled={busy === v.id} onClick={() => restore(v)}>Restore</Btn>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+    </Modal>
+  );
+}
+
 function PdfTemplateEditor({ id, kind, call, notify, token, onClose }) {
   const [tab, setTab] = useState(PDF_FIELD_GROUPS[0]);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [useReal, setUseReal] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const prevUrlRef = useRef(null);
   const previewSeq = useRef(0);
 
@@ -14606,7 +14668,7 @@ function PdfTemplateEditor({ id, kind, call, notify, token, onClose }) {
   const saving = status === "saving" || busy;
 
   async function doReset() {
-    if (!window.confirm(`Reset "${tpl.name}" to the original default look? This can't be undone.`)) return;
+    if (!window.confirm(`Reset "${tpl.name}" to the original default look? The current look is kept in Version history.`)) return;
     if (!(await flush())) return;
     setBusy(true);
     try {
@@ -14646,9 +14708,12 @@ function PdfTemplateEditor({ id, kind, call, notify, token, onClose }) {
               ))}
             </div>
           )}
-          <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${C.line}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${C.line}`, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
             <TemplateSaveStatus status={status} error={error} version={tpl?.version} onRetry={flush} />
-            <Btn size="sm" tone="ghost" disabled={!tpl || saving} onClick={doReset}>Reset to defaults</Btn>
+            <span style={{ display: "inline-flex", gap: 6, marginLeft: "auto" }}>
+              <Btn size="sm" tone="ghost" disabled={!tpl || saving} onClick={async () => { if (await flush()) setHistoryOpen(true); }}>Version history</Btn>
+              <Btn size="sm" tone="ghost" disabled={!tpl || saving} onClick={doReset}>Reset to defaults</Btn>
+            </span>
           </div>
         </div>
         <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, padding: 16, display: "flex", flexDirection: "column", minHeight: 680 }}>
@@ -14664,6 +14729,7 @@ function PdfTemplateEditor({ id, kind, call, notify, token, onClose }) {
           </div>
         </div>
       </div>
+      {historyOpen && tpl && <TemplateVersionsModal type="pdf" id={id} name={tpl.name} call={call} notify={notify} token={token} onClose={() => setHistoryOpen(false)} onRestored={(t) => { adopt(t); refreshPreview(); }} />}
     </div>
   );
 }
@@ -14892,6 +14958,7 @@ const EXCEL_FIELD_CATALOG = [
   { group: "Header & Branding", key: "showGeneratedDate", label: "Show generated date", type: "bool" },
   { group: "Header & Branding", key: "showGeneratedBy", label: "Show generated by", type: "bool" },
   { group: "Header & Branding", key: "showDateRange", label: "Show date range", type: "bool" },
+  { group: "Header & Branding", key: "showStamp", label: "Show company stamp at the end of the sheet", type: "bool", hint: "Upload or change the stamp in Settings → General → Company stamp." },
 
   { group: "Colors", key: "colorPrimary", label: "Primary", type: "color", nullable: true },
   { group: "Colors", key: "colorSecondary", label: "Secondary", type: "color", nullable: true },
@@ -14935,13 +15002,14 @@ const EXCEL_FIELD_GROUPS = Array.from(new Set(EXCEL_FIELD_CATALOG.map((f) => f.g
 function ExcelTemplateEditor({ id, kind, call, dl, notify, onClose }) {
   const [tab, setTab] = useState(EXCEL_FIELD_GROUPS[0]);
   const [busy, setBusy] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const { tpl, setTpl, draft, status, error, setField, flush, settle, adopt } = useTemplateAutosave({
     id, base: "/api/excel-templates", catalog: EXCEL_FIELD_CATALOG, call, notify,
   });
   const saving = status === "saving" || busy;
 
   async function doReset() {
-    if (!window.confirm(`Reset "${tpl.name}" to the original default look? This can't be undone.`)) return;
+    if (!window.confirm(`Reset "${tpl.name}" to the original default look? The current look is kept in Version history.`)) return;
     if (!(await flush())) return;
     setBusy(true);
     try {
@@ -14983,9 +15051,12 @@ function ExcelTemplateEditor({ id, kind, call, dl, notify, onClose }) {
               ))}
             </div>
           )}
-          <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${C.line}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${C.line}`, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
             <TemplateSaveStatus status={status} error={error} version={tpl?.version} onRetry={flush} />
-            <Btn size="sm" tone="ghost" disabled={!tpl || saving} onClick={doReset}>Reset to defaults</Btn>
+            <span style={{ display: "inline-flex", gap: 6, marginLeft: "auto" }}>
+              <Btn size="sm" tone="ghost" disabled={!tpl || saving} onClick={async () => { if (await flush()) setHistoryOpen(true); }}>Version history</Btn>
+              <Btn size="sm" tone="ghost" disabled={!tpl || saving} onClick={doReset}>Reset to defaults</Btn>
+            </span>
           </div>
         </div>
         <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 6, padding: 16 }}>
@@ -14999,6 +15070,7 @@ function ExcelTemplateEditor({ id, kind, call, dl, notify, onClose }) {
           </div>
         </div>
       </div>
+      {historyOpen && tpl && <TemplateVersionsModal type="excel" id={id} name={tpl.name} call={call} notify={notify} dl={dl} onClose={() => setHistoryOpen(false)} onRestored={(t) => adopt(t)} />}
     </div>
   );
 }

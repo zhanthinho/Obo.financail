@@ -2694,6 +2694,12 @@
  "Change stamp…": "Beddel shaabadda…",
  "Remove stamp": "Ka saar shaabadda",
  "Show company stamp beside the signature": "Tus shaabadda shirkadda saxeexa agtiisa",
+ "Show company stamp at the end of the sheet": "Tus shaabadda shirkadda dhammaadka xaashida",
  "Upload or change the stamp in Settings → General → Company stamp.": "Shaabadda ka geli ama ka beddel Settings → General → Company stamp.",
- "PNG (transparent background works best) or JPEG, under ~1MB. Printed beside the signature on PDF documents — switch it on or off per template in PDF Templates → Signatures. Click Save to keep it.": "PNG (asal aan muuqan ayaa ugu fiican) ama JPEG, ka yar ~1MB. Waxay ka soo baxdaa saxeexa agtiisa dukumentiyada PDF — template kasta ka shid ama ka dami PDF Templates → Signatures. Riix Save si loo kaydiyo."
+ "PNG (transparent background works best) or JPEG, under ~1MB. Printed beside the signature on PDF documents — switch it on or off per template in PDF Templates → Signatures. Click Save to keep it.": "PNG (asal aan muuqan ayaa ugu fiican) ama JPEG, ka yar ~1MB. Waxay ka soo baxdaa saxeexa agtiisa dukumentiyada PDF — template kasta ka shid ama ka dami PDF Templates → Signatures. Riix Save si loo kaydiyo.",
+ "Version history": "Taariikhda noocyada",
+ "By": "Qofka",
+ "Before save": "Kahor kaydinta",
+ "Before reset to defaults": "Kahor dib-u-dejinta",
+ "No earlier versions yet. A version is kept automatically each time this template is changed, reset or restored.": "Weli ma jiraan noocyo hore. Nooc ayaa si toos ah loo kaydiyaa mar kasta oo template-kan la beddelo, dib loo dejiyo ama la soo celiyo."
 }
