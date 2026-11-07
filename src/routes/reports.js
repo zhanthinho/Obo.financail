@@ -1,4 +1,5 @@
 "use strict";
+const { dayClause } = require("../company-day");
 const { all, get } = require("../db");
 const { sendJSON, sendCSV, sendPDF } = require("../http-helpers");
 const { requireAuth, requirePerm } = require("../rbac");
@@ -16,8 +17,8 @@ const { blankMargins, addStoredMargin, roundMargins } = require("../exchange-cal
 const addMargin = (b, t, lookup) => addStoredMargin(b, { currencyGiven: t.currency_given, profitUsd: t.profit_usd, costRate: t.cost_rate != null ? t.cost_rate : lookup(t.date) });
 function exchangeFilter(query) {
   const clauses = ["status = 'active'"], params = [];
-  if (query.from) { clauses.push("date(date) >= date(?)"); params.push(query.from); }
-  if (query.to) { clauses.push("date(date) <= date(?)"); params.push(query.to); }
+  if (query.from) { { const [dc, dp] = dayClause("date", ">=", query.from); clauses.push(dc); params.push(...dp); } }
+  if (query.to) { { const [dc, dp] = dayClause("date", "<=", query.to); clauses.push(dc); params.push(...dp); } }
   // Currency filter: the currency the customer GAVE (USD = Buy side, SLSH = Sell side).
   if (query.currency === "USD" || query.currency === "SLSH") { clauses.push("currency_given = ?"); params.push(query.currency); }
   return { where: clauses.join(" AND "), params };

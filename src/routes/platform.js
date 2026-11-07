@@ -27,7 +27,7 @@ function fail(res, e) {
 function validateLogo(res, logo) {
   if (logo === undefined || logo === null || logo === "") return true;
   if (typeof logo !== "string" || logo.length > MAX_LOGO_CHARS) { badRequest(res, "That logo image is too large. Please use a smaller file (under ~1MB)."); return false; }
-  if (!/^data:image\/(png|jpeg|jpg);base64,/.test(logo)) { badRequest(res, "Logo must be a PNG or JPEG image."); return false; }
+  if (!require("../image-validate").isRealImageDataUrl(logo, ["png", "jpeg"])) { badRequest(res, "Logo must be a PNG or JPEG image."); return false; }
   return true;
 }
 function validateEmail(res, email) {

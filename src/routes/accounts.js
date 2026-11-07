@@ -1,4 +1,5 @@
 "use strict";
+const { dayClause } = require("../company-day");
 const payments = require("../payments");
 const { isValidAmount, toNumber } = require("../util");
 const { all, get, run, tx } = require("../db");
@@ -74,8 +75,8 @@ function buildAccountsFilter(user, query) {
   if (hidden.length) { clauses.push(`id NOT IN (${hidden.map(() => "?").join(",")})`); sqlParams.push(...hidden); }
   if (query.currency && ["USD", "SLSH"].includes(query.currency)) { clauses.push("currency = ?"); sqlParams.push(query.currency); }
   if (query.type && ["customer", "company"].includes(query.type)) { clauses.push("account_type = ?"); sqlParams.push(query.type); }
-  if (query.from) { clauses.push("date(created_at) >= date(?)"); sqlParams.push(query.from); }
-  if (query.to) { clauses.push("date(created_at) <= date(?)"); sqlParams.push(query.to); }
+  if (query.from) { { const [dc, dp] = dayClause("created_at", ">=", query.from); clauses.push(dc); sqlParams.push(...dp); } }
+  if (query.to) { { const [dc, dp] = dayClause("created_at", "<=", query.to); clauses.push(dc); sqlParams.push(...dp); } }
   if (query.search) {
     clauses.push("(name LIKE ? OR contact LIKE ? OR email LIKE ? OR account_number LIKE ? OR id_number LIKE ?)");
     const s = `%${query.search}%`;
@@ -254,8 +255,8 @@ function register(router) {
     { const hidden = [...accountAccess.hiddenIds(user)]; if (hidden.length) { clauses.push(`id NOT IN (${hidden.map(() => "?").join(",")})`); sqlParams.push(...hidden); } }
     if (query.currency && ["USD", "SLSH"].includes(query.currency)) { clauses.push("currency = ?"); sqlParams.push(query.currency); }
     if (query.type && ["customer", "company"].includes(query.type)) { clauses.push("account_type = ?"); sqlParams.push(query.type); }
-    if (query.from) { clauses.push("date(created_at) >= date(?)"); sqlParams.push(query.from); }
-    if (query.to) { clauses.push("date(created_at) <= date(?)"); sqlParams.push(query.to); }
+    if (query.from) { { const [dc, dp] = dayClause("created_at", ">=", query.from); clauses.push(dc); sqlParams.push(...dp); } }
+    if (query.to) { { const [dc, dp] = dayClause("created_at", "<=", query.to); clauses.push(dc); sqlParams.push(...dp); } }
     // SMART ACCOUNT LIVE SEARCH round: leading/trailing spaces never stop a match.
     // GLOBAL SMART ACCOUNT SEARCH round: repeated inner spaces count as one,
     // and a phone number matches with or without its spaces / + / dashes.

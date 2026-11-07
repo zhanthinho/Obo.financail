@@ -1741,7 +1741,9 @@ function balanceTone(balance) {
   return C.slate;
 }
 function convert(amount, from, to, rate) { const n = Number(amount) || 0; return from === to ? n : to === "USD" ? n / rate : n * rate; }
-function todayStr() { return new Date().toISOString().slice(0, 10); }
+// SYSTEM AUDIT round: the local calendar day (was the UTC date, which is
+// yesterday between 00:00 and 03:00 in Mogadishu).
+function todayStr() { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
 function nowLocalDT() {
   return toLocalDT(new Date());
 }
@@ -16285,7 +16287,7 @@ const DR_TABS = [["history", "Daily History", "history"], ["snapshot", "Daily Sn
 const DR_PRESETS = [["today", "Today"], ["yesterday", "Yesterday"], ["last7", "Last 7 Days"], ["last30", "Last 30 Days"], ["thisMonth", "This Month"], ["lastMonth", "Last Month"], ["thisYear", "This Year"], ["custom", "Custom Date Range"]];
 function drAddDays(d, n) { const [y, m, dd] = d.split("-").map(Number); return new Date(Date.UTC(y, m - 1, dd + n)).toISOString().slice(0, 10); }
 function drPresetRange(key, today) {
-  const t = today || new Date().toISOString().slice(0, 10);
+  const t = today || todayStr();
   const [y, m] = t.split("-").map(Number);
   const first = (yy, mm) => new Date(Date.UTC(yy, mm - 1, 1)).toISOString().slice(0, 10);
   switch (key) {
@@ -17383,7 +17385,7 @@ function DailyHistoryView({ call, dl, preview, notify, status, onRefresh }) {
   useEffect(() => { load(); }, [load]);
   const choosePreset = (k) => {
     setPreset(k); setPage(1); setSelDate(null); setOpenDate(null);
-    if (k === "all") setRange({ from: "2000-01-01", to: today || new Date().toISOString().slice(0, 10) });
+    if (k === "all") setRange({ from: "2000-01-01", to: today || todayStr() });
     else if (k !== "custom") setRange(drPresetRange(k, today));
   };
   const setCustom = (patch) => { setPreset("custom"); setPage(1); setSelDate(null); setOpenDate(null); setRange((r) => ({ ...(r || {}), ...patch })); };

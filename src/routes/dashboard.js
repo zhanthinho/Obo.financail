@@ -1,4 +1,7 @@
 "use strict";
+const { dayClause, companyToday } = require("../company-day");
+// SYSTEM AUDIT round: date ranges are company calendar days (see src/company-day.js).
+function dayRange(col, from, to) { const a = dayClause(col, ">=", from), b = dayClause(col, "<=", to); return { sql: [a[0], b[0]], params: [...a[1], ...b[1]] }; }
 // ENTERPRISE FINANCIAL MANAGEMENT DASHBOARD round.
 //
 // A single, real-data, currency-safe aggregation endpoint (GET /api/dashboard)
@@ -46,7 +49,7 @@ function startOfWeek(d) {
 }
 const RANGE_PRESETS = new Set(["today", "yesterday", "thisWeek", "thisMonth", "lastMonth", "thisYear", "last3Months", "last6Months", "custom"]);
 function resolveDateRange(range, fromQ, toQ) {
-  const today = new Date(new Date().toISOString().slice(0, 10) + "T00:00:00Z");
+  const today = new Date(companyToday() + "T00:00:00Z"); // the company's calendar day (SYSTEM AUDIT round)
   const r = RANGE_PRESETS.has(range) ? range : "today";
   switch (r) {
     case "yesterday": { const y = new Date(today); y.setUTCDate(y.getUTCDate() - 1); return { range: r, from: isoDate(y), to: isoDate(y) }; }
@@ -118,8 +121,9 @@ function enumerateBuckets(from, to, unit) {
 let HIDDEN = new Set();
 const visible = (...ids) => !ids.some((id) => id && HIDDEN.has(id));
 function ledgerRows(from, to, currency, accountId) {
-  const clauses = ["date(l.date) >= date(?)", "date(l.date) <= date(?)", "c.deleted_at IS NULL"];
-  const params = [from, to];
+  const dr = dayRange("l.date", from, to);
+  const clauses = [...dr.sql, "c.deleted_at IS NULL"];
+  const params = [...dr.params];
   if (currency) { clauses.push("l.currency = ?"); params.push(currency); }
   if (accountId) { clauses.push("l.client_id = ?"); params.push(accountId); }
   return all(`SELECT l.* FROM account_ledger l JOIN clients c ON c.id = l.client_id WHERE ${clauses.join(" AND ")} ORDER BY l.date ASC`, params).filter((l) => visible(l.client_id));
@@ -132,20 +136,23 @@ function allTimeLedgerRows(currency, accountId) {
   return all(`SELECT l.date, l.type, l.amount, l.client_id FROM account_ledger l JOIN clients c ON c.id = l.client_id WHERE ${clauses.join(" AND ")} ORDER BY l.date ASC`, params).filter((l) => visible(l.client_id));
 }
 function exchangeRows(from, to, accountId) {
-  const clauses = ["status = 'active'", "date(date) >= date(?)", "date(date) <= date(?)"];
-  const params = [from, to];
+  const dr = dayRange("date", from, to);
+  const clauses = ["status = 'active'", ...dr.sql];
+  const params = [...dr.params];
   if (accountId) { clauses.push("(client_id = ? OR from_account_id = ? OR to_account_id = ?)"); params.push(accountId, accountId, accountId); }
   return all(`SELECT * FROM exchange_transactions WHERE ${clauses.join(" AND ")} ORDER BY date DESC, id DESC`, params).filter((t) => visible(t.client_id, t.from_account_id, t.to_account_id));
 }
 function transferRows(from, to, accountId) {
-  const clauses = ["status = 'active'", "date(date) >= date(?)", "date(date) <= date(?)"];
-  const params = [from, to];
+  const dr = dayRange("date", from, to);
+  const clauses = ["status = 'active'", ...dr.sql];
+  const params = [...dr.params];
   if (accountId) { clauses.push("(from_account_id = ? OR to_account_id = ?)"); params.push(accountId, accountId); }
   return all(`SELECT * FROM transfers WHERE ${clauses.join(" AND ")} ORDER BY date DESC, created_at DESC, id DESC`, params).filter((t) => visible(t.from_account_id, t.to_account_id));
 }
 function quotationRows(from, to, status, accountId) {
-  const clauses = ["date(created_at) >= date(?)", "date(created_at) <= date(?)"];
-  const params = [from, to];
+  const dr = dayRange("created_at", from, to);
+  const clauses = [...dr.sql];
+  const params = [...dr.params];
   if (status) { clauses.push("status = ?"); params.push(status); }
   if (accountId) { clauses.push("charged_account_id = ?"); params.push(accountId); }
   return all(`SELECT * FROM quotations WHERE ${clauses.join(" AND ")} ORDER BY created_at DESC`, params).filter((q) => visible(q.charged_account_id, q.client_id));

@@ -1,4 +1,5 @@
 "use strict";
+const { dayClause } = require("../company-day");
 const { isValidAmount, isFiniteMoney, toNumber } = require("../util");
 // CASH IN HAND round — company-owned cash accounts (bank / mobile money /
 // physical cash), fully separate from the customer-facing `clients` /
@@ -488,8 +489,8 @@ function register(router) {
     if (query.currency && query.currency !== "all") { clauses.push("currency = ?"); p.push(query.currency); }
     if (query.type && query.type !== "all") { clauses.push("type = ?"); p.push(query.type); }
     if (query.search) { clauses.push("(description LIKE ? OR reference_number LIKE ? OR counterparty_label LIKE ?)"); p.push(`%${query.search}%`, `%${query.search}%`, `%${query.search}%`); }
-    if (query.from) { clauses.push("date(date) >= date(?)"); p.push(query.from); }
-    if (query.to) { clauses.push("date(date) <= date(?)"); p.push(query.to); }
+    if (query.from) { { const [dc, dp] = dayClause("date", ">=", query.from); clauses.push(dc); p.push(...dp); } }
+    if (query.to) { { const [dc, dp] = dayClause("date", "<=", query.to); clauses.push(dc); p.push(...dp); } }
     // CASH ACCOUNT VIEW round: two additive filters for the per-account Cash
     // Movements tab's filter bar (Staff, Reference) — same plain-equality/
     // LIKE pattern as every other filter here, nothing existing changes when

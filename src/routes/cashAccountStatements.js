@@ -6,6 +6,7 @@
 // cash_ledger instead of clients/account_ledger. Deliberately a brand-new,
 // fully additive pair of routes: nothing about the existing customer
 // Account Statement, or any other Cash in Hand endpoint, is touched.
+const { dayClause } = require("../company-day");
 const { all, get } = require("../db");
 const { sendPDF, sendXLSX, notFound } = require("../http-helpers");
 const { requireAuth, requirePerm } = require("../rbac");
@@ -28,8 +29,8 @@ function loadCashAccountStatementData(cashAccountId, query) {
   const currency = account.currency;
 
   const clauses = ["cash_account_id = ?"], sqlParams = [account.id];
-  if (query.from) { clauses.push("date(date) >= date(?)"); sqlParams.push(query.from); }
-  if (query.to) { clauses.push("date(date) <= date(?)"); sqlParams.push(query.to); }
+  if (query.from) { { const [dc, dp] = dayClause("date", ">=", query.from); clauses.push(dc); sqlParams.push(...dp); } }
+  if (query.to) { { const [dc, dp] = dayClause("date", "<=", query.to); clauses.push(dc); sqlParams.push(...dp); } }
   const where = "WHERE " + clauses.join(" AND ");
   const rows = all(
     `SELECT * FROM cash_ledger ${where} ORDER BY ${CHRONO_SORT_EXPR} ASC, id ASC`,
@@ -42,10 +43,11 @@ function loadCashAccountStatementData(cashAccountId, query) {
   // as the customer Account Statement.
   let openingBalance = 0;
   if (query.from) {
+    const priorDay = dayClause("date", "<", query.from);
     const prior = get(
-      `SELECT balance_after FROM cash_ledger WHERE cash_account_id = ? AND date(date) < date(?)
+      `SELECT balance_after FROM cash_ledger WHERE cash_account_id = ? AND ${priorDay[0]}
        ORDER BY ${CHRONO_SORT_EXPR} DESC, id DESC LIMIT 1`,
-      [account.id, query.from]
+      [account.id, ...priorDay[1]]
     );
     if (prior) openingBalance = prior.balance_after;
   }
@@ -93,7 +95,7 @@ function cashStatementFilename(account, query, ext) {
     .toLowerCase()
     .replace(/\s+/g, "-")
     .replace(/[^a-z0-9-]/g, "");
-  const dateTag = query.to || new Date().toISOString().slice(0, 10);
+  const dateTag = query.to || require("../company-day").companyToday();
   return `${base}-${dateTag}.${ext}`;
 }
 

@@ -1,4 +1,5 @@
 "use strict";
+const { dayClause } = require("../company-day");
 const { all, get } = require("../db");
 const { sendJSON, sendCSV, sendPDF, sendXLSX } = require("../http-helpers");
 const { requireAuth, requirePerm, can, allowedCurrencies } = require("../rbac");
@@ -93,8 +94,8 @@ function queryHistory(query, opts = {}) {
 
   {
     const clauses = [], params = [];
-    if (from) { clauses.push("date(t.date) >= date(?)"); params.push(from); }
-    if (to) { clauses.push("date(t.date) <= date(?)"); params.push(to); }
+    if (from) { { const [dc, dp] = dayClause("t.date", ">=", from); clauses.push(dc); params.push(...dp); } }
+    if (to) { { const [dc, dp] = dayClause("t.date", "<=", to); clauses.push(dc); params.push(...dp); } }
     const where = clauses.length ? "WHERE " + clauses.join(" AND ") : "";
     const rows = all(`SELECT t.*, c.account_type AS client_account_type, c.contact AS client_phone, c.currency AS client_currency, fa.account_number AS from_account_number, ta.account_number AS to_account_number FROM exchange_transactions t LEFT JOIN clients fa ON fa.id = t.from_account_id LEFT JOIN clients ta ON ta.id = t.to_account_id LEFT JOIN clients c ON c.id = t.client_id ${where}`, params);
     entries.push(...rows.map((t) => ({
@@ -147,8 +148,8 @@ function queryHistory(query, opts = {}) {
     // settlement deposits (source_type='quotation_paid') — never the
     // original charge or a refund — so it answers "show me only money that
     // actually came IN against quotations."
-    if (from) { clauses.push("date(l.date) >= date(?)"); params.push(from); }
-    if (to) { clauses.push("date(l.date) <= date(?)"); params.push(to); }
+    if (from) { { const [dc, dp] = dayClause("l.date", ">=", from); clauses.push(dc); params.push(...dp); } }
+    if (to) { { const [dc, dp] = dayClause("l.date", "<=", to); clauses.push(dc); params.push(...dp); } }
     const where = "WHERE " + clauses.join(" AND ");
     // BUGFIX: this used to hardcode the row's status purely from source_type
     // — every "quotation_paid" leg (a settlement Deposit) was always labeled
@@ -234,8 +235,8 @@ function queryHistory(query, opts = {}) {
   // the destination (see accountId filtering below).
   {
     const clauses = [], params = [];
-    if (from) { clauses.push("date(t.date) >= date(?)"); params.push(from); }
-    if (to) { clauses.push("date(t.date) <= date(?)"); params.push(to); }
+    if (from) { { const [dc, dp] = dayClause("t.date", ">=", from); clauses.push(dc); params.push(...dp); } }
+    if (to) { { const [dc, dp] = dayClause("t.date", "<=", to); clauses.push(dc); params.push(...dp); } }
     const where = clauses.length ? "WHERE " + clauses.join(" AND ") : "";
     const rows = all(
       `SELECT t.*, fc.name AS from_name, fc.account_type AS from_account_type, fc.currency AS from_currency, fc.contact AS from_phone, fc.account_number AS from_number, tc.account_number AS to_number, tc.name AS to_name
@@ -263,8 +264,8 @@ function queryHistory(query, opts = {}) {
   {
     const clauses = ["(l.source_type IS NULL OR l.source_type IN ('exchange','transfer','quotation_charge','quotation_paid','quotation_refund'))"];
     const params = [];
-    if (from) { clauses.push("date(l.date) >= date(?)"); params.push(from); }
-    if (to) { clauses.push("date(l.date) <= date(?)"); params.push(to); }
+    if (from) { { const [dc, dp] = dayClause("l.date", ">=", from); clauses.push(dc); params.push(...dp); } }
+    if (to) { { const [dc, dp] = dayClause("l.date", "<=", to); clauses.push(dc); params.push(...dp); } }
     const rows = all(
       `SELECT l.*, c.account_type AS client_account_type, c.contact AS client_phone, c.currency AS client_currency, c.name AS client_name, c.account_number AS client_account_number,
               x.reference_number AS exchange_ref, tr.reference_number AS transfer_ref, ca.name AS cash_name
@@ -296,8 +297,8 @@ function queryHistory(query, opts = {}) {
   // Account transfer are original records of their own.
   if (includeCash) {
     const clauses = [], params = [];
-    if (from) { clauses.push("date(cl.date) >= date(?)"); params.push(from); }
-    if (to) { clauses.push("date(cl.date) <= date(?)"); params.push(to); }
+    if (from) { { const [dc, dp] = dayClause("cl.date", ">=", from); clauses.push(dc); params.push(...dp); } }
+    if (to) { { const [dc, dp] = dayClause("cl.date", "<=", to); clauses.push(dc); params.push(...dp); } }
     const rows = all(
       `SELECT cl.*, ca.name AS cash_name, c.name AS cp_name, c.account_type AS cp_type, c.account_number AS cp_number, c.contact AS cp_phone,
               x.reference_number AS exchange_ref, al.reference_number AS payment_ref

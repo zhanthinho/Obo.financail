@@ -101,7 +101,7 @@ function register(router) {
     if (body.logoDataUrl && body.logoDataUrl.length > MAX_LOGO_CHARS) {
       return badRequest(res, "That logo image is too large. Please use a smaller file (under ~1MB).");
     }
-    if (body.logoDataUrl && !/^data:image\/(png|jpeg|jpg);base64,/.test(body.logoDataUrl)) {
+    if (body.logoDataUrl && !require("../image-validate").isRealImageDataUrl(body.logoDataUrl, ["png", "jpeg"])) {
       return badRequest(res, "Logo must be a PNG or JPEG image.");
     }
     if (body.pdfAccentColor !== undefined && body.pdfAccentColor !== null && body.pdfAccentColor !== "" && !/^#[0-9a-fA-F]{6}$/.test(body.pdfAccentColor)) {
@@ -146,7 +146,7 @@ function register(router) {
     if (body.faviconDataUrl && body.faviconDataUrl.length > MAX_FAVICON_CHARS) {
       return badRequest(res, "That favicon image is too large. Please use a smaller file (under ~90KB).");
     }
-    if (body.faviconDataUrl && !/^data:image\/(png|jpeg|jpg|x-icon|vnd\.microsoft\.icon);base64,/.test(body.faviconDataUrl)) {
+    if (body.faviconDataUrl && !require("../image-validate").isRealImageDataUrl(body.faviconDataUrl, ["png", "jpeg", "ico"])) {
       return badRequest(res, "Favicon must be a PNG, JPEG, or ICO image.");
     }
     const tagline = body.tagline !== undefined ? body.tagline : current.tagline;

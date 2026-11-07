@@ -14,7 +14,10 @@
 //     expenses without exactly one reversal;
 //   * possible double submissions — two identical deposits/withdrawals on the
 //     same account, by the same person, within 10 seconds — listed by
-//     reference number for a person to review (they may be genuine).
+//     reference number for a person to review (they may be genuine);
+//   * (SYSTEM AUDIT round) ledger rows in another currency than their
+//     account, cross-currency transfers, duplicate reference numbers and
+//     exchanges whose received amount does not match amount × rate.
 // Uses the same DB_PATH / CONTROL_DB_PATH / COMPANIES_DIR settings as the
 // server. Exit code 0 = nothing found, 1 = something to review.
 require("../src/env");
@@ -67,6 +70,17 @@ function checkCompany(co) {
       ["posted expenses without exactly one cash movement", "SELECT COUNT(*) AS n FROM expenses e WHERE e.status='posted' AND (SELECT COUNT(*) FROM cash_ledger l WHERE l.source_type='expense' AND l.source_id=e.id) <> 1"],
       ["cancelled expenses without exactly one reversal", "SELECT COUNT(*) AS n FROM expenses e WHERE e.status='cancelled' AND (SELECT COUNT(*) FROM cash_ledger l WHERE l.source_type='expense_reversal' AND l.source_id=e.id) <> 1"],
     ];
+    // SYSTEM AUDIT round: currency separation, duplicate references, exchange arithmetic.
+    orphanChecks.push(
+      ["account ledger rows in a currency other than their account's", "SELECT COUNT(*) AS n FROM account_ledger l JOIN clients c ON c.id = l.client_id WHERE c.currency IS NOT NULL AND l.currency <> c.currency"],
+      ["cash ledger rows in a currency other than their cash account's", "SELECT COUNT(*) AS n FROM cash_ledger l JOIN cash_accounts a ON a.id = l.cash_account_id WHERE l.currency IS NOT NULL AND l.currency <> a.currency"],
+      ["transfers between accounts of different currencies", "SELECT COUNT(*) AS n FROM transfers t JOIN clients f ON f.id = t.from_account_id JOIN clients o ON o.id = t.to_account_id WHERE f.currency <> o.currency"],
+      ["duplicate account ledger reference numbers", "SELECT COUNT(*) AS n FROM (SELECT reference_number FROM account_ledger WHERE reference_number IS NOT NULL AND reference_number <> '' GROUP BY reference_number HAVING COUNT(*) > 1) d"],
+      ["duplicate cash ledger reference numbers", "SELECT COUNT(*) AS n FROM (SELECT reference_number FROM cash_ledger WHERE reference_number IS NOT NULL AND reference_number <> '' GROUP BY reference_number HAVING COUNT(*) > 1) d"],
+      ["duplicate exchange reference numbers", "SELECT COUNT(*) AS n FROM (SELECT reference_number FROM exchange_transactions WHERE reference_number IS NOT NULL AND reference_number <> '' GROUP BY reference_number HAVING COUNT(*) > 1) d"],
+      ["exchanges whose received amount does not match amount × rate", "SELECT COUNT(*) AS n FROM exchange_transactions WHERE status <> 'voided' AND rate_used > 0 AND currency_given <> currency_received AND ABS(amount_received - (CASE WHEN currency_given = 'USD' THEN amount_given * rate_used ELSE amount_given / rate_used END)) > GREATEST(1, 0.01 * amount_received)"],
+      ["exchanges given and received in the same currency", "SELECT COUNT(*) AS n FROM exchange_transactions WHERE currency_given = currency_received"],
+    );
     for (const [label, sql] of orphanChecks) {
       try { const n = q(sql)[0].n; if (n) out.push(`${n} ${label}`); } catch (e) { /* table not present in this database */ }
     }

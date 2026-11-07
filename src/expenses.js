@@ -18,6 +18,7 @@
 //     'expense_reversal') and marks the expense cancelled. A cancelled
 //     expense can be neither edited nor cancelled again.
 //   * USD and SLSH are never added together and no exchange rate is used.
+const { dayClause } = require("./company-day");
 const { all, get, run, tx } = require("./db");
 const domain = require("./domain");
 const { uid, nowISO, resolvePaymentDate, fmtMoney } = require("./util");
@@ -262,8 +263,8 @@ function cancelExpense(user, id, reason) {
 // so a report can never count different rows from the table it summarises.
 function buildFilter(q, { includeStatus = true } = {}) {
   const clauses = [], p = [];
-  if (q.from && /^\d{4}-\d{2}-\d{2}$/.test(q.from)) { clauses.push("date(e.date) >= date(?)"); p.push(q.from); }
-  if (q.to && /^\d{4}-\d{2}-\d{2}$/.test(q.to)) { clauses.push("date(e.date) <= date(?)"); p.push(q.to); }
+  if (q.from && /^\d{4}-\d{2}-\d{2}$/.test(q.from)) { { const [dc, dp] = dayClause("e.date", ">=", q.from); clauses.push(dc); p.push(...dp); } }
+  if (q.to && /^\d{4}-\d{2}-\d{2}$/.test(q.to)) { { const [dc, dp] = dayClause("e.date", "<=", q.to); clauses.push(dc); p.push(...dp); } }
   if (q.currency && CURRENCIES.includes(q.currency)) { clauses.push("e.currency = ?"); p.push(q.currency); }
   if (q.categoryId && q.categoryId !== "all") { clauses.push("e.category_id = ?"); p.push(String(q.categoryId)); }
   if (q.cashAccountId && q.cashAccountId !== "all") { clauses.push("e.cash_account_id = ?"); p.push(String(q.cashAccountId)); }

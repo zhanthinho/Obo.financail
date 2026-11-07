@@ -1,5 +1,6 @@
 "use strict";
 // ACCOUNT-LEVEL ACCESS round — see src/account-access.js.
+const { dayClause } = require("../company-day");
 const accountAccess = require("../account-access");
 const { isValidAmount, toNumber, moneyExceeds } = require("../util");
 const { all, get, run, tx } = require("../db");
@@ -46,8 +47,8 @@ function register(router) {
     const clauses = [], sqlParams = [];
     if (allowed.length < 2) { clauses.push(`currency IN (${allowed.map(() => "?").join(",")})`); sqlParams.push(...allowed); }
     if (query.accountId) { clauses.push("(from_account_id = ? OR to_account_id = ?)"); sqlParams.push(query.accountId, query.accountId); }
-    if (query.from) { clauses.push("date(date) >= date(?)"); sqlParams.push(query.from); }
-    if (query.to) { clauses.push("date(date) <= date(?)"); sqlParams.push(query.to); }
+    if (query.from) { { const [dc, dp] = dayClause("date", ">=", query.from); clauses.push(dc); sqlParams.push(...dp); } }
+    if (query.to) { { const [dc, dp] = dayClause("date", "<=", query.to); clauses.push(dc); sqlParams.push(...dp); } }
     if (query.status && query.status !== "all") { clauses.push("status = ?"); sqlParams.push(query.status); }
     const where = clauses.length ? "WHERE " + clauses.join(" AND ") : "";
     const rows = all(`SELECT * FROM transfers ${where} ORDER BY date DESC, created_at DESC, id DESC`, sqlParams);

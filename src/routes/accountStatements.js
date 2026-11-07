@@ -7,6 +7,7 @@
 // about that existing feature changes. Both new endpoints below query the
 // SAME account_ledger rows and compute the SAME summary numbers, so the PDF
 // and Excel for one account/date-range can never disagree with each other.
+const { dayClause } = require("../company-day");
 const { all, get } = require("../db");
 const { sendPDF, sendXLSX, notFound } = require("../http-helpers");
 const { requireAuth, requirePerm, requireCurrencyAccess, can } = require("../rbac");
@@ -53,8 +54,8 @@ function loadStatementData(accountId, query) {
   const balanceField = currency === "USD" ? "balance_usd" : "balance_slsh";
 
   const clauses = ["al.client_id = ?"], sqlParams = [account.id];
-  if (query.from) { clauses.push("date(al.date) >= date(?)"); sqlParams.push(query.from); }
-  if (query.to) { clauses.push("date(al.date) <= date(?)"); sqlParams.push(query.to); }
+  if (query.from) { { const [dc, dp] = dayClause("al.date", ">=", query.from); clauses.push(dc); sqlParams.push(...dp); } }
+  if (query.to) { { const [dc, dp] = dayClause("al.date", "<=", query.to); clauses.push(dc); sqlParams.push(...dp); } }
   const where = "WHERE " + clauses.join(" AND ");
   // PAYMENT & TRANSFER UPGRADE round: a transfer's two ledger legs are plain
   // account_ledger rows (type deposit/withdrawal, tagged source_type=
@@ -93,10 +94,11 @@ function loadStatementData(accountId, query) {
   let openingBalance = 0;
   if (query.from) {
     const priorChronoExpr = "(CASE WHEN length(date) > 10 THEN date ELSE substr(date,1,10) || substr(COALESCE(created_at, date || 'T00:00:00.000Z'), 11) END)";
+    const priorDay = dayClause("date", "<", query.from);
     const prior = get(
-      `SELECT balance_after FROM account_ledger WHERE client_id = ? AND date(date) < date(?)
+      `SELECT balance_after FROM account_ledger WHERE client_id = ? AND ${priorDay[0]}
        ORDER BY ${priorChronoExpr} DESC, id DESC LIMIT 1`,
-      [account.id, query.from]
+      [account.id, ...priorDay[1]]
     );
     if (prior) openingBalance = prior.balance_after;
   }

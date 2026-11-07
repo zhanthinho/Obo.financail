@@ -1,5 +1,6 @@
 "use strict";
 // ACCOUNT-LEVEL ACCESS round — see src/account-access.js.
+const { dayClause } = require("../company-day");
 const accountAccess = require("../account-access");
 const payments = require("../payments");
 const fundAlloc = require("../fund-allocation");
@@ -121,8 +122,8 @@ function queryTransactions(user, query) {
     clauses.push("staff_id = ?");
     params.push(query.staffId);
   }
-  if (query.from) { clauses.push("date(date) >= date(?)"); params.push(query.from); }
-  if (query.to) { clauses.push("date(date) <= date(?)"); params.push(query.to); }
+  if (query.from) { { const [dc, dp] = dayClause("date", ">=", query.from); clauses.push(dc); params.push(...dp); } }
+  if (query.to) { { const [dc, dp] = dayClause("date", "<=", query.to); clauses.push(dc); params.push(...dp); } }
   if (query.client) { clauses.push("client_name LIKE ?"); params.push(`%${query.client}%`); }
   if (query.status && query.status !== "all") { clauses.push("status = ?"); params.push(query.status); }
   // Currency filter: every exchange converts USD <-> SLSH for one client, so

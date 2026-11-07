@@ -1,4 +1,5 @@
 "use strict";
+const { dayClause } = require("../company-day");
 const { isValidAmount, toNumber } = require("../util");
 const { all, get, run, tx } = require("../db");
 const { sendJSON, sendCSV, sendPDF, badRequest, notFound, readJSONBody } = require("../http-helpers");
@@ -67,8 +68,8 @@ function queryLedger(query, allowed, user) {
   else if (origin === "quotation") clauses.push("l.source_type IN ('quotation_charge','quotation_paid','quotation_refund')");
   if (query.type && ["deposit", "withdrawal"].includes(query.type)) { clauses.push("l.type = ?"); params.push(query.type); }
   if (query.currency && ["USD", "SLSH"].includes(query.currency)) { clauses.push("l.currency = ?"); params.push(query.currency); }
-  if (query.from) { clauses.push("date(l.date) >= date(?)"); params.push(query.from); }
-  if (query.to) { clauses.push("date(l.date) <= date(?)"); params.push(query.to); }
+  if (query.from) { { const [dc, dp] = dayClause("l.date", ">=", query.from); clauses.push(dc); params.push(...dp); } }
+  if (query.to) { { const [dc, dp] = dayClause("l.date", "<=", query.to); clauses.push(dc); params.push(...dp); } }
   if (query.search) {
     clauses.push("(c.name LIKE ? OR c.account_number LIKE ? OR c.contact LIKE ?)");
     const s = `%${query.search}%`;

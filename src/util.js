@@ -9,8 +9,12 @@ function nowISO() {
   return new Date().toISOString();
 }
 
+// SYSTEM AUDIT round: "today" is the COMPANY's calendar day (its Daily
+// Snapshot time zone, default Africa/Mogadishu), not the UTC date — before,
+// a payment entered between 00:00 and 03:00 Mogadishu time without a date
+// was filed under yesterday. Outside a company request it falls back to UTC.
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  try { return require("./company-day").companyToday(); } catch (e) { return new Date().toISOString().slice(0, 10); }
 }
 
 // Convert an amount between USD and SLSH given "rate" = SLSH per 1 USD.
