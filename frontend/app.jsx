@@ -3341,7 +3341,7 @@ function useTxSort(rows, { module, amountOf, refOf, currencyOf, initialPageSize 
         return list.sort((a, b) => byCur(a, b) || (Math.abs(Number(amt(a)) || 0) - Math.abs(Number(amt(b)) || 0)) * d || txChronoCmp(a, b, dateKey));
       }
       case "reference": return list.sort((a, b) => { const ra = String(ref(a) || ""), rb = String(ref(b) || ""); if (!ra !== !rb) return ra ? -1 : 1; return (txRefCollator ? txRefCollator.compare(ra, rb) : ra.localeCompare(rb)) || txChronoCmp(a, b, dateKey); });
-      default: return list.sort(txChronoCmp);
+      default: return list.sort((a, b) => txChronoCmp(a, b, dateKey));
     }
   }, [pg.pageRows, mode, col]); // eslint-disable-line react-hooks/exhaustive-deps
   const setMode = useCallback((m) => { if (!TX_SORT_IDS.has(m)) return; setModeState(m); setCol(null); try { localStorage.setItem(storeKey, m); } catch (e) { /* storage unavailable */ } }, [storeKey]);
