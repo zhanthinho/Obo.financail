@@ -1102,14 +1102,64 @@ const THEME_CSS = `
   /* COMPACT SUMMARY CARDS round: five ~60px cards in one row on desktop. */
   /* TRANSACTION HISTORY CONSOLE round (shares the Accounts console styles) */
   .gk-th-kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
-  .gk-th-tabs { flex-wrap: wrap; }
+  /* TRANSACTION HISTORY TWO-ROW HEADER round */
+  .gk-ph--inline .gk-ph-row { flex-wrap: nowrap; align-items: center; }
+  .gk-ph--inline .gk-ph-head { flex: 0 0 auto; }
+  .gk-ph--inline .gk-ph-title { font-size: 16px; white-space: nowrap; }
+  .gk-ph--inline .gk-ph-sub { font-size: 11px; }
+  .gk-ph-center { flex: 1 1 auto; min-width: 0; }
+  .gk-th-header { margin-bottom: 8px; }
+  .gk-otabs { position: relative; min-width: 0; width: 100%; }
+  .gk-otabs-measure { position: absolute; visibility: hidden; pointer-events: none; height: 0; overflow: hidden; display: flex; gap: 4px; white-space: nowrap; }
+  .gk-otabs .gk-th-tabs { flex-wrap: nowrap; gap: 4px; margin: 0; align-items: center; }
+  .gk-otabs .gk-acc-tab, .gk-otabs-measure .gk-acc-tab { padding: 5px 9px; font-size: 12px; gap: 5px; height: 32px; box-sizing: border-box; white-space: nowrap; flex: 0 0 auto; border-radius: 7px; }
+  .gk-otabs .gk-acc-tab.is-active { background: #104B45; border-color: #104B45; color: #fff; }
+  .gk-otabs .gk-th-tab-count, .gk-otabs-measure .gk-th-tab-count { margin-left: 2px; min-width: 16px; padding: 0 5px; font-size: 10.5px; line-height: 15px; font-variant-numeric: tabular-nums; }
+  .gk-otabs .gk-acc-tab.is-active .gk-th-tab-count { background: rgba(255,255,255,.2); color: #fff; }
+  .gk-otabs-more { position: relative; flex: 0 0 auto; }
+  .gk-otabs-menu { position: absolute; top: calc(100% + 4px); right: 0; z-index: 70; min-width: 220px; background: var(--c-card); border: 1px solid var(--c-line); border-radius: 10px; box-shadow: 0 12px 28px rgba(6,78,59,.16); padding: 5px; display: flex; flex-direction: column; gap: 2px; }
+  .gk-otabs-item { display: flex; align-items: center; gap: 8px; border: 0; background: transparent; padding: 8px 10px; border-radius: 7px; font: inherit; font-size: 12.5px; color: var(--c-ink); cursor: pointer; text-align: left; }
+  .gk-otabs-item span:nth-of-type(1) { flex: 1; } .gk-otabs-item:hover { background: #F0FDF8; }
+  .gk-otabs-item[aria-checked="true"] { background: #104B45; color: #fff; }
+  .gk-acc-toolbar.gk-th-toolbar { padding: 7px 10px; gap: 6px; margin-bottom: 8px; flex-wrap: nowrap; }
+  .gk-th-toolbar .gk-acc-label { font-size: 10.5px; font-weight: 600; color: var(--c-slate); text-transform: none; }
+  .gk-th-toolbar .gk-acc-field { gap: 2px; min-width: 90px; flex: 1 1 110px; }
+  .gk-th-toolbar .gk-acc-field:nth-child(1) { min-width: 120px; }
+  .gk-th-toolbar .gk-acc-field:nth-child(3), .gk-th-toolbar .gk-acc-field:nth-child(4) { min-width: 105px; }
+  .gk-th-toolbar .gk-acc-field:nth-child(5), .gk-th-toolbar .gk-acc-field:nth-child(6) { min-width: 122px; flex: 0 1 132px; }
+  .gk-th-toolbar .gk-acc-field:nth-child(5) .gk-acc-input > svg, .gk-th-toolbar .gk-acc-field:nth-child(6) .gk-acc-input > svg { display: none; }
+  .gk-th-toolbar .gk-acc-field--search { flex: 2 1 180px; min-width: 130px; }
+  .gk-th-toolbar .gk-acc-input { padding: 0 7px; gap: 5px; }
+  .gk-th-toolbar .gk-acc-input input[type="date"] { font-size: 12px; }
+  .gk-th-toolbar .gk-acc-toolbar-actions { gap: 5px; flex: 0 0 auto; margin-left: 0; }
+  .gk-th-toolbar .gk-acc-toolbar-actions .gk-icon-btn { height: 36px; }
+  @media (max-width: 1680px) {
+    .gk-th-toolbar .gk-acc-toolbar-actions > .gk-acc-btn > span, .gk-th-toolbar .gk-acc-toolbar-actions .gk-icon-btn { font-size: 0 !important; gap: 0 !important; }
+    .gk-th-toolbar .gk-acc-toolbar-actions > .gk-acc-btn { padding: 0 10px; gap: 0; }
+    .gk-th-toolbar .gk-acc-toolbar-actions .gk-icon-btn { padding: 0 10px !important; }
+    .gk-th-toolbar .gk-txsort-k { display: none; }
+  }
+  .gk-th-toolbar .gk-acc-input, .gk-th-toolbar .gk-acc-btn { height: 36px; }
+  .gk-th-toolbar .gk-acc-toolbar-actions { flex-wrap: nowrap; }
+  .gk-th-toolbar .gk-txsort-btn { height: 36px; }
+  .gk-th-kpis { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-bottom: 8px; }
+  @media (max-width: 1100px) { .gk-th-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 640px) { .gk-th-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .gk-th-kpis .gk-acc-kpi { padding: 6px 9px; gap: 8px; border-radius: 8px; }
+  .gk-th-kpis .gk-acc-kpi-icon { width: 28px; height: 28px; border-radius: 7px; }
+  .gk-th-kpis .gk-acc-kpi-icon svg { width: 15px; height: 15px; }
+  .gk-th-kpis .gk-acc-kpi-value { font-size: 18px; line-height: 1.15; }
+  .gk-th-kpis .gk-acc-kpi-label { font-size: 11.5px; white-space: nowrap !important; overflow: hidden; text-overflow: ellipsis; }
+  .gk-th-kpis .gk-acc-kpi-sub { font-size: 10.5px; }
+  @media (max-width: 1100px) { .gk-acc-toolbar.gk-th-toolbar { flex-wrap: wrap; } .gk-th-toolbar .gk-acc-toolbar-actions { margin-left: auto; } }
+  @media (max-width: 900px) {
+    .gk-ph--inline .gk-ph-row { flex-wrap: wrap; }
+    .gk-ph--inline .gk-ph-center { order: 3; flex: 1 1 100%; }
+    .gk-th-toolbar .gk-acc-field { flex: 1 1 140px; }
+  }
   .gk-th-tab-count { margin-left: 6px; min-width: 20px; padding: 1px 6px; border-radius: 999px; font-size: 11px; font-weight: 700; line-height: 16px; text-align: center; background: color-mix(in srgb, var(--c-navy) 10%, transparent); color: var(--c-navy); font-variant-numeric: tabular-nums; }
   .gk-acc-tab.is-active .gk-th-tab-count { background: var(--c-navy); color: #fff; }
   .gk-th-origin { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; white-space: nowrap; }
-  .gk-th-kpis .gk-acc-kpi { padding: 9px 11px; gap: 9px; }
-  .gk-th-kpis .gk-acc-kpi-icon { width: 34px; height: 34px; border-radius: 9px; }
-  .gk-th-kpis .gk-acc-kpi-value { font-size: 22px; }
-  .gk-th-kpis .gk-acc-kpi-label { white-space: normal; line-height: 1.25; }
   .gk-th-credit { color: #15803d; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; }
   .gk-th-debit { color: #dc2626; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; }
   .gk-th-desc { display: block; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1175,9 +1225,7 @@ const THEME_CSS = `
   .gk-av-link { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; padding: 9px 12px; background: var(--c-card); border: 1px solid var(--c-line); border-radius: 8px; font-size: 12.5px; }
   .gk-av-link b { color: var(--c-ink); }
   @media (max-width: 900px) { .gk-cp-review { grid-template-columns: 1fr; } .gk-cp-review-actions { flex-direction: row; } .gk-cp-kpis { grid-template-columns: 1fr; } }
-  .gk-th-toolbar .gk-acc-field { flex: 0 1 150px; }
   .gk-th-toolbar .gk-acc-field--search { flex: 1 1 240px; }
-  @media (max-width: 1300px) { .gk-th-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
   @media (max-width: 640px) { .gk-th-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .gk-th-toolbar .gk-acc-field { flex: 1 1 100%; } }
   /* ACCOUNTS CONSOLE round */
   .gk-acc-tabs { display: flex; gap: 8px; margin: 2px 0 12px; flex-wrap: wrap; }
@@ -2999,12 +3047,84 @@ function OverflowMenu({ items, label = "More actions" }) {
     </div>
   );
 }
-function SectionHeader({ title, sub, actions, menu, tabs, icon }) {
+// TRANSACTION HISTORY TWO-ROW HEADER round — category tabs that share the
+// title row: every tab that fits is shown; the rest move into a "More"
+// dropdown (the active tab always stays visible). Widths are measured from a
+// hidden copy of the row, so the split follows the real screen width.
+function OverflowTabs({ tabs, value, onChange, counts, ariaLabel, className = "" }) {
+  const wrap = useRef(null), measure = useRef(null), moreRef = useRef(null);
+  const [fit, setFit] = useState(tabs.length);
+  const [open, setOpen] = useState(false);
+  const sig = tabs.map((t) => t[0]).join("|") + "|" + JSON.stringify(counts || {});
+  React.useLayoutEffect(() => {
+    const calc = () => {
+      if (!wrap.current || !measure.current) return;
+      const avail = wrap.current.clientWidth;
+      const widths = [...measure.current.children].map((e) => e.getBoundingClientRect().width);
+      const gap = 4, moreW = 92;
+      const all = widths.reduce((n, w, i) => n + w + (i ? gap : 0), 0);
+      if (all <= avail) { setFit(tabs.length); return; }
+      let total = 0, n = 0;
+      for (let i = 0; i < widths.length; i++) { const need = total + widths[i] + (i ? gap : 0); if (need + gap + moreW <= avail) { total = need; n = i + 1; } else break; }
+      setFit(Math.max(1, n));
+    };
+    calc();
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(calc) : null;
+    if (ro && wrap.current) ro.observe(wrap.current);
+    window.addEventListener("resize", calc);
+    return () => { if (ro) ro.disconnect(); window.removeEventListener("resize", calc); };
+  }, [sig]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!open) return undefined;
+    const away = (e) => { if (moreRef.current && !moreRef.current.contains(e.target)) setOpen(false); };
+    const esc = (e) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", away); document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("mousedown", away); document.removeEventListener("keydown", esc); };
+  }, [open]);
+  let visible = tabs.slice(0, fit);
+  if (fit < tabs.length && !visible.some((t) => t[0] === value)) {
+    const act = tabs.find((t) => t[0] === value);
+    if (act) visible = [...visible.slice(0, Math.max(0, fit - 1)), act];
+  }
+  const hidden = tabs.filter((t) => !visible.includes(t));
+  const count = (k) => (counts && counts[k] != null ? counts[k] : null);
+  const tabBtn = ([k, l, ic], extra = {}) => (
+    <button key={k} type="button" role="tab" aria-selected={value === k} aria-label={l} data-tab={k} onClick={() => onChange(k)} className={`gk-acc-tab${value === k ? " is-active" : ""}`} {...extra}>
+      <NavIcon name={ic} size={14} /><span>{l}</span>
+      {count(k) != null && <span className="gk-th-tab-count" aria-hidden="true">{count(k)}</span>}
+    </button>
+  );
+  return (
+    <div className={`gk-otabs ${className}`} ref={wrap}>
+      <div className="gk-otabs-measure" ref={measure} aria-hidden="true">{tabs.map((t) => tabBtn(t, { tabIndex: -1, role: undefined, "aria-selected": undefined, "aria-label": undefined, "data-tab": undefined, onClick: undefined }))}</div>
+      <div className="gk-acc-tabs gk-th-tabs" role="tablist" aria-label={ariaLabel}>
+        {visible.map((t) => tabBtn(t))}
+        {hidden.length > 0 && (
+          <div className="gk-otabs-more" ref={moreRef}>
+            <button type="button" className="gk-acc-tab gk-otabs-more-btn" aria-haspopup="menu" aria-expanded={open} aria-label="More tabs" title="More categories" onClick={() => setOpen((o) => !o)}>
+              <NavIcon name="moreH" size={14} /><span>More</span><span className="gk-th-tab-count" aria-hidden="true">{hidden.length}</span><NavIcon name="chevronDown" size={13} />
+            </button>
+            {open && (
+              <div className="gk-otabs-menu" role="menu" aria-label="More categories">
+                {hidden.map(([k, l, ic]) => (
+                  <button key={k} type="button" role="menuitemradio" aria-checked={value === k} data-tab={k} className="gk-otabs-item" onClick={() => { onChange(k); setOpen(false); }}>
+                    <NavIcon name={ic} size={14} /><span>{l}</span>{count(k) != null && <span className="gk-th-tab-count" aria-hidden="true">{count(k)}</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+function SectionHeader({ title, sub, actions, menu, tabs, icon, center, className }) {
   const { others, secondary, primary, overflow } = splitHeaderActions(actions, menu);
   const iconName = icon || iconFor(TITLE_ICON_RULES, typeof title === "string" ? title : nodeText(title));
   const hasActions = others.length || secondary.length || primary.length || overflow.length;
   return (
-    <div className="gk-ph">
+    <div className={`gk-ph${className ? ` ${className}` : ""}`}>
       <div className="gk-ph-row">
         <div className="gk-ph-head">
           {iconName && <span className="gk-ph-icon" aria-hidden="true"><NavIcon name={iconName} size={17} /></span>}
@@ -3013,6 +3133,7 @@ function SectionHeader({ title, sub, actions, menu, tabs, icon }) {
             {sub && <div className="gk-ph-sub">{sub}</div>}
           </div>
         </div>
+        {center && <div className="gk-ph-center">{center}</div>}
         {hasActions ? (
           <div className="gk-ph-actions">
             {others}{secondary}{primary}
@@ -13324,7 +13445,10 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
   return (
     <div>
       {!historyExchangeEditOpen && <>
-      <SectionHeader icon="history" title={`Transaction History — ${currency}`} sub={`Review, search, and reconcile ${currency} account transactions in one place.`}
+      <SectionHeader icon="history" className="gk-ph--inline gk-th-header" title={`Transaction History — ${currency}`} sub={`Review and reconcile ${currency} transactions.`}
+        center={<OverflowTabs ariaLabel="Transaction category" value={type} onChange={setType} counts={tabCounts}
+          tabs={[["all", "All", "dashboard"], ["payment", "Payments", "wallet"], ["exchange", "Exchanges", "arrowLeftRight"], ["transfer", "Transfers", "transfer"], ["deposit", "Credits", "arrowDownLeft"], ["withdrawal", "Debits", "arrowUpRight"], ["quotation", "Quotations", "fileText"], ["quotation_charge", "Quotation Charges", "clipboardList"], ["quotation_payment", "Quotation Payments", "receipt"], ["cash", "Cash Account", "landmark"]]
+            .filter(([k]) => k !== "cash" || (tabCounts && tabCounts.cash != null))} />}
         actions={<>
           <Btn tone="subtle" onClick={() => dl("/api/history/export.csv" + qs(queryParams), `obo-transaction-history-${currency}.csv`)}>Export CSV</Btn>
           {/* MASTER PROMPT: the old raw "Export PDF" (renderTablePDF) is
@@ -13337,22 +13461,6 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
           <Btn tone="subtle" onClick={() => dl("/api/history/statement.xlsx" + qs(queryParams), `obo-transaction-statement-${currency}.xlsx`)}>Export Excel</Btn>
           <Btn tone="ghost" onClick={() => print("/api/history/statement.pdf" + qs(queryParams))}>Print</Btn>
         </>} />
-
-      <div className="gk-acc-tabs gk-th-tabs" role="tablist" aria-label="Transaction category">
-        {/* PROFESSIONAL TRANSACTION MANAGEMENT round: one tab per module,
-            each with the server's count under the current filters. "All"
-            lists every business record once; Credits / Debits list every
-            account posting (including the ones an Exchange, Transfer or
-            Quotation made); Cash Account lists every cash entry. */}
-        {[["all", "All", "dashboard"], ["payment", "Payments", "wallet"], ["exchange", "Exchanges", "arrowLeftRight"], ["transfer", "Transfers", "transfer"], ["deposit", "Credits", "arrowDownLeft"], ["withdrawal", "Debits", "arrowUpRight"], ["quotation", "Quotations", "fileText"], ["quotation_charge", "Quotation Charges", "clipboardList"], ["quotation_payment", "Quotation Payments", "receipt"], ["cash", "Cash Account", "landmark"]]
-          .filter(([k]) => k !== "cash" || (tabCounts && tabCounts.cash != null))
-          .map(([k, l, ic]) => (
-          <button key={k} type="button" role="tab" aria-selected={type === k} aria-label={l} data-tab={k} onClick={() => setType(k)} className={`gk-acc-tab${type === k ? " is-active" : ""}`}>
-            <NavIcon name={ic} size={15} /><span>{l}</span>
-            {tabCounts && tabCounts[k] != null && <span className="gk-th-tab-count" aria-hidden="true">{tabCounts[k]}</span>}
-          </button>
-        ))}
-      </div>
 
       <div className="gk-acc-toolbar gk-th-toolbar" role="search">
         <label className="gk-acc-field">
@@ -13419,7 +13527,7 @@ function TransactionHistoryModule({ currency, call, dl, preview, print, notify, 
         <div className="gk-acc-toolbar-actions">
           <TxSortControl id="history-sort" mode={sortMode} onChange={setSortMode} />
           {filtersActive && <button type="button" className="gk-acc-btn" onClick={clearFilters}><NavIcon name="undo" size={15} /><span>Clear filters</span></button>}
-          <TableCustomizeButton tableKey={tableKey} columnDefs={HISTORY_COLUMNS} layoutState={layoutState} canSetSystemDefault={hasRaw && hasRaw("settings.manageTableDefaults")} notify={notify} />
+          <span title="Customize table" style={{ display: "inline-flex" }}><TableCustomizeButton tableKey={tableKey} columnDefs={HISTORY_COLUMNS} layoutState={layoutState} canSetSystemDefault={hasRaw && hasRaw("settings.manageTableDefaults")} notify={notify} /></span>
           <button type="button" className="gk-acc-btn" title="Export the matching transactions to Excel" onClick={() => dl("/api/history/statement.xlsx" + qs(queryParams), `obo-transaction-statement-${currency}.xlsx`)}><NavIcon name="download" size={15} /><span>Export</span></button>
           <button type="button" className="gk-acc-btn" onClick={() => reload(true)} disabled={refreshing} aria-busy={refreshing} title="Reload the latest transactions"><NavIcon name="refresh" size={15} className={refreshing ? "gk-spin" : undefined} /><span>{refreshing ? "Refreshing…" : "Refresh"}</span></button>
         </div>

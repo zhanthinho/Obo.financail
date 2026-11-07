@@ -184,9 +184,12 @@ async function browserPart() {
     await go("USD Transactions");
     const s0 = await hist(ctx.adm, "currency=USD");
     const fmt = (n) => new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.abs(n));
+    // TWO-ROW HEADER round: tabs that don't fit the title row are in "More".
+    const findTab = async (label) => { const t = p.getByRole("tab", { name: label, exact: true }); if (await t.count()) return t; if (!(await p.locator(".gk-otabs-menu").count())) { await p.getByRole("button", { name: "More tabs" }).click(); await p.waitForTimeout(200); } return p.getByRole("menuitemradio", { name: label, exact: true }); };
+    const closeMore = async () => { if (await p.locator(".gk-otabs-menu").count()) { await p.keyboard.press("Escape"); await p.waitForTimeout(150); } };
     await check("title, the category tabs, filter toolbar and KPI cards with the server's counts", async () => {
       assert(await p.locator("h1", { hasText: "Transaction History — USD" }).count() === 1, "title");
-      for (const t of ["All", "Exchanges", "Transfers", "Quotations", "Quotation Payments", "Credits", "Debits"]) assert(await p.getByRole("tab", { name: t, exact: true }).count() === 1, `${t} tab`);
+      for (const t of ["All", "Exchanges", "Transfers", "Quotations", "Quotation Payments", "Credits", "Debits"]) { assert(await (await findTab(t)).count() === 1, `${t} tab`); await closeMore(); }
       for (const l of ["Account type", "Status", "Staff", "Account", "Date from", "Date to", "Search transactions"]) assert(await p.getByLabel(l, { exact: true }).count() >= 1, `${l} missing`);
       assert(await kpi("entries") === String(s0.summary.counts.entries) && await kpi("exchanges") === String(s0.summary.counts.exchanges) && await kpi("transfers") === String(s0.summary.counts.transfers), "kpis");
       // PROFESSIONAL TRANSACTION MANAGEMENT round: Credits / Debits cards

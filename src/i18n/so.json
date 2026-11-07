@@ -2677,5 +2677,9 @@
  "Latest date & time first": "Taariikhda iyo waqtiga ugu dambeeya marka hore",
  "Largest amount first (within each currency)": "Qadarka ugu badan marka hore (lacag kasta gudaheeda)",
  "Smallest amount first (within each currency)": "Qadarka ugu yar marka hore (lacag kasta gudaheeda)",
- "References in alphabetical and number order": "Tixraacyada oo loo kala horreysiiyay xarfaha iyo tirooyinka"
+ "References in alphabetical and number order": "Tixraacyada oo loo kala horreysiiyay xarfaha iyo tirooyinka",
+ "Review and reconcile USD transactions.": "Dib u eeg oo isu-dheelli tir dhaqdhaqaaqa USD.",
+ "Review and reconcile SLSH transactions.": "Dib u eeg oo isu-dheelli tir dhaqdhaqaaqa SLSH.",
+ "More tabs": "Qaybo kale",
+ "More categories": "Qaybo kale"
 }

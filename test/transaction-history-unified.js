@@ -307,13 +307,52 @@ async function run() {
     await go("USD Transactions");
     const now = await hist("currency=USD");
     const kpi = async (k) => (await p.locator(`.gk-acc-kpi[data-kpi="${k}"] .gk-acc-kpi-value`).innerText()).trim();
-    const tabCount = async (k) => (await p.locator(`.gk-th-tabs button[data-tab="${k}"] .gk-th-tab-count`).innerText()).trim();
+    // TWO-ROW HEADER round: tabs that don't fit the title row are in "More".
+    const findTab = async (label) => { const t = p.getByRole("tab", { name: label, exact: true }); if (await t.count()) return t; if (!(await p.locator(".gk-otabs-menu").count())) { await p.getByRole("button", { name: "More tabs" }).click(); await p.waitForTimeout(200); } return p.getByRole("menuitemradio", { name: label, exact: true }); };
+    const closeMore = async () => { if (await p.locator(".gk-otabs-menu").count()) { await p.keyboard.press("Escape"); await p.waitForTimeout(150); } };
+    const tabCount = async (k) => {
+      const v = p.locator(`.gk-th-tabs button[role="tab"][data-tab="${k}"] .gk-th-tab-count`);
+      if (await v.count()) return (await v.innerText()).trim();
+      if (!(await p.locator(".gk-otabs-menu").count())) { await p.getByRole("button", { name: "More tabs" }).click(); await p.waitForTimeout(200); }
+      const t = (await p.locator(`.gk-otabs-menu [data-tab="${k}"] .gk-th-tab-count`).innerText()).trim();
+      await closeMore(); return t;
+    };
 
     await check("every module has its own tab with the server's count", async () => {
       for (const [k, l] of [["all", "All"], ["payment", "Payments"], ["exchange", "Exchanges"], ["transfer", "Transfers"], ["deposit", "Credits"], ["withdrawal", "Debits"], ["quotation", "Quotations"], ["quotation_charge", "Quotation Charges"], ["quotation_payment", "Quotation Payments"], ["cash", "Cash Account"]]) {
-        assert(await p.getByRole("tab", { name: l, exact: true }).count() === 1, `${l} tab`);
+        assert(await (await findTab(l)).count() === 1, `${l} tab`); await closeMore();
         assert(await tabCount(k) === String(now.summary.tabCounts[k]), `${l} count ${await tabCount(k)} vs ${now.summary.tabCounts[k]}`);
       }
+    });
+    await check("two-row header: title + tabs + More + ⋯ on row one; every filter and Customize / Export / Refresh on row two", async () => {
+      const box = async (loc) => loc.first().boundingBox();
+      const title = await box(p.locator("h1", { hasText: "Transaction History — USD" })), tabs = await box(p.locator(".gk-th-tabs")), dots = await box(p.locator(".gk-th-header .gk-ph-actions"));
+      assert(Math.abs((title.y + title.height / 2) - (tabs.y + tabs.height / 2)) < 14 && Math.abs((dots.y + dots.height / 2) - (tabs.y + tabs.height / 2)) < 14, "row one not on one line");
+      const bar = p.locator(".gk-th-toolbar");
+      const ys = await bar.locator(".gk-acc-field .gk-acc-input, .gk-acc-toolbar-actions > *").evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top + e.getBoundingClientRect().height / 2)));
+      assert(Math.max(...ys) - Math.min(...ys) < 6, `row two wraps: ${ys.join(",")}`);
+      assert((await bar.boundingBox()).height <= 72, `row two height ${(await bar.boundingBox()).height}`);
+      for (const n of ["Export", "Refresh"]) assert(await bar.getByRole("button", { name: n }).count() === 1, n);
+      assert(await bar.getByRole("button", { name: /Customize table/ }).count() === 1, "customize");
+      // More: the hidden categories are reachable and selectable.
+      const more = p.getByRole("button", { name: "More tabs" });
+      assert(await more.count() === 1, "More missing");
+      await more.click(); await p.waitForTimeout(200);
+      const items = await p.locator(".gk-otabs-menu [role=menuitemradio]").allInnerTexts();
+      assert(items.length >= 1, "More is empty");
+      await p.getByRole("menuitemradio", { name: "Quotation Payments", exact: true }).click(); await p.waitForTimeout(1200);
+      assert(await p.locator('.gk-th-tabs button[role="tab"][data-tab="quotation_payment"][aria-selected="true"]').count() === 1, "chosen tab not shown as active");
+      await p.getByRole("tab", { name: "All", exact: true }).click(); await p.waitForTimeout(1000);
+      assert(await p.locator(".gk-th-kpis .gk-acc-kpi").first().evaluate((e) => e.getBoundingClientRect().height) < 70, "KPI cards not compact");
+      if (process.env.TH_SHOTS) await p.screenshot({ path: require("path").join(process.env.TH_SHOTS, "th-usd.png") });
+      // The same two-row header on SLSH.
+      await go("SLSH Transactions");
+      const t2 = await box(p.locator("h1", { hasText: "Transaction History — SLSH" })), tb2 = await box(p.locator(".gk-th-tabs"));
+      assert(t2 && Math.abs((t2.y + t2.height / 2) - (tb2.y + tb2.height / 2)) < 14, "SLSH row one");
+      const ys2 = await p.locator(".gk-th-toolbar").locator(".gk-acc-field .gk-acc-input, .gk-acc-toolbar-actions > *").evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top + e.getBoundingClientRect().height / 2)));
+      assert(Math.max(...ys2) - Math.min(...ys2) < 6, `SLSH row two wraps: ${ys2.join(",")}`);
+      if (process.env.TH_SHOTS) await p.screenshot({ path: require("path").join(process.env.TH_SHOTS, "th-slsh.png") });
+      await go("USD Transactions");
     });
     await check("summary cards: Total, Payments, Credits, Debits, Exchanges, Transfers, Quotation Charges / Payments, Exchange Profit", async () => {
       assert(await kpi("entries") === String(now.summary.counts.entries), "total");
@@ -354,7 +393,7 @@ async function run() {
     });
     await check("Cash Account tab lists cash entries (emerald)", async () => {
       await p.getByLabel("Search transactions").fill(""); await p.waitForTimeout(300);
-      await p.getByRole("tab", { name: "Cash Account", exact: true }).click(); await p.waitForTimeout(1300);
+      await (await findTab("Cash Account")).click(); await p.waitForTimeout(1300);
       const rec = await p.locator(".gk-th-table tbody tr").evaluateAll((els) => els.map((e) => e.dataset.record));
       assert(rec.length > 0 && rec.every((r) => r === "cash"), rec.join(","));
       assert(await p.locator('.gk-th-table tbody [data-type-tone="emerald"]').count() === rec.length, "cash tone");

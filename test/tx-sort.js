@@ -115,7 +115,7 @@ async function run() {
     await p.locator("input").first().fill("ts.admin"); await p.fill('input[type="password"]', "BetaPass-2026x"); await p.keyboard.press("Enter");
     await p.waitForSelector(".gk-sidebar", { state: "attached", timeout: 15000 }); await p.waitForTimeout(800);
     const go = async (label) => {
-      const btn = p.locator(".gk-nav-btn:not(.gk-nav-group-header)").filter({ hasText: new RegExp(`^\\s*${label}\\s*$`) }).first();
+      const btn = p.locator(".gk-nav-btn:not(.gk-nav-group-header)").filter({ hasText: new RegExp(`^\\s*${label}(\\s*\\d+)?\\s*$`) }).first();
       const group = p.locator(".gk-nav-group").filter({ has: btn });
       if (await group.count()) { const hd = group.first().locator(".gk-nav-group-header").first(); if ((await hd.getAttribute("aria-expanded")) === "false") { await hd.click(); await p.waitForTimeout(300); } }
       await btn.click(); await p.waitForTimeout(1300);

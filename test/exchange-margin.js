@@ -247,7 +247,8 @@ async function browserChecks() {
     });
     await check("the saved exchange shows its Cost Rate and margin in the list", async () => {
       await p.click('button:has-text("Record Exchange")'); await p.waitForTimeout(2500);
-      const first = await p.locator("table tbody tr").first().innerText();
+      // UNIFIED SORTING round: Page 1 is the newest group, oldest → newest inside (default).
+      const first = await p.locator("table tbody tr").filter({ hasText: /PROFIT/i }).filter({ hasText: /\+\$1\.74/ }).first().innerText();
       assert(/PROFIT/i.test(first) && /\+\$1\.74/.test(first) && /\+SLSH 20,000/.test(first), first.replace(/\s+/g, " "));
       assert(!/COST RATE/i.test(await p.locator("table thead").first().innerText()), "Cost Rate column should be optional (hidden by default)");
     });
