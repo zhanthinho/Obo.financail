@@ -116,6 +116,6 @@ Executed on throw-away databases (MySQL 8 + Chromium), 48 suites, 1012 checks pa
 | transaction-history-unified | 34 checks passed, 0 failed. (re-run after fixes) |
 | tx-sort | 39 checks passed, 0 failed. |
 
-Also adjusted while running the suite:  now chooses "Newest First" before opening the latest exchange (the default in-page order is Oldest First since the sorting round); the integrity check's duplicate-reference rule ignores the legs an exchange / transfer / quotation posts under one shared reference.
+Also adjusted while running the suite: `test/optional-notes.js` now chooses "Newest First" before opening the latest exchange (the default in-page order is Oldest First since the sorting round); the integrity check's duplicate-reference rule ignores the legs an exchange / transfer / quotation posts under one shared reference.
 
-Not run:  (pre-existing failure: it expects the old brand name "Geeska Exchange" on the sign-in page — unrelated). Manual verification recommended: printing on the office printer, and the app on a real phone.
+Not run: `e2e` (pre-existing failure: it expects the old brand name "Geeska Exchange" on the sign-in page — unrelated). Manual verification recommended: printing on the office printer, and the app on a real phone.
