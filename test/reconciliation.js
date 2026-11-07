@@ -197,6 +197,16 @@ async function run() {
     const bTx = (await api("/api/transactions", { token: bTok })).json.transactions;
     assert(bTx.length === 0, "B sees exchanges");
   });
+  await check("cash transfer / cash exchange legs share one reference — not reported as duplicates", async () => {
+    const t1 = ok(await api("/api/cash/accounts", { method: "POST", token: sw, body: { name: "Dup Till A", type: "physical_cash", currency: "USD", openingBalance: 500 } }), "till A").account;
+    const t2 = ok(await api("/api/cash/accounts", { method: "POST", token: sw, body: { name: "Dup Till B", type: "bank", currency: "USD" } }), "till B").account;
+    const t3 = ok(await api("/api/cash/accounts", { method: "POST", token: sw, body: { name: "Dup Till S", type: "bank", currency: "SLSH" } }), "till S").account;
+    ok(await api("/api/cash/transfers", { method: "POST", token: sw, body: { fromCashAccountId: t1.id, toCashAccountId: t2.id, amount: 50 } }), "cash transfer");
+    ok(await api("/api/cash/exchanges", { method: "POST", token: sw, body: { fromCashAccountId: t1.id, toCashAccountId: t3.id, amountGiven: 10, rateUsed: 11000 } }), "cash exchange");
+    const r = spawnSync(process.execPath, [path.join(ROOT, "scripts", "integrity-check.js")], { env: { ...process.env, ...TESTDB.env, JWT_SECRET: ENV.JWT_SECRET }, encoding: "utf8" });
+    const out = `${r.stdout || ""}${r.stderr || ""}`;
+    assert(!/duplicate cash movement/.test(out), out.slice(-400));
+  });
 }
 
 async function main() {

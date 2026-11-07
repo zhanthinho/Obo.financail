@@ -77,7 +77,11 @@ function checkCompany(co) {
       ["transfers between accounts of different currencies", "SELECT COUNT(*) AS n FROM transfers t JOIN clients f ON f.id = t.from_account_id JOIN clients o ON o.id = t.to_account_id WHERE f.currency <> o.currency"],
       // (an exchange / transfer / quotation posts several legs under one shared reference — only own payments must be unique)
       ["duplicate payment reference numbers", "SELECT COUNT(*) AS n FROM (SELECT reference_number FROM account_ledger WHERE reference_number IS NOT NULL AND reference_number <> '' AND source_type IS NULL GROUP BY reference_number HAVING COUNT(*) > 1) d"],
-      ["duplicate cash movement reference numbers", "SELECT COUNT(*) AS n FROM (SELECT reference_number FROM cash_ledger WHERE reference_number IS NOT NULL AND reference_number <> '' GROUP BY reference_number HAVING COUNT(*) > 1) d"],
+      // A cash transfer / cash exchange posts its two legs (out of one Cash
+      // Account, into another) under ONE shared reference — those are a single
+      // movement, not duplicates. Only a reference used by two different
+      // origins counts.
+      ["duplicate cash movement reference numbers", "SELECT COUNT(*) AS n FROM (SELECT reference_number FROM cash_ledger WHERE reference_number IS NOT NULL AND reference_number <> '' GROUP BY reference_number HAVING COUNT(DISTINCT CASE WHEN source_type IS NOT NULL AND source_id IS NOT NULL THEN CONCAT(source_type, ':', source_id) ELSE id END) > 1) d"],
       ["duplicate exchange reference numbers", "SELECT COUNT(*) AS n FROM (SELECT reference_number FROM exchange_transactions WHERE reference_number IS NOT NULL AND reference_number <> '' GROUP BY reference_number HAVING COUNT(*) > 1) d"],
       ["exchanges whose received amount does not match amount × rate", "SELECT COUNT(*) AS n FROM exchange_transactions WHERE status <> 'voided' AND rate_used > 0 AND currency_given <> currency_received AND ABS(amount_received - (CASE WHEN currency_given = 'USD' THEN amount_given * rate_used ELSE amount_given / rate_used END)) > GREATEST(1, 0.01 * amount_received)"],
       ["exchanges given and received in the same currency", "SELECT COUNT(*) AS n FROM exchange_transactions WHERE currency_given = currency_received"],
