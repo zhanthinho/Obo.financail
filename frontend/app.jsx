@@ -2655,8 +2655,8 @@ function NotificationBell({ call }) {
   useEffect(() => { loadAndCompute(); const t = setInterval(loadAndCompute, 60000); return () => clearInterval(t); }, [loadAndCompute]);
   useEffect(() => {
     function onClickOutside(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
+    document.addEventListener("pointerdown", onClickOutside, true);
+    return () => document.removeEventListener("pointerdown", onClickOutside, true);
   }, []);
 
   function toggleOpen() {
@@ -2698,8 +2698,8 @@ function ProfileMenu({ user, onSignOut, sidebarSide, onSidebarSide, onChangePass
   const ref = useRef(null);
   useEffect(() => {
     function onClickOutside(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
+    document.addEventListener("pointerdown", onClickOutside, true);
+    return () => document.removeEventListener("pointerdown", onClickOutside, true);
   }, []);
   const initials = user.name.split(" ").filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
   return (
@@ -3007,10 +3007,10 @@ function OverflowMenu({ items, label = "More actions" }) {
       setOpen(false);
     };
     const onKey = (e) => { if (e.key === "Escape") { setOpen(false); if (btnRef.current) btnRef.current.focus(); } };
-    document.addEventListener("mousedown", onDown);
+    document.addEventListener("pointerdown", onDown, true);
     document.addEventListener("touchstart", onDown);
     document.addEventListener("keydown", onKey);
-    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("touchstart", onDown); document.removeEventListener("keydown", onKey); };
+    return () => { document.removeEventListener("pointerdown", onDown, true); document.removeEventListener("touchstart", onDown); document.removeEventListener("keydown", onKey); };
   }, [open]);
   function onMenuKey(e) {
     const list = menuItems();
@@ -3081,8 +3081,8 @@ function OverflowTabs({ tabs, value, onChange, counts, ariaLabel, className = ""
     if (!open) return undefined;
     const away = (e) => { if (moreRef.current && !moreRef.current.contains(e.target)) setOpen(false); };
     const esc = (e) => { if (e.key === "Escape") setOpen(false); };
-    document.addEventListener("mousedown", away); document.addEventListener("keydown", esc);
-    return () => { document.removeEventListener("mousedown", away); document.removeEventListener("keydown", esc); };
+    document.addEventListener("pointerdown", away, true); document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("pointerdown", away, true); document.removeEventListener("keydown", esc); };
   }, [open]);
   let visible = tabs.slice(0, fit);
   if (fit < tabs.length && !visible.some((t) => t[0] === value)) {
@@ -3365,8 +3365,8 @@ function TxSortControl({ mode, onChange, id }) {
   useEffect(() => {
     if (!open) return undefined;
     const away = (e) => { if (root.current && !root.current.contains(e.target)) setOpen(false); };
-    document.addEventListener("mousedown", away);
-    return () => document.removeEventListener("mousedown", away);
+    document.addEventListener("pointerdown", away, true);
+    return () => document.removeEventListener("pointerdown", away, true);
   }, [open]);
   const choose = (k) => { onChange(k); setOpen(false); };
   return (
@@ -4709,8 +4709,8 @@ function CompanySwitcher({ user, company, call, onSwitch }) {
   const ref = useRef(null);
   useEffect(() => {
     function onClickOutside(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
+    document.addEventListener("pointerdown", onClickOutside, true);
+    return () => document.removeEventListener("pointerdown", onClickOutside, true);
   }, []);
   useEffect(() => {
     if (open && user.isPlatformAdmin && list === null) call("/api/platform/companies").then((d) => setList(d.companies)).catch(() => setList([]));
@@ -5204,9 +5204,9 @@ function App() {
     if (!navDropKey) return;
     const onDown = (e) => { if (sidebarRef.current && !sidebarRef.current.contains(e.target)) setNavDropKey(null); };
     const onKey = (e) => { if (e.key === "Escape") setNavDropKey(null); };
-    document.addEventListener("mousedown", onDown);
+    document.addEventListener("pointerdown", onDown, true);
     document.addEventListener("keydown", onKey);
-    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
+    return () => { document.removeEventListener("pointerdown", onDown, true); document.removeEventListener("keydown", onKey); };
   }, [navDropKey]);
   // Drag starts ONLY from the grip strip. A press that moves < 6px is not a
   // drag (nothing happens), so a stray click can never move the menu. While
@@ -6197,8 +6197,8 @@ function AccountPicker({ call, accountId, accountName, onChange }) {
   const ref = useRef(null);
   useEffect(() => {
     function onClickOutside(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
+    document.addEventListener("pointerdown", onClickOutside, true);
+    return () => document.removeEventListener("pointerdown", onClickOutside, true);
   }, []);
   useEffect(() => {
     if (!q.trim()) { setResults([]); return; }
@@ -12421,7 +12421,7 @@ function AccountCombo({ id, accounts, value, onChange, kind, placeholder = "Sele
   useEffect(() => {
     if (!open) return undefined;
     const away = (e) => { if (root.current && !root.current.contains(e.target)) setOpen(false); };
-    document.addEventListener("mousedown", away);
+    document.addEventListener("pointerdown", away, true);
     if (trigger.current) {
       const r = trigger.current.getBoundingClientRect();
       const below = window.innerHeight - r.bottom, above = r.top;
@@ -12430,7 +12430,7 @@ function AccountCombo({ id, accounts, value, onChange, kind, placeholder = "Sele
       setUp(room < 320 && above > 360);
       setRight(r.left + Math.max(r.width, 380) > window.innerWidth - 12);
     }
-    return () => document.removeEventListener("mousedown", away);
+    return () => document.removeEventListener("pointerdown", away, true);
   }, [open]);
   useEffect(() => {
     if (!open || !root.current) return undefined;
