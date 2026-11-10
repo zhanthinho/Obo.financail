@@ -8457,6 +8457,7 @@ function QuotationsModule({ call, dl, preview, print, notify, perm, user, rate, 
   const [rows, setRows] = useState([]); const [loading, setLoading] = useState(true);
   const [payFor, setPayFor] = useState(null);
   const [refundFor, setRefundFor] = useState(null);
+  const [orphansOpen, setOrphansOpen] = useState(false);
   const [deleteFor, setDeleteFor] = useState(null);
   const [viewing, setViewing] = useState(null);
   const quoteSort = useTxSort(rows, { module: "quotations", dateKey: "issueDate", refOf: (q) => q.number,
@@ -8679,6 +8680,7 @@ function QuotationsModule({ call, dl, preview, print, notify, perm, user, rate, 
               filterParams correctly. Now both exports agree with each other
               and with what's on screen. */}
           <Btn tone="subtle" onClick={() => dl("/api/quotations/export.pdf" + qs(filterParams), "obo-quotations.pdf")}>Export PDF (list)</Btn>
+          {perm("quotationsManage") && perm("quotationsDelete") && <Btn tone="subtle" onClick={() => setOrphansOpen(true)}>Entries of deleted quotations</Btn>}
           {perm("quotationsManage") && <Btn tone="primary" onClick={() => { setEditing(null); setMode("editor"); }}>+ New quotation</Btn>}
         </>} />
       <div className="gk-filterbar">
@@ -8751,6 +8753,7 @@ function QuotationsModule({ call, dl, preview, print, notify, perm, user, rate, 
           onSubmit={() => { action(`/api/quotations/${refundFor.id}/refund-charge`, "Quotation refunded."); setRefundFor(null); }}
         />
       )}
+      {orphansOpen && <OrphanQuotationEntriesModal call={call} notify={notify} onClose={() => setOrphansOpen(false)} onDone={() => { reload(); onChanged?.(); }} />}
       {deleteFor && (
         <DeleteQuotationModal
           quotation={deleteFor}
@@ -8758,7 +8761,7 @@ function QuotationsModule({ call, dl, preview, print, notify, perm, user, rate, 
           onSubmit={async (reason) => {
             try {
               await call(`/api/quotations/${deleteFor.id}`, { method: "DELETE", body: { reason } });
-              notify("Quotation deleted.");
+              notify("Quotation deleted — its account entries were removed and the balance recalculated.");
               setDeleteFor(null);
               reload();
               onChanged?.();
@@ -9098,6 +9101,54 @@ function RefundQuotationModal({ quotation: q, onClose, onSubmit }) {
   );
 }
 const QUOTATION_DELETE_REASONS = ["Created by mistake", "Duplicate quotation", "Customer no longer needs it", "Incorrect information", "Other"];
+// QUOTATION DELETE FIX: quotations deleted before the fix left their
+// charge (and any payments / refund) on the account with no document. This
+// lists those entries and removes them on confirmation; balances are
+// recalculated and each removal is audited.
+function OrphanQuotationEntriesModal({ call, notify, onClose, onDone }) {
+  const [rows, setRows] = useState(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { call("/api/quotations/orphan-entries").then((d) => setRows(d.entries)).catch((e) => { notify(e.message, true); setRows([]); }); }, [call, notify]);
+  async function remove() {
+    setBusy(true);
+    try {
+      const d = await call("/api/quotations/orphan-entries/remove", { method: "POST" });
+      notify(`${d.removed} entr${d.removed === 1 ? "y" : "ies"} removed — balances recalculated.`);
+      onDone(); onClose();
+    } catch (e) { notify(e.message, true); } finally { setBusy(false); }
+  }
+  return (
+    <Modal title="Entries of deleted quotations" onClose={onClose} wide>
+      {!rows ? <Spinner /> : !rows.length ? (
+        <div data-orphan-entries="0" style={{ padding: "14px 0", fontSize: 13, color: C.slate }}>Nothing to clean up — every quotation entry on the accounts belongs to an existing quotation.</div>
+      ) : (
+        <div data-orphan-entries={rows.length}>
+          <div style={{ fontSize: 12.5, color: C.ink, marginBottom: 12, padding: 10, background: C.redBg, border: `1px solid ${C.red}`, borderRadius: 6 }}>
+            These account entries were posted by quotations that have since been deleted. Removing them takes them off the accounts and recalculates the balances. This cannot be undone; each removal is recorded in the Audit Log.
+          </div>
+          <table className="gk-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead><tr><th style={{ textAlign: "left" }}>Date</th><th style={{ textAlign: "left" }}>Reference</th><th style={{ textAlign: "left" }}>Account</th><th style={{ textAlign: "left" }}>Type</th><th style={{ textAlign: "right" }}>Amount</th></tr></thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id}>
+                  <td className="num" style={{ whiteSpace: "nowrap" }}>{fmtDate(r.date)}</td>
+                  <td style={{ fontFamily: FONT_MONO }}>{r.reference || "—"}</td>
+                  <td>{toTitleCase(r.accountName || r.accountId)}</td>
+                  <td><Pill tone={r.type === "withdrawal" ? "red" : "green"}>{r.type === "withdrawal" ? "Debit" : "Credit"}</Pill></td>
+                  <td className="num" style={{ textAlign: "right", fontWeight: 700 }}>{fmtMoney(r.amount, r.currency)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+            <Btn tone="ghost" onClick={onClose}>Cancel</Btn>
+            <Btn tone="danger" disabled={busy} onClick={remove}>Remove {rows.length} entr{rows.length === 1 ? "y" : "ies"}</Btn>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}
 function DeleteQuotationModal({ quotation: q, onClose, onSubmit }) {
   const [reason, setReason] = useState("");
   const [otherReason, setOtherReason] = useState("");
@@ -9105,10 +9156,8 @@ function DeleteQuotationModal({ quotation: q, onClose, onSubmit }) {
   return (
     <Modal title="Delete Quotation Permanently?" onClose={onClose}>
       <div style={{ fontSize: 12.5, color: C.ink, marginBottom: 14, padding: 10, background: C.redBg, border: `1px solid ${C.red}`, borderRadius: 6 }}>
-        <b>This quotation will be permanently deleted from the quotation system. This action cannot be undone.</b>{" "}
-        {q.status === "Pending"
-          ? <>This quotation is still <b>Pending</b> — its original Debit against {accountName}'s account has already posted and is <b>not</b> reversed by deleting the document. It stays in the account's ledger permanently, on its own, with no quotation left to explain it. Use Pay or Refund first if that's what you meant instead.</>
-          : <>Its financial history — the original debit{q.totalPaid > 0 ? ` and ${q.payments?.length > 1 ? "payments" : "payment"} already recorded` : ""}{q.status === "Refunded" ? " and refund" : ""} — stays intact and visible in the ledger; only the quotation document itself will be gone.</>}
+        <b>This quotation will be permanently deleted. This action cannot be undone.</b>{" "}
+        Everything it posted to {accountName}'s account is removed with it — the {fmtMoney(q.chargedAmount, q.chargedCurrency)} debit{q.totalPaid > 0 ? ` and ${q.payments?.length > 1 ? "the payments" : "the payment"} recorded on it` : ""}{q.status === "Refunded" ? " and its refund" : ""} — and the account balance is recalculated. The deletion is recorded in the Audit Log.
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16, fontSize: 12.5 }}>
         <div><div style={{ color: C.slate, marginBottom: 2 }}>Quotation</div><div style={{ fontWeight: 700, fontFamily: FONT_MONO }}>{q.number}</div></div>

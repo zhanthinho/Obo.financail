@@ -2701,5 +2701,9 @@
  "By": "Qofka",
  "Before save": "Kahor kaydinta",
  "Before reset to defaults": "Kahor dib-u-dejinta",
- "No earlier versions yet. A version is kept automatically each time this template is changed, reset or restored.": "Weli ma jiraan noocyo hore. Nooc ayaa si toos ah loo kaydiyaa mar kasta oo template-kan la beddelo, dib loo dejiyo ama la soo celiyo."
+ "No earlier versions yet. A version is kept automatically each time this template is changed, reset or restored.": "Weli ma jiraan noocyo hore. Nooc ayaa si toos ah loo kaydiyaa mar kasta oo template-kan la beddelo, dib loo dejiyo ama la soo celiyo.",
+ "Entries of deleted quotations": "Diiwaannada quotation-ada la tirtiray",
+ "Nothing to clean up — every quotation entry on the accounts belongs to an existing quotation.": "Wax la nadiifiyo ma jiraan — diiwaan kasta oo quotation ah wuxuu leeyahay quotation jira.",
+ "These account entries were posted by quotations that have since been deleted. Removing them takes them off the accounts and recalculates the balances. This cannot be undone; each removal is recorded in the Audit Log.": "Diiwaannadan waxaa xisaabaadka ku qoray quotation-ado markii dambe la tirtiray. Ka saaristoodu waxay ka qaadaysaa xisaabaadka, balance-yadana dib ayay u xisaabinaysaa. Dib looma celin karo; ka saarid kasta waxay ku qormaysaa Audit Log-ga.",
+ "Quotation deleted — its account entries were removed and the balance recalculated.": "Quotation-ka waa la tirtiray — diiwaannadiisii xisaabta waa laga saaray, balance-kana dib ayaa loo xisaabiyay."
 }

@@ -12,6 +12,38 @@ const { toCSV } = require("../csv");
 const { renderReportPDF, renderQuotationDocumentPDF } = require("../pdf");
 const { buildQuotationWorkbook } = require("../xlsx-documents");
 
+// Everything a quotation posted to its account: the charge, each payment,
+// any refund. Removed together, then the balance is recomputed.
+function removeQuotationPostings(q) {
+  const ledger = all(
+    `SELECT id, client_id, type, currency, amount FROM account_ledger
+      WHERE (source_id = ? AND source_type IN ('quotation_charge','quotation_paid','quotation_refund'))
+         OR id = ? OR id IN (SELECT ledger_id FROM quotation_payments WHERE quotation_id = ? AND ledger_id IS NOT NULL)`,
+    [q.id, q.charged_ledger_id || "", q.id]
+  );
+  const out = { rows: 0, debit: 0, credit: 0 };
+  const touched = new Set();
+  for (const l of ledger) {
+    run("DELETE FROM account_ledger WHERE id = ?", [l.id]);
+    out.rows++;
+    if (l.type === "withdrawal") out.debit += Number(l.amount) || 0; else out.credit += Number(l.amount) || 0;
+    touched.add(`${l.client_id}|${l.currency}`);
+  }
+  run("DELETE FROM quotation_payments WHERE quotation_id = ?", [q.id]);
+  run("DELETE FROM quotation_items WHERE quotation_id = ?", [q.id]);
+  run("DELETE FROM quotations WHERE id = ?", [q.id]);
+  for (const k of touched) { const [cid, cur] = k.split("|"); if (get("SELECT id FROM clients WHERE id = ?", [cid])) rebuildAccountBalance(cid, cur); }
+  return out;
+}
+function orphanQuotationEntries() {
+  return all(
+    `SELECT l.*, c.name AS account_name FROM account_ledger l LEFT JOIN clients c ON c.id = l.client_id
+      WHERE l.source_type IN ('quotation_charge','quotation_paid','quotation_refund')
+        AND (l.source_id IS NULL OR l.source_id NOT IN (SELECT id FROM quotations))
+      ORDER BY l.date`
+  );
+}
+
 // Thrown by createAndChargeQuotation() for an expected, user-facing problem
 // (bad account, deactivated account, etc.) so route handlers can turn it
 // into a 400 instead of it falling through to the generic 500 handler.
@@ -353,6 +385,30 @@ function register(router) {
     sendJSON(res, 200, { columns });
   });
 
+  // Entries left on accounts by quotations deleted before the QUOTATION DELETE FIX (see DELETE /api/quotations/:id) —
+  // a quotation charge / payment / refund whose quotation no longer exists.
+  // GET lists them; POST removes them (and recomputes those balances).
+  router.get("/api/quotations/orphan-entries", (req, res) => {
+    const user = requireAuth(req, res); if (!user) return;
+    if (!requirePerm(user, res, "quotationsManage")) return;
+    if (!requirePerm(user, res, "quotationsDelete")) return;
+    sendJSON(res, 200, { entries: orphanQuotationEntries().map((r) => ({ id: r.id, accountId: r.client_id, accountName: r.account_name, type: r.type, currency: r.currency, amount: r.amount, date: r.date, reference: r.reference_number, notes: r.notes, sourceType: r.source_type })) });
+  });
+  router.post("/api/quotations/orphan-entries/remove", (req, res) => {
+    const user = requireAuth(req, res); if (!user) return;
+    if (!requirePerm(user, res, "quotationsManage")) return;
+    if (!requirePerm(user, res, "quotationsDelete")) return;
+    const rows = orphanQuotationEntries();
+    if (!rows.length) return sendJSON(res, 200, { removed: 0 });
+    tx(() => {
+      const touched = new Set();
+      for (const r of rows) { run("DELETE FROM account_ledger WHERE id = ?", [r.id]); touched.add(`${r.client_id}|${r.currency}`); }
+      for (const k of touched) { const [cid, cur] = k.split("|"); if (get("SELECT id FROM clients WHERE id = ?", [cid])) rebuildAccountBalance(cid, cur); }
+    });
+    for (const r of rows) addAudit(user, "Deleted-quotation entry removed", `${r.reference_number || r.id}: ${r.type === "withdrawal" ? "debit" : "credit"} ${fmtMoney(r.amount, r.currency)} on ${r.account_name || r.client_id} (${r.notes || r.source_type}) — its quotation was deleted earlier; balance recomputed`);
+    sendJSON(res, 200, { removed: rows.length });
+  });
+
   router.get("/api/quotations/:id", (req, res, params) => {
     const user = requireAuth(req, res); if (!user) return;
     if (!requireQuotationRead(user, res)) return;
@@ -690,25 +746,11 @@ function register(router) {
     sendJSON(res, 200, { quotation: serialize(get("SELECT * FROM quotations WHERE id = ?", [q.id])) });
   });
 
-  // Removes a quotation entirely — for ANY status (Pending, Paid, or
-  // Refunded). Per the "FINAL QUOTATION MANAGEMENT SYSTEM" spec: deleting a
-  // quotation is a RECORD MANAGEMENT operation, not a financial one, and
-  // must never be confused with Refund. So this NEVER touches the account
-  // balance and NEVER touches the account_ledger rows the quotation
-  // produced (the charge, and — once settled — the settlement) — those are
-  // genuine financial history and stay exactly as they are, permanently,
-  // falling back to showing on their own (via their own reference_number)
-  // once their parent quotation document is gone (see accounts.js's
-  // activity-feed logic). Only the quotation document and its line items
-  // are removed.
-  //
-  // Note this means deleting a still-Pending quotation leaves its original
-  // Withdrawal permanently outstanding in the ledger with no document left
-  // to explain it — that's accepted and intentional per the spec (deletion
-  // must work "regardless of its current status," and must not "silently
-  // destroy financial transaction history" or "automatically alter account
-  // balances" either way); the frontend's confirmation modal calls this out
-  // explicitly so it's never a surprise.
+  // Removes a quotation entirely — for ANY status (Pending, Partially Paid,
+  // Paid or Refunded) — together with everything it posted to the account
+  // (charge, payments, refund), and recomputes the balance. The audit entry
+  // keeps the quotation's financial details. Use Refund instead when the
+  // charge should be cancelled but the record kept.
   //
   // Gated by BOTH quotationsManage (day-to-day quotation access) AND the
   // stricter quotationsDelete (permanent-delete specifically) — the same
@@ -725,17 +767,21 @@ function register(router) {
     if (!q) return notFound(res, "Quotation not found.");
     let body = {}; try { body = await readJSONBody(req); } catch (e) { /* reason is optional */ }
     const account = q.charged_account_id ? get("SELECT id, name FROM clients WHERE id = ?", [q.charged_account_id]) : null;
-    tx(() => {
-      run("DELETE FROM quotation_items WHERE quotation_id = ?", [q.id]);
-      run("DELETE FROM quotations WHERE id = ?", [q.id]);
-    });
+    // QUOTATION DELETE FIX (owner request, Nov 2026): deleting a quotation now
+    // also removes everything it posted to the account — the charge, every
+    // payment and any refund — and recomputes the balance, exactly as
+    // deleting a single quotation payment already did. Before, the document
+    // went but its Debit stayed on the account with nothing to explain it.
+    let removed = { rows: 0, debit: 0, credit: 0 };
+    tx(() => { removed = removeQuotationPostings(q); });
     addAudit(
       user,
       "Quotation deleted",
-      `${q.number} for ${q.client_name} — Account: ${account ? `${account.name} (${account.id})` : "n/a"}, Customer ID: ${q.client_id || "n/a"}, Amount: ${fmtMoney(q.charged_amount, q.charged_currency)}, Previous status: ${q.status}, Reason: ${body && body.reason ? body.reason : "not specified"}`
+      `${q.number} for ${q.client_name} — Account: ${account ? `${account.name} (${account.id})` : "n/a"}, Customer ID: ${q.client_id || "n/a"}, Amount: ${fmtMoney(q.charged_amount, q.charged_currency)}, Previous status: ${q.status}, Reason: ${body && body.reason ? body.reason : "not specified"}. Account entries removed: ${removed.rows} (debits ${fmtMoney(removed.debit, q.charged_currency)}, credits ${fmtMoney(removed.credit, q.charged_currency)}) — balance recomputed`
     );
-    sendJSON(res, 200, { deleted: true, id: q.id });
+    sendJSON(res, 200, { deleted: true, id: q.id, removedEntries: removed.rows });
   });
+
 
   // Duplicating a quotation creates a brand-new one — which, like any other
   // quotation, is charged to an account the instant it's created. Defaults
