@@ -134,6 +134,16 @@ async function run() {
       assert(await p.getByPlaceholder("Password").count() === 0, "still on the login page");
       assert(new URL(p.url()).pathname === "/sky", `left the link: ${p.url()}`);
     });
+    await check("browser: a session of another company is ended on /bindhe — Bindhe's sign-in page is shown", async () => {
+      const t = ok(await login("sky.admin", "Sky-Admin-Pass-2026"), "sky").token;
+      const u = ok(await api("/api/auth/me", { token: t }), "me").user;
+      const c3 = await browser.newContext(); const p3 = await c3.newPage();
+      await p3.addInitScript(([tok, usr]) => { try { if (!sessionStorage.getItem("seeded")) { localStorage.setItem("geeska_token", tok); localStorage.setItem("geeska_user", usr); sessionStorage.setItem("seeded", "1"); } } catch (e) {} }, [t, JSON.stringify(u)]);
+      await p3.goto(BASE + "/bindhe"); await p3.waitForTimeout(2500);
+      assert(await p3.getByPlaceholder("Password").count() === 1, "Sky's workspace shown on Bindhe's link");
+      assert(await p3.getByText("Sky Test Exchange").count() === 0, "Sky branding shown");
+      await c3.close();
+    });
     await check("browser: the main page is unchanged (neutral)", async () => {
       const p2 = await (await browser.newContext()).newPage();
       await p2.goto(BASE + "/"); await p2.waitForTimeout(1200);

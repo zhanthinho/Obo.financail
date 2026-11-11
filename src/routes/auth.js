@@ -153,7 +153,7 @@ function sessionUser(userRow, company, platformUser) {
   // name and status only — never its Company ID.
   const companyView = platformUser
     ? tenancy.publicCompany(company, { includeLogo: false })
-    : (company ? { name: company.name, status: company.status } : null);
+    : (company ? { name: company.name, status: company.status, loginSlug: company.login_slug || "" } : null);
   return { ...publicUser(userRow), isPlatformAdmin: !!platformUser, company: companyView };
 }
 

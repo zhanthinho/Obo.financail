@@ -1760,13 +1760,52 @@ function toLocalDT(dateInput) {
 const TOKEN_KEY = "geeska_token", USER_KEY = "geeska_user";
 
 /* ---------------- SOMALI / ENGLISH LANGUAGE ----------------
-   The chosen language is kept in this browser (obo_lang) so it survives a
-   refresh, signing out and in, and switching company. Interface text is
+   The chosen language is kept per company login link (or per platform admin)
+   so it survives a refresh without carrying one company's choice into another.
+   Interface text is
    translated by the JSX runtime (frontend/i18n-jsx) through src/i18n; the
    server is told the language on every request (X-Lang) so its messages
    and exported documents follow it too. */
 const LANG_KEY = "obo_lang";
-function readSavedLang() { try { return localStorage.getItem(LANG_KEY) === "so" ? "so" : "en"; } catch (e) { return "en"; } }
+function storedSessionUser() { try { return JSON.parse(localStorage.getItem(USER_KEY) || "null"); } catch (e) { return null; } }
+function routeCompanySlug() {
+  try { const m = /^\/([a-z0-9-]{2,40})\/?$/i.exec(window.location.pathname); return m ? m[1].toLowerCase() : ""; } catch (e) { return ""; }
+}
+// Browser preferences belong to the company login link (or the signed-in
+// company), not to whichever company happened to use this browser last.
+function preferenceScope(user = storedSessionUser()) {
+  const slug = routeCompanySlug() || (user && user.company && user.company.loginSlug) || "";
+  if (slug) return `company:${String(slug).toLowerCase()}`;
+  if (user && user.company) {
+    if (user.company.id) return `company-id:${user.company.id}`;
+    if (user.company.name) return `company-name:${String(user.company.name).trim().toLowerCase()}`;
+  }
+  if (user && user.isPlatformAdmin) return `platform:${user.id || user.username || "admin"}`;
+  return "public";
+}
+function scopedPreferenceKey(base, scope = preferenceScope()) { return `${base}:${scope}`; }
+// A choice saved before preferences were kept per company (the plain
+// obo_lang / geeska_theme keys) is still honoured until this company's own
+// choice is saved, so nobody's language or theme resets with the update.
+function readScopedPref(base, scope) {
+  const scoped = localStorage.getItem(scopedPreferenceKey(base, scope));
+  return scoped !== null ? scoped : localStorage.getItem(base);
+}
+function readSavedLang(user = storedSessionUser()) {
+  try { return readScopedPref(LANG_KEY, preferenceScope(user)) === "so" ? "so" : "en"; }
+  catch (e) { return "en"; }
+}
+function readSavedTheme(scope = preferenceScope()) {
+  try {
+    const saved = readScopedPref("geeska_theme", scope);
+    if (saved === "dark" || saved === "light") return saved;
+  } catch (e) { /* use the operating-system preference */ }
+  try { return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; }
+  catch (e) { return "light"; }
+}
+function notifyPreferenceScopeChange() {
+  try { window.dispatchEvent(new Event("finman-preference-scope-change")); } catch (e) { /* older browser */ }
+}
 setI18nLang(readSavedLang());
 const LangContext = createContext({ lang: "en", setLang: () => {} });
 // GLOBAL RATE & PROFIT round: the company's Cost / Buy / Sell rates (SLSH per
@@ -4985,7 +5024,11 @@ function App() {
   // quick-edit modal (ManageRatesModal) — replaces the two separate
   // RateControl/SaleRateControl popups with one combined Daily+Sale form.
   const [manageRatesOpen, setManageRatesOpen] = useState(false);
-  const [company, setCompany] = useState(null); // public branding — fetched regardless of auth state
+  const [companyBrandRecord, setCompanyBrandRecord] = useState(null); // branding is tagged with its owner to prevent cross-company flashes
+  const companyLinkNeedsLogin = !!(LOGIN_SLUG && token && (!user || !user.company || String(user.company.loginSlug || "").toLowerCase() !== LOGIN_SLUG));
+  const brandOwner = companyLinkNeedsLogin ? `login:${LOGIN_SLUG}` : token ? (user && user.company ? "c:" + (user.company.id || user.company.loginSlug || user.company.name) : "platform") : LOGIN_SLUG ? `login:${LOGIN_SLUG}` : "public";
+  const sameLinkBrand = !!(LOGIN_SLUG && token && user && user.company && String(user.company.loginSlug || "").toLowerCase() === LOGIN_SLUG && companyBrandRecord && companyBrandRecord.owner === `login:${LOGIN_SLUG}`);
+  const company = companyBrandRecord && (companyBrandRecord.owner === brandOwner || sameLinkBrand) ? companyBrandRecord.value : null;
   const [quotationPrefill, setQuotationPrefill] = useState(null); // set when "New quotation" is triggered from an Account
   const [exchangePrefill, setExchangePrefill] = useState(null); // set when the "Exchange" Quick Action is triggered from an Account
   // QUOTATION PAYMENT INTEGRATION round: set when "View Quotation" is
@@ -5048,18 +5091,36 @@ function App() {
   // hard-coded), and refreshed whenever QuotationsModule reports a change
   // (create, Settle, Update with a revised amount, Delete).
   const [quotationCounts, setQuotationCounts] = useState(null);
-  const [theme, setTheme] = useState(() => {
-    try {
-      const stored = localStorage.getItem("geeska_theme");
-      if (stored) return stored;
-      return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    } catch (e) { return "light"; }
+  const prefScope = preferenceScope(user);
+  const [themeState, setThemeState] = useState(() => {
+    const scope = preferenceScope(storedSessionUser());
+    return { scope, value: readSavedTheme(scope) };
   });
+  const theme = themeState.scope === prefScope ? themeState.value : readSavedTheme(prefScope);
+  const setTheme = useCallback((next) => {
+    setThemeState((current) => ({ scope: prefScope, value: typeof next === "function" ? next(current.value) : next }));
+  }, [prefScope]);
+  // A sign-in or a Super Admin workspace switch changes the preference
+  // namespace. Read that company's saved choice before persisting anything.
   useEffect(() => {
+    if (themeState.scope !== prefScope) setThemeState({ scope: prefScope, value: readSavedTheme(prefScope) });
+  }, [prefScope, themeState.scope]);
+  useEffect(() => {
+    const sync = (event) => {
+      if (event.key !== scopedPreferenceKey("geeska_theme", prefScope)) return;
+      const value = event.newValue === "dark" ? "dark" : "light";
+      setThemeState({ scope: prefScope, value });
+    };
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
+  }, [prefScope]);
+  React.useLayoutEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
-    try { localStorage.setItem("geeska_theme", theme); } catch (e) {}
-  }, [theme]);
-  // APPEARANCE & BRANDING round: apply the Super Admin's chosen Brand Color
+    if (themeState.scope === prefScope) {
+      try { localStorage.setItem(scopedPreferenceKey("geeska_theme", prefScope), theme); } catch (e) {}
+    }
+  }, [theme, prefScope, themeState.scope]);
+  // APPEARANCE & BRANDING round: apply the active company's chosen Brand Color
   // (Settings -> Appearance & Branding) as inline CSS-variable overrides on
   // <html>, which win over THEME_CSS's hard-coded defaults regardless of
   // theme. Deriving --c-navy-deep/--c-thead-bg/--c-tfoot-bg from the SAME
@@ -5079,7 +5140,7 @@ function App() {
   // theme sets it to #fff); otherwise it's computed from brand's luminance so
   // a very light Custom Brand Color still gets dark, readable text instead of
   // white-on-white (spec: "never generate unreadable combinations").
-  useEffect(() => {
+  React.useLayoutEffect(() => {
     const root = document.documentElement.style;
     const brand = company?.brandColor;
     if (!brand || !isValidHex(brand)) {
@@ -5143,7 +5204,7 @@ function App() {
   // theme's exact value when present, else derives from accentColor the same
   // way navyLight derives from brandColor above. --c-text-on-accent is
   // computed for readability the same way --c-text-on-primary is.
-  useEffect(() => {
+  React.useLayoutEffect(() => {
     const root = document.documentElement.style;
     const apply = (varName, value) => {
       if (value && isValidHex(value)) root.setProperty(varName, value);
@@ -5332,30 +5393,25 @@ function App() {
   const [loginPage, setLoginPage] = useState(null);
   const loadCompanyBranding = useCallback(() => {
     const seq = ++brandSeqRef.current;
-    if (!token && LOGIN_SLUG) {
+    const requiresLoginPage = !!(LOGIN_SLUG && (!token || !user || !user.company || String(user.company.loginSlug || "").toLowerCase() !== LOGIN_SLUG));
+    const owner = requiresLoginPage ? `login:${LOGIN_SLUG}` : token ? (user && user.company ? "c:" + (user.company.id || user.company.loginSlug || user.company.name) : "platform") : "public";
+    if (requiresLoginPage) {
       api(`/api/public/login-page/${encodeURIComponent(LOGIN_SLUG)}`)
-        .then((d) => { if (seq === brandSeqRef.current) { setLoginPage(d.loginPage); setCompany({ ...d.loginPage }); } })
-        .catch(() => { if (seq === brandSeqRef.current) setLoginPage(null); });
+        .then((d) => { if (seq === brandSeqRef.current) { setLoginPage(d.loginPage); setCompanyBrandRecord({ owner, value: { ...d.loginPage } }); } })
+        .catch(() => { if (seq === brandSeqRef.current) { setLoginPage(null); setCompanyBrandRecord({ owner, value: null }); } });
       return;
     }
     api("/api/settings/company", {}, token)
-      .then((d) => { if (seq === brandSeqRef.current) setCompany(d.company || null); })
+      .then((d) => { if (seq === brandSeqRef.current) setCompanyBrandRecord({ owner, value: d.company || null }); })
       .catch(() => {});
-  }, [token]);
-  // Company Admins/staff only receive their company's name (no ID) in the
-  // session, so the name identifies the owner there.
-  const brandOwner = token ? (user && user.company ? "c:" + (user.company.id || user.company.name) : "platform") : "public";
-  const brandOwnerRef = useRef(brandOwner);
-  useEffect(() => {
-    if (brandOwnerRef.current !== brandOwner) { brandOwnerRef.current = brandOwner; setCompany(null); }
-  }, [brandOwner]);
+  }, [token, user]);
   useEffect(() => { loadCompanyBranding(); }, [loadCompanyBranding]);
   const refreshCompany = loadCompanyBranding;
 
   useEffect(() => {
     if (!token) { setChecked(true); return; }
     api("/api/auth/me", {}, token)
-      .then((d) => { setUser(d.user); try { localStorage.setItem(USER_KEY, JSON.stringify(d.user)); } catch (e) {} })
+      .then((d) => { setUser(d.user); try { localStorage.setItem(USER_KEY, JSON.stringify(d.user)); } catch (e) {} notifyPreferenceScopeChange(); })
       .catch(() => logout())
       .finally(() => setChecked(true));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -5364,6 +5420,7 @@ function App() {
   function loginSuccess(tok, u) {
     setToken(tok); setUser(u);
     try { localStorage.setItem(TOKEN_KEY, tok); localStorage.setItem(USER_KEY, JSON.stringify(u)); } catch (e) {}
+    notifyPreferenceScopeChange();
   }
   function logout() {
     // FULL SYSTEM AUDIT round: end the session on the server too, so a copy
@@ -5373,7 +5430,16 @@ function App() {
     if (ending) { try { fetch("/api/auth/logout", { method: "POST", headers: { Authorization: `Bearer ${ending}` }, keepalive: true }).catch(() => {}); } catch (e) { /* ignore */ } }
     setToken(null); setUser(null); setView("dashboard");
     try { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY); } catch (e) {}
+    notifyPreferenceScopeChange();
   }
+  // A company login link must never silently display another workspace. If a
+  // browser has a session for the platform console or a different company,
+  // show the requested company's branded sign-in page and end that session.
+  useEffect(() => {
+    if (checked && companyLinkNeedsLogin) logout();
+    // The mismatch is the condition of interest; logout intentionally runs once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checked, companyLinkNeedsLogin]);
   // MULTI-COMPANY round: switching company (Super Admin only) gets a NEW
   // server-signed token bound to that company, then reloads the whole app —
   // every piece of in-memory state from the previous company (lists, totals,
@@ -5468,7 +5534,7 @@ function App() {
   }, [view]);
 
   if (!checked) return <><style>{THEME_CSS}</style><div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: C.slate, fontFamily: FONT_SANS, background: C.paper }}>Loading…</div></>;
-  if (!token || !user) return <><style>{THEME_CSS}</style><LoginScreen onSuccess={loginSuccess} loginPage={loginPage} loginSlug={LOGIN_SLUG} /></>;
+  if (!token || !user || companyLinkNeedsLogin) return <><style>{THEME_CSS}</style><LoginScreen onSuccess={loginSuccess} loginPage={loginPage} loginSlug={LOGIN_SLUG} /></>;
   // SECURITY AUDIT round: signed in with a published default password —
   // nothing else is reachable until a new password is set (the server
   // refuses every other request for this session too).
@@ -20741,12 +20807,24 @@ function CashAccountDetailPage({ call, dl, notify, perm, hasRaw, cashAccountId, 
 // interface in the new language at once (the app remounts; the page you are
 // on, your sign-in and your company are kept).
 function LangRoot() {
-  const [lang, setLangState] = useState(getLang());
+  const [lang, setLangState] = useState(() => readSavedLang());
   const change = useCallback((next) => {
     const v = next === "so" ? "so" : "en";
     setI18nLang(v);
-    try { localStorage.setItem(LANG_KEY, v); } catch (e) { /* private mode */ }
+    try { localStorage.setItem(scopedPreferenceKey(LANG_KEY, preferenceScope(storedSessionUser())), v); } catch (e) { /* private mode */ }
     setLangState(v);
+  }, []);
+  useEffect(() => {
+    const refresh = () => { const next = readSavedLang(); setI18nLang(next); setLangState(next); };
+    const sync = (event) => {
+      if (event.key === scopedPreferenceKey(LANG_KEY, preferenceScope(storedSessionUser()))) refresh();
+    };
+    window.addEventListener("finman-preference-scope-change", refresh);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("finman-preference-scope-change", refresh);
+      window.removeEventListener("storage", sync);
+    };
   }, []);
   useEffect(() => { document.documentElement.lang = lang; }, [lang]);
   const ctx = useMemo(() => ({ lang, setLang: change }), [lang, change]);
