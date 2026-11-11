@@ -94,6 +94,20 @@ function register(router) {
     sendJSON(res, 200, { company: isPlatform ? { ...data, companyId: company.id } : data });
   });
 
+  // COMPANY LOGIN LINKS round: the branding a company's own sign-in page
+  // (<site>/<slug>) shows — name, tagline, logo, favicon and colours only;
+  // never contact details, registration/tax numbers or the Company ID.
+  router.get("/api/public/login-page/:slug", (req, res, params) => {
+    const tenancy = require("../tenancy");
+    const company = tenancy.getCompanyBySlug(params.slug);
+    if (!company) return sendJSON(res, 404, { error: "No company uses this login link." });
+    let s;
+    try { s = tenancy.withCompany(company, () => serialize(getCompanySettings())); } catch (e) { return sendJSON(res, 503, { error: "This company's sign-in page is temporarily unavailable." }); }
+    const pick = ["name", "tagline", "logoDataUrl", "faviconDataUrl", "brandColor", "secondaryColor", "accentColor", "primaryDark", "primaryLight", "accentBright", "brandThemeKey", "fontFamily", "fontSize"];
+    const out = {}; for (const k of pick) out[k] = s[k];
+    sendJSON(res, 200, { loginPage: { slug: company.login_slug, ...out } });
+  });
+
   router.patch("/api/settings/company", async (req, res) => {
     const user = requireAuth(req, res); if (!user) return;
     if (!requirePerm(user, res, "settingsManage")) return;

@@ -9109,6 +9109,15 @@
      "pk": 0,
      "mysqlType": "LONGTEXT",
      "isCompanyId": false
+    },
+    {
+     "name": "login_slug",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(64)",
+     "isCompanyId": false
     }
    ],
    "primaryKey": [

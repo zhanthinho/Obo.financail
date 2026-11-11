@@ -4320,6 +4320,7 @@ function CompanyFormModal({ initial, call, notify, onClose, onSaved }) {
   const [f, setF] = useState(() => ({
     name: initial?.name || "", contactName: initial?.contactName || "", phone: initial?.phone || "", email: initial?.email || "",
     address: initial?.address || "", website: initial?.website || "", notes: initial?.notes || "", logoDataUrl: initial?.logoDataUrl || null,
+    loginSlug: initial?.loginSlug || "",
     adminName: "", adminUsername: "", adminPassword: "",
   }));
   const [err, setErr] = useState("");
@@ -4333,6 +4334,7 @@ function CompanyFormModal({ initial, call, notify, onClose, onSaved }) {
       setErr("Company Admin needs a name, a username and a password of at least 8 characters — or leave all three empty."); return;
     }
     const body = { name: f.name.trim(), contactName: f.contactName, phone: f.phone, email: f.email, address: f.address, website: f.website, notes: f.notes, logoDataUrl: f.logoDataUrl };
+    if (editing) body.loginSlug = f.loginSlug.trim().toLowerCase();
     if (wantsAdmin) body.admin = { name: f.adminName.trim(), username: f.adminUsername.trim().toLowerCase(), password: f.adminPassword };
     setSaving(true);
     try {
@@ -4364,6 +4366,16 @@ function CompanyFormModal({ initial, call, notify, onClose, onSaved }) {
           <Field label="Website"><Input value={f.website} onChange={set("website")} /></Field>
           <Field label="Address"><Input value={f.address} onChange={set("address")} /></Field>
         </div>
+        {editing && (
+          <div style={{ border: `1px solid ${C.line}`, borderRadius: 8, padding: 14 }} data-login-link-field>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.ink }}>Company login link <span style={{ fontWeight: 500, color: C.slate }}>(optional)</span></div>
+            <div style={{ fontSize: 11.5, color: C.slate, margin: "2px 0 10px" }}>The company's own sign-in page: it shows this company's name and logo, and only this company's users can sign in there. Lowercase letters, numbers and hyphens, e.g. <b>bindhe</b>. Leave empty for none.</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 13, color: C.slate, fontFamily: FONT_MONO }}>{(typeof window !== "undefined" ? window.location.origin : "")}/</span>
+              <Input value={f.loginSlug} onChange={(e) => setF((p) => ({ ...p, loginSlug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") }))} placeholder="bindhe" style={{ maxWidth: 200 }} autoComplete="off" />
+            </div>
+          </div>
+        )}
         <OptionalNotes value={f.notes} onChange={set("notes")} rows={2} />
         {!editing && (
           <div style={{ border: `1px solid ${EMERALD.line}`, background: EMERALD.tint, borderRadius: 8, padding: 14 }}>
@@ -4585,6 +4597,13 @@ function CompaniesManagement({ call, notify, activeCompanyId, onOpenWorkspace })
                       {c.deactivated && c.deactivatedReason ? <span style={{ color: COMPANY_STATUS_META.inactive.fg }}> — Deactivated: {c.deactivatedReason}</span> : null}
                       {c.suspended && c.suspendedReason ? <span style={{ color: COMPANY_STATUS_META.suspended.fg }}> — Suspended: {c.suspendedReason}</span> : null}
                     </div>
+                    {c.loginSlug && (
+                      <div style={{ fontSize: 12, marginTop: 3, display: "flex", alignItems: "center", gap: 6 }} data-company-login-link={c.loginSlug}>
+                        <span style={{ color: C.slate }}>Login link:</span>
+                        <a href={companyLoginUrl(c.loginSlug)} target="_blank" rel="noopener noreferrer" style={{ color: EMERALD.main, fontWeight: 700, fontFamily: FONT_MONO }}>{companyLoginUrl(c.loginSlug).replace(/^https?:\/\//, "")}</a>
+                        <button type="button" className="gk-icon-btn" title="Copy link" onClick={() => { try { navigator.clipboard.writeText(companyLoginUrl(c.loginSlug)); } catch (e) { /* ignore */ } }} style={{ border: `1px solid ${C.line}`, background: "transparent", borderRadius: 4, padding: "1px 6px", fontSize: 11, cursor: "pointer", color: C.slate }}>Copy</button>
+                      </div>
+                    )}
                   </div>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     <Btn size="sm" tone="transfer" onClick={() => onOpenWorkspace(c.id)}>Open workspace</Btn>
@@ -4812,7 +4831,14 @@ const LOGIN_ICON_LOCK = <><rect x="4.5" y="10.5" width="15" height="10" rx="2.2"
 // company's name, logo, address or colours, whatever is held in memory from
 // an earlier session. The server decides after sign-in which company (if
 // any) the account belongs to; the browser never chooses or sends one.
-function LoginScreen({ onSuccess }) {
+// COMPANY LOGIN LINKS round: <site>/<slug> (e.g. /bindhe) is a company's own
+// sign-in page — its name and logo, and only its users can sign in there.
+const LOGIN_SLUG = (() => {
+  try { const m = /^\/([a-z0-9-]{2,40})\/?$/i.exec(window.location.pathname); return m ? m[1].toLowerCase() : null; } catch (e) { return null; }
+})();
+function companyLoginUrl(slug) { try { return `${window.location.origin}/${slug}`; } catch (e) { return `/${slug}`; } }
+
+function LoginScreen({ onSuccess, loginPage, loginSlug }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -4825,7 +4851,7 @@ function LoginScreen({ onSuccess }) {
     if (!username || !password) { setError("Enter your username and password."); setErrorTick((n) => n + 1); return; }
     setLoading(true); setError(null);
     try {
-      const data = await api("/api/auth/login", { method: "POST", body: { username, password } });
+      const data = await api("/api/auth/login", { method: "POST", body: { username, password, ...(loginSlug ? { companySlug: loginSlug } : {}) } });
       onSuccess(data.token, data.user);
     } catch (e) {
       setError(e.message || "Login failed.");
@@ -4854,10 +4880,16 @@ function LoginScreen({ onSuccess }) {
       <div style={{ position: "absolute", top: 16, right: 16, zIndex: 2 }}><LangToggle onDark /></div>
       <div style={{ width: 380, maxWidth: "100%", position: "relative", zIndex: 1 }}>
         <div className="gk-login-in" style={{ display: "flex", justifyContent: "center", marginBottom: 14, animationDelay: "0.02s" }}>
-          <div className="gk-login-logo-ring"><BrandMark size={52} /></div>
+          <div className="gk-login-logo-ring" data-login-company={loginPage ? loginPage.slug : undefined}>
+            {loginPage && loginPage.logoDataUrl
+              ? <img src={loginPage.logoDataUrl} alt="" style={{ width: 52, height: 52, objectFit: "contain", borderRadius: 10, background: "#fff", padding: 4 }} />
+              : <BrandMark size={52} />}
+          </div>
         </div>
-        <div className="gk-login-in" style={{ textAlign: "center", color: "#fff", fontSize: 22, fontWeight: 700, animationDelay: "0.08s" }}>Financial System</div>
-        <div className="gk-login-in" style={{ textAlign: "center", color: C.mint, fontSize: 13, marginTop: 4, marginBottom: 28, animationDelay: "0.13s", lineHeight: 1.5 }}>Welcome — sign in to access your company's workspace.</div>
+        <div className="gk-login-in" style={{ textAlign: "center", color: "#fff", fontSize: 22, fontWeight: 700, animationDelay: "0.08s" }}>{loginPage ? loginPage.name : "Financial System"}</div>
+        <div className="gk-login-in" style={{ textAlign: "center", color: C.mint, fontSize: 13, marginTop: 4, marginBottom: 28, animationDelay: "0.13s", lineHeight: 1.5 }}>
+          {loginSlug && !loginPage ? "This sign-in link is not in use." : loginPage ? "Welcome — sign in to your workspace." : "Welcome — sign in to access your company's workspace."}
+        </div>
 
         <div className="gk-login-card gk-login-in" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 12, padding: 24, display: "flex", flexDirection: "column", gap: 14, animationDelay: "0.18s" }}>
           <div>
@@ -5297,8 +5329,15 @@ function App() {
   // company) the previous owner's branding is cleared at once instead of
   // staying on screen until the new reply arrives.
   const brandSeqRef = useRef(0);
+  const [loginPage, setLoginPage] = useState(null);
   const loadCompanyBranding = useCallback(() => {
     const seq = ++brandSeqRef.current;
+    if (!token && LOGIN_SLUG) {
+      api(`/api/public/login-page/${encodeURIComponent(LOGIN_SLUG)}`)
+        .then((d) => { if (seq === brandSeqRef.current) { setLoginPage(d.loginPage); setCompany({ ...d.loginPage }); } })
+        .catch(() => { if (seq === brandSeqRef.current) setLoginPage(null); });
+      return;
+    }
     api("/api/settings/company", {}, token)
       .then((d) => { if (seq === brandSeqRef.current) setCompany(d.company || null); })
       .catch(() => {});
@@ -5429,7 +5468,7 @@ function App() {
   }, [view]);
 
   if (!checked) return <><style>{THEME_CSS}</style><div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: C.slate, fontFamily: FONT_SANS, background: C.paper }}>Loading…</div></>;
-  if (!token || !user) return <><style>{THEME_CSS}</style><LoginScreen onSuccess={loginSuccess} /></>;
+  if (!token || !user) return <><style>{THEME_CSS}</style><LoginScreen onSuccess={loginSuccess} loginPage={loginPage} loginSlug={LOGIN_SLUG} /></>;
   // SECURITY AUDIT round: signed in with a published default password —
   // nothing else is reachable until a new password is set (the server
   // refuses every other request for this session too).

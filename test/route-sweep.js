@@ -83,7 +83,9 @@ function harvest(v, out, depth = 0) {
 // Public routes: answered without a sign-in by design.
 // GET /api/settings/company answers a visitor with the neutral platform
 // identity only (checked below).
-const PUBLIC = new Set(["POST /api/auth/login", "GET /api/health", "GET /api/settings/company"]);
+const PUBLIC = new Set(["POST /api/auth/login", "GET /api/health", "GET /api/settings/company",
+  // COMPANY LOGIN LINKS round: a company sign-in page's name/logo/colours only.
+  "GET /api/public/login-page/:slug"]);
 // Self-service routes a read-only user may legitimately use.
 const VIEWER_SELF = [/^POST \/api\/auth\//, /^PATCH \/api\/auth\//, /\/api\/table-layouts/, /\/api\/notifications/, /^(PATCH|DELETE) \/api\/dashboard-layout$/, /^PATCH \/api\/me\b/, /^POST \/api\/me\b/];
 

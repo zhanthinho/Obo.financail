@@ -182,6 +182,22 @@ function register(router) {
     }
     const uname = tenancy.normalizeUsername(username);
     const invalid = () => sendJSON(res, 401, { error: "Invalid username or password, or the account is inactive." });
+    // COMPANY LOGIN LINKS round: signing in on a company's own page
+    // (<site>/<slug>) accepts ONLY that company's users. Anyone else — a
+    // user of another company, or the Super Admin — gets the ordinary
+    // "invalid" answer (same timing), so the page reveals nothing.
+    let pageCompany = null;
+    if (body.companySlug !== undefined && body.companySlug !== null && body.companySlug !== "") {
+      pageCompany = tenancy.getCompanyBySlug(String(body.companySlug));
+      if (!pageCompany) return sendJSON(res, 404, { error: "No company uses this login link." });
+      const e0 = tenancy.getPlatformUserByUsername(uname) ? null : tenancy.lookupDirectory(uname);
+      if (!e0 || e0.company_id !== pageCompany.id) {
+        authLib.burnPasswordCheck(password);
+        recordFailedLogin(username); recordIpFailure(ip);
+        tenancy.platformAudit({ name: String(username) }, "Failed login attempt", pageCompany.id, `Not a user of this company's login page (/${pageCompany.login_slug})`);
+        return invalid();
+      }
+    }
 
     // 1) Platform Super Admin?
     const pu = tenancy.getPlatformUserByUsername(uname);

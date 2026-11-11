@@ -71,7 +71,8 @@
     "test:company-stamp": "node test/company-stamp.js",
     "test:remove-critical-perms": "node test/remove-critical-perms.js",
     "test:template-versions": "node test/template-versions.js",
-    "test:quotation-delete": "node test/quotation-delete.js"
+    "test:quotation-delete": "node test/quotation-delete.js",
+    "test:company-login-links": "node test/company-login-links.js"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",

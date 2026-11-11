@@ -233,6 +233,13 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === "GET" || req.method === "HEAD") {
+    // COMPANY LOGIN LINKS round: <site>/<slug> (e.g. /bindhe) is a company's
+    // own sign-in page — the same single-page app, which reads the slug from
+    // the address. Only a slug some company actually uses is served.
+    const m = /^\/([a-z0-9-]{2,40})\/?$/i.exec(url.pathname);
+    if (m && !m[1].includes(".") && require("./tenancy").getCompanyBySlug(m[1])) {
+      return staticHandler(req, res, "/index.html");
+    }
     return staticHandler(req, res, url.pathname);
   }
   sendJSON(res, 404, { error: `No route for ${req.method} ${url.pathname}` });

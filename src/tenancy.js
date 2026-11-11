@@ -113,8 +113,30 @@ function publicCompany(c, { includeLogo = true } = {}) {
     contactName: c.contact_name || "", phone: c.phone || "", email: c.email || "",
     address: c.address || "", website: c.website || "", notes: c.notes || "",
     logoDataUrl: includeLogo ? (c.logo_data_url || null) : undefined,
+    loginSlug: c.login_slug || "",
     createdAt: c.created_at, updatedAt: c.updated_at || null,
   };
+}
+
+/* ------------------- COMPANY LOGIN LINKS round ------------------------ */
+// Each company may have its own sign-in link: <site>/<slug>, e.g.
+// finman.obotechso.me/bindhe. The page shows that company's name and logo
+// and accepts only that company's users. Slugs are lowercase letters,
+// digits and hyphens, unique, and never a path the app itself uses.
+const RESERVED_SLUGS = new Set(["api", "fonts", "assets", "public", "static", "admin", "login", "logout", "index", "app", "health", "favicon", "super", "superadmin", "platform", "www"]);
+const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/;
+function normalizeSlug(v) { return String(v || "").trim().toLowerCase(); }
+function validateSlug(slug, companyId) {
+  if (!slug) return null; // empty = no own link
+  if (slug.length < 2 || !SLUG_RE.test(slug)) throw httpError(400, "The login link name may use only lowercase letters, numbers and hyphens (2–40 characters), e.g. bindhe.");
+  if (RESERVED_SLUGS.has(slug)) throw httpError(400, `"${slug}" is reserved by the system. Please choose another login link name.`);
+  if (cget("SELECT id FROM companies WHERE login_slug = ? AND id != ?", [slug, companyId || ""])) throw httpError(409, "Another company already uses that login link name.");
+  return slug;
+}
+function getCompanyBySlug(slug) {
+  const s = normalizeSlug(slug);
+  if (!s || !SLUG_RE.test(s)) return null;
+  return cget("SELECT * FROM companies WHERE login_slug = ?", [s]) || null;
 }
 
 /* ----------------------- usernames & directory ------------------------ */
@@ -434,6 +456,7 @@ function updateCompany(company, input, actor) {
     if (input[k] !== undefined) fields[col] = str(input[k]);
   }
   if (input.logoDataUrl !== undefined) fields.logo_data_url = input.logoDataUrl || null;
+  if (input.loginSlug !== undefined) fields.login_slug = validateSlug(normalizeSlug(input.loginSlug), company.id);
   const cols = Object.keys(fields);
   if (!cols.length) return company;
   crun(`UPDATE companies SET ${cols.map((c) => `${c} = ?`).join(", ")}, updated_at = ?, updated_by = ? WHERE id = ?`,
@@ -496,7 +519,7 @@ function setCompanyStatus(company, status, reason, actor) {
 function str(v) { return v === undefined || v === null ? null : String(v).trim() || null; }
 function httpError(status, message) { const e = new Error(message); e.status = status; return e; }
 
-module.exports = {
+module.exports = { getCompanyBySlug, normalizeSlug, RESERVED_SLUGS,
   COMPANY_STATUSES,
   controlDb, cget, call, crun, ctx,
   bootstrap, useScriptTenant,
