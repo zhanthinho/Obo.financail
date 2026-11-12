@@ -2710,5 +2710,14 @@
  "This sign-in link is not in use.": "Link-gan gelitaanka lama isticmaalo.",
  "Company login link": "Link-ga gelitaanka shirkadda",
  "Login link:": "Link-ga gelitaanka:",
- "No company uses this login link.": "Shirkad ma isticmaasho link-gan gelitaanka."
+ "No company uses this login link.": "Shirkad ma isticmaasho link-gan gelitaanka.",
+ "Platform branding": "Calaamadda platform-ka",
+ "Platform name": "Magaca platform-ka",
+ "Colour theme": "Midabka",
+ "Brand colour": "Midabka calaamadda",
+ "Secondary colour": "Midabka labaad",
+ "Accent colour": "Midabka xoojinta",
+ "Use default colours": "Isticmaal midabada caadiga ah",
+ "Platform branding saved.": "Calaamadda platform-ka waa la keydiyay.",
+ "The general sign-in page and the Super Admin Console. Companies keep their own branding.": "Bogga guud ee gelitaanka iyo Super Admin Console. Shirkaduhu calaamaddooda gaarka ah ayay haystaan."
 }

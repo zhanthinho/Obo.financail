@@ -3,7 +3,9 @@
 // colours (red / blue). Every screen must show only the active company's
 // brand: anonymous login links, sign-in, sign-out, Super Admin workspace
 // switching, a session of another company opening a link, and delayed
-// (stale) branding replies. Theme and language are kept per company.
+// (stale) branding replies. The platform has its own (purple) branding for
+// the main address and the Super Admin Console. Theme and language are
+// kept per company and per platform.
 // Throw-away DB. Run with: npm run test:brand-isolation
 process.env.SEED_DEMO_PASSWORD = process.env.SEED_DEMO_PASSWORD || "Test-Demo-Pass-2026";
 process.env.SUPER_ADMIN_INITIAL_PASSWORD = process.env.SUPER_ADMIN_INITIAL_PASSWORD || "Test-Super-Pass-2026";
@@ -39,7 +41,7 @@ async function api(p, { method = "GET", body, token, raw, headers = {} } = {}) {
 const ok = (r, what) => { if (r.status >= 300) throw new Error(`${what}: ${r.status} ${r.text}`); return r.json; };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const RED = "#b91c1c", BLUE = "#1d4ed8";
+const RED = "#b91c1c", BLUE = "#1d4ed8", PURPLE = "#7e22ce";
 
 let srv;
 async function main() {
@@ -66,14 +68,27 @@ async function run() {
   ok(await api(`/api/platform/companies/${A.id}`, { method: "PATCH", token: sa, body: { loginSlug: "red" } }), "slug A");
   ok(await api(`/api/platform/companies/${B.id}`, { method: "PATCH", token: sa, body: { loginSlug: "blue" } }), "slug B");
 
-  await check("server: each company's own branding, by link and by session; neutral without one", async () => {
+  await check("platform branding is the Super Admin's alone; it and company branding never touch each other", async () => {
+    const staff = ok(await api("/api/auth/login", { method: "POST", body: { username: "faadumo.warsame", password: PW } }), "staff").token;
+    assert((await api("/api/platform/branding", { method: "PATCH", token: staff, body: { brandColor: "#000000" } })).status === 403, "company user changed platform branding");
+    assert((await api("/api/platform/branding", { method: "PATCH", token: sa, body: { brandColor: "purple" } })).status === 400, "bad colour accepted");
+    const pb = ok(await api("/api/platform/branding", { method: "PATCH", token: sa, body: { name: "Purple Platform", brandColor: PURPLE, brandThemeKey: "custom" } }), "platform").branding;
+    assert(pb.brandColor === PURPLE && pb.name === "Purple Platform", JSON.stringify(pb).slice(0, 200));
+    assert(ok(await api("/api/settings/company", { token: await tokFor(A.id) }), "a").company.brandColor === RED, "platform change reached Red");
+    ok(await api("/api/settings/company", { method: "PATCH", token: await tokFor(A.id), body: { brandColor: "#991b1b" } }), "red tweak");
+    assert(ok(await api("/api/platform/branding", { token: sa }), "pb").branding.brandColor === PURPLE, "company change reached the platform");
+    ok(await api("/api/settings/company", { method: "PATCH", token: await tokFor(A.id), body: { brandColor: RED } }), "red back");
+    const anon = ok(await api("/api/settings/company"), "anon").company;
+    assert(anon.brandColor === PURPLE && anon.name === "Purple Platform" && !anon.address && !anon.phone && !anon.updatedBy, "main address does not show the platform brand only");
+  });
+  await check("server: each company's own branding, by link and by session; the platform's without one", async () => {
     assert(ok(await api("/api/public/login-page/red"), "red").loginPage.brandColor === RED, "red page");
     assert(ok(await api("/api/public/login-page/blue"), "blue").loginPage.brandColor === BLUE, "blue page");
     const blueSess = ok(await api("/api/auth/login", { method: "POST", body: { username: "blue.admin", password: "Blue-Admin-Pass-2026" } }), "blue login").token;
     assert(ok(await api("/api/settings/company", { token: blueSess }), "b").company.brandColor === BLUE, "blue session");
     assert(ok(await api("/api/settings/company", { token: await tokFor(A.id) }), "a").company.brandColor === RED, "red workspace");
-    assert(!ok(await api("/api/settings/company"), "anon").company.brandColor, "anonymous got a brand colour");
-    assert(!ok(await api("/api/settings/company", { token: sa }), "console").company.brandColor, "console got a brand colour");
+    assert(ok(await api("/api/settings/company"), "anon").company.brandColor === PURPLE, "anonymous did not get the platform colour");
+    assert(ok(await api("/api/settings/company", { token: sa }), "console").company.brandColor === PURPLE, "console did not get the platform colour");
   });
 
   let chromium;
@@ -109,16 +124,17 @@ async function run() {
     const ctx = await browser.newContext({ viewport: { width: 1366, height: 860 } });
     const p = await newPage(ctx);
 
-    await check("anonymous: /red shows only red, /blue only blue, the main page neither", async () => {
+    await check("anonymous: /red shows only red, /blue only blue, the main page the platform's purple", async () => {
       await p.goto(BASE + "/red"); await p.waitForTimeout(1500);
       assert((await navy(p)) === RED, `red page navy ${await navy(p)}`);
-      assert(!(await log(p)).includes(BLUE), "blue appeared on /red");
+      assert(!(await log(p)).some((v) => v === BLUE || v === PURPLE), `other brand on /red: ${(await log(p)).join(",")}`);
       await p.goto(BASE + "/blue"); await p.waitForTimeout(1500);
       assert((await navy(p)) === BLUE, `blue page navy ${await navy(p)}`);
-      assert(!(await log(p)).includes(RED), "red appeared on /blue");
+      assert(!(await log(p)).some((v) => v === RED || v === PURPLE), `other brand on /blue: ${(await log(p)).join(",")}`);
       await p.goto(BASE + "/"); await p.waitForTimeout(1500);
-      assert((await navy(p)) === "", `main page navy ${await navy(p)}`);
-      assert((await log(p)).every((v) => v === ""), `main page showed ${(await log(p)).join(",")}`);
+      assert((await navy(p)) === PURPLE, `main page navy ${await navy(p)}`);
+      assert(!(await log(p)).some((v) => v === RED || v === BLUE), `company brand on the main page: ${(await log(p)).join(",")}`);
+      assert((await p.locator("[data-login-title]").textContent()).includes("Purple Platform"), "platform name not on the main sign-in page");
     });
     await check("sign in on /red → red workspace; sign out → red sign-in page, never blue", async () => {
       await p.goto(BASE + "/red"); await p.waitForTimeout(1200);
@@ -126,17 +142,17 @@ async function run() {
       assert((await navy(p)) === RED, `workspace navy ${await navy(p)}`);
       await signOut(p);
       assert((await navy(p)) === RED, `after sign-out ${await navy(p)}`);
-      assert(!(await log(p)).includes(BLUE), "blue appeared");
+      assert(!(await log(p)).some((v) => v === BLUE || v === PURPLE), `other brand: ${(await log(p)).join(",")}`);
     });
-    await check("sign in on the main page as Blue → blue only; sign out → neutral", async () => {
+    await check("sign in on the main page as Blue → blue; sign out → the platform's purple", async () => {
       await p.goto(BASE + "/"); await p.waitForTimeout(1200);
       await signIn(p, "blue.admin", "Blue-Admin-Pass-2026");
       await p.waitForTimeout(800);
       assert((await navy(p)) === BLUE, `workspace navy ${await navy(p)}`);
       assert(!(await log(p)).includes(RED), `red appeared: ${(await log(p)).join(",")}`);
       await signOut(p);
-      assert((await navy(p)) === "", `after sign-out ${await navy(p)}`);
-      assert(!(await log(p)).includes(RED), "red appeared after sign-out");
+      assert((await navy(p)) === PURPLE, `after sign-out ${await navy(p)}`);
+      assert(!(await log(p)).some((v) => v === RED || v === BLUE), `company brand after sign-out: ${(await log(p)).join(",")}`);
     });
     await check("Blue's session opening /red: Red's sign-in page, Blue's workspace never shown", async () => {
       await p.goto(BASE + "/"); await p.waitForTimeout(1000);
@@ -144,7 +160,7 @@ async function run() {
       await p.goto(BASE + "/red"); await p.waitForTimeout(2000);
       assert(await p.getByPlaceholder("Password").count() === 1, "workspace shown on /red");
       assert((await navy(p)) === RED, `navy ${await navy(p)}`);
-      assert(!(await log(p)).includes(BLUE), `blue appeared on /red: ${(await log(p)).join(",")}`);
+      assert(!(await log(p)).some((v) => v === BLUE || v === PURPLE), `other brand on /red: ${(await log(p)).join(",")}`);
       assert(!(await p.evaluate(() => localStorage.getItem("geeska_token"))), "Blue session kept");
     });
     await check("delayed branding: a slow neutral/public reply arriving after sign-in never wins", async () => {
@@ -198,13 +214,15 @@ async function run() {
       const seen = await log(p6);
       assert((await navy(p6)) === BLUE, `final navy ${await navy(p6)} (seen ${seen.join(",")})`);
       assert(!seen.includes(RED), `Red's late reply was applied: ${seen.join(",")}`);
+      assert(seen.indexOf(BLUE) === seen.length - 1 || seen.slice(seen.indexOf(BLUE)).every((v) => v === BLUE), `brand changed after Blue: ${seen.join(",")}`);
       await signOut(p6); await p6.close();
     });
-    await check("Super Admin: console neutral → Red workspace red → Blue workspace blue (no red)", async () => {
+    await check("Super Admin: console purple → Red workspace red → console purple again → Blue workspace blue", async () => {
       const p4 = await newPage(ctx);
       await p4.goto(BASE + "/"); await p4.waitForTimeout(800);
       await signIn(p4, "super.admin", process.env.SUPER_ADMIN_INITIAL_PASSWORD);
-      assert((await navy(p4)) === "", `console navy ${await navy(p4)}`);
+      assert((await navy(p4)) === PURPLE, `console navy ${await navy(p4)}`);
+      assert((await p4.locator("[data-platform-name]").textContent()).includes("Purple Platform"), "platform name not in the console");
       const openWs = async (name) => {
         const card = p4.locator("div").filter({ hasText: name }).filter({ has: p4.getByRole("button", { name: "Open workspace" }) }).last();
         await card.getByRole("button", { name: "Open workspace" }).first().click();
@@ -212,14 +230,16 @@ async function run() {
       };
       await openWs("Red Rock Exchange");
       assert((await navy(p4)) === RED, `red workspace navy ${await navy(p4)}`);
+      assert(!(await log(p4)).some((v) => v === BLUE || v === PURPLE), `other brand in Red's workspace: ${(await log(p4)).join(",")}`);
       // back to the console, then Blue
       const swC = ok(await api("/api/platform/switch-company", { method: "POST", token: sa, body: { companyId: null } }), "console");
       await p4.evaluate(([t, u]) => { localStorage.setItem("geeska_token", t); localStorage.setItem("geeska_user", u); }, [swC.token, JSON.stringify(swC.user)]);
       await p4.reload(); await p4.waitForTimeout(1500);
-      assert((await navy(p4)) === "", `console navy again ${await navy(p4)}`);
+      assert((await navy(p4)) === PURPLE, `console navy again ${await navy(p4)}`);
+      assert(!(await log(p4)).some((v) => v === RED || v === BLUE), `company brand in the console: ${(await log(p4)).join(",")}`);
       await openWs("Blue Harbour Exchange");
       assert((await navy(p4)) === BLUE, `blue workspace navy ${await navy(p4)}`);
-      assert(!(await log(p4)).includes(RED), `red appeared in Blue's workspace: ${(await log(p4)).join(",")}`);
+      assert(!(await log(p4)).some((v) => v === RED || v === PURPLE), `other brand in Blue's workspace: ${(await log(p4)).join(",")}`);
       await signOut(p4); await p4.close();
     });
     await check("theme and language are kept per company (and separately for the Super Admin console)", async () => {
@@ -252,6 +272,21 @@ async function run() {
       await signIn(p7, "blue.admin", "Blue-Admin-Pass-2026");
       assert((await p7.evaluate(() => document.documentElement.getAttribute("data-theme"))) === "light", "blue inherited red's theme");
       await ctx2.close();
+    });
+    await check("console: 'Platform branding' changes the platform's look only", async () => {
+      const p8 = await newPage(ctx);
+      await p8.goto(BASE + "/"); await p8.waitForTimeout(800);
+      await signIn(p8, "super.admin", process.env.SUPER_ADMIN_INITIAL_PASSWORD);
+      await p8.getByRole("button", { name: "Platform branding" }).click();
+      await p8.waitForSelector("[data-platform-branding]");
+      await p8.locator("[data-platform-branding]").getByRole("button", { name: "Ocean Blue" }).click();
+      await p8.locator("[data-platform-branding]").getByRole("button", { name: "Save" }).click();
+      await p8.waitForTimeout(1500);
+      assert((await navy(p8)) === "#075985", `console navy ${await navy(p8)}`);
+      assert(ok(await api("/api/settings/company", { token: await tokFor(A.id) }), "a").company.brandColor === RED, "Red changed");
+      assert(ok(await api("/api/settings/company", { token: await tokFor(B.id) }), "b").company.brandColor === BLUE, "Blue changed");
+      ok(await api("/api/platform/branding", { method: "PATCH", token: sa, body: { brandColor: PURPLE, primaryDark: null, primaryLight: null, brandThemeKey: "custom" } }), "restore");
+      await signOut(p8); await p8.close();
     });
     await check("no page errors", async () => { assert(!errors.length, errors.slice(0, 3).join(" | ")); });
     await ctx.close();

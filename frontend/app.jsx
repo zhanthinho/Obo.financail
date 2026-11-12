@@ -4821,23 +4821,103 @@ function CompanySwitcher({ user, company, call, onSwitch }) {
 
 // Full-screen console a platform Super Admin lands on when no company
 // workspace is selected — only company management, no company data.
-function PlatformConsole({ user, call, notify, onSwitch, onLogout, onToken, theme, setTheme }) {
+// PLATFORM BRANDING round: the platform's OWN look — the general sign-in
+// page (main address) and this console. Saved in the control database; no
+// company's branding is read or changed here, and a company's Appearance &
+// Branding never changes this.
+function PlatformBrandingModal({ call, notify, onClose, onSaved }) {
+  const [f, setF] = useState(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { call("/api/platform/branding").then((d) => setF({ ...d.branding })).catch((e) => { notify(e.message, true); onClose(); }); }, [call, notify, onClose]);
+  if (!f) return <Modal title="Platform branding" onClose={onClose}><Spinner /></Modal>;
+  const set = (k) => (v) => setF((p) => ({ ...p, [k]: v }));
+  const pickTheme = (t) => setF((p) => ({ ...p, brandThemeKey: t.key, brandColor: t.primary, primaryDark: t.primaryDark, primaryLight: t.primaryLight, accentColor: t.accent, accentBright: t.accentBright, secondaryColor: t.softAccent }));
+  const colorRow = (label, k, fallback) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <input type="color" value={isValidHex(f[k]) ? f[k] : fallback} onChange={(e) => setF((p) => ({ ...p, [k]: e.target.value, brandThemeKey: "custom", ...(k === "brandColor" ? { primaryDark: null, primaryLight: null } : {}), ...(k === "accentColor" ? { accentBright: null } : {}) }))}
+        aria-label={`${label} picker`} data-platform-color={k} style={{ width: 36, height: 32, padding: 2, border: `1px solid ${C.line}`, borderRadius: 6, cursor: "pointer", background: C.card }} />
+      <span style={{ fontSize: 12.5, color: C.ink, minWidth: 120 }}>{label}</span>
+      <span style={{ fontFamily: FONT_MONO, fontSize: 12, color: C.slate }}>{f[k] || "default"}</span>
+    </div>
+  );
+  async function save(body) {
+    setBusy(true);
+    try { const d = await call("/api/platform/branding", { method: "PATCH", body }); setF({ ...d.branding }); notify("Platform branding saved."); onSaved(); onClose(); }
+    catch (e) { notify(e.message, true); } finally { setBusy(false); }
+  }
+  const fields = ["name", "tagline", "logoDataUrl", "faviconDataUrl", "brandColor", "secondaryColor", "accentColor", "primaryDark", "primaryLight", "accentBright", "brandThemeKey"];
+  return (
+    <Modal title="Platform branding" subtitle="The general sign-in page and the Super Admin Console. Companies keep their own branding." onClose={onClose} wide>
+      <div style={{ display: "grid", gap: 14 }} data-platform-branding>
+        <Field label="Platform name"><Input value={f.name || ""} onChange={(e) => set("name")(e.target.value)} maxLength={120} /></Field>
+        <Field label="Tagline"><Input value={f.tagline || ""} onChange={(e) => set("tagline")(e.target.value)} maxLength={200} /></Field>
+        <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
+          <div>
+            <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 6 }}>Logo</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {f.logoDataUrl ? <img src={f.logoDataUrl} alt="" style={{ width: 48, height: 48, objectFit: "contain", border: `1px solid ${C.line}`, borderRadius: 8, background: "#fff" }} /> : <BrandMark size={40} />}
+              <input type="file" accept="image/png,image/jpeg" onChange={(e) => readImageFile(e.target.files && e.target.files[0], set("logoDataUrl"), (m) => notify(m, true))} style={{ fontSize: 12 }} />
+              {f.logoDataUrl && <Btn size="sm" tone="ghost" onClick={() => set("logoDataUrl")(null)}>Remove</Btn>}
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 6 }}>Favicon</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {f.faviconDataUrl && <img src={f.faviconDataUrl} alt="" style={{ width: 24, height: 24 }} />}
+              <input type="file" accept="image/png,image/jpeg,image/x-icon,image/vnd.microsoft.icon" onChange={(e) => { const file = e.target.files && e.target.files[0]; if (!file) return; if (file.size > 90000) { notify("That favicon is too large — please use an image under ~90KB.", true); return; } const r = new FileReader(); r.onload = () => set("faviconDataUrl")(String(r.result)); r.readAsDataURL(file); }} style={{ fontSize: 12 }} />
+              {f.faviconDataUrl && <Btn size="sm" tone="ghost" onClick={() => set("faviconDataUrl")(null)}>Remove</Btn>}
+            </div>
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 6 }}>Colour theme</div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+            {BRAND_THEMES.map((t) => (
+              <button key={t.key} type="button" onClick={() => pickTheme(t)} title={t.label}
+                style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 9px", borderRadius: 6, cursor: "pointer", fontSize: 12, background: C.card, color: C.ink, border: `1px solid ${f.brandThemeKey === t.key ? t.primary : C.line}`, fontWeight: f.brandThemeKey === t.key ? 700 : 500 }}>
+                <span style={{ width: 14, height: 14, borderRadius: 4, background: t.primary }} />{t.label}
+              </button>
+            ))}
+          </div>
+          <div style={{ display: "grid", gap: 6 }}>
+            {colorRow("Brand colour", "brandColor", "#005F4B")}
+            {colorRow("Secondary colour", "secondaryColor", "#C6FBEA")}
+            {colorRow("Accent colour", "accentColor", "#00B98A")}
+          </div>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
+          <Btn tone="ghost" disabled={busy} onClick={() => save({ brandColor: null, secondaryColor: null, accentColor: null, primaryDark: null, primaryLight: null, accentBright: null, brandThemeKey: null })}>Use default colours</Btn>
+          <div style={{ display: "flex", gap: 8 }}>
+            <Btn tone="ghost" onClick={onClose}>Cancel</Btn>
+            <Btn tone="primary" disabled={busy || !String(f.name || "").trim()} onClick={() => { const b = {}; for (const k of fields) b[k] = f[k] === undefined ? null : f[k]; save(b); }}>Save</Btn>
+          </div>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function PlatformConsole({ user, call, notify, onSwitch, onLogout, onToken, theme, setTheme, branding, onBrandingSaved }) {
   const [overview, setOverview] = useState(null);
   const [pwOpen, setPwOpen] = useState(false);
+  const [brandOpen, setBrandOpen] = useState(false);
   useEffect(() => { call("/api/platform/overview").then(setOverview).catch(() => {}); }, [call]);
   return (
     <div style={{ fontFamily: FONT_SANS, minHeight: "100vh", background: C.paper, color: C.ink }}>
       <div style={{ background: `linear-gradient(120deg, ${EMERALD.deep} 0%, ${EMERALD.main} 55%, ${EMERALD.teal} 100%)`, color: "#fff", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, background: "rgba(255,255,255,0.16)", display: "flex", alignItems: "center", justifyContent: "center" }}><NavIcon name="companies" size={20} /></div>
+          <div style={{ width: 38, height: 38, borderRadius: 10, background: "rgba(255,255,255,0.16)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }} data-platform-logo={branding && branding.logoDataUrl ? "custom" : "default"}>
+            {branding && branding.logoDataUrl ? <img src={branding.logoDataUrl} alt="" style={{ width: 34, height: 34, objectFit: "contain", background: "#fff", borderRadius: 7 }} /> : <NavIcon name="companies" size={20} />}
+          </div>
           <div>
             <div style={{ fontSize: 17, fontWeight: 700 }}>Super Admin Console</div>
-            <div style={{ fontSize: 11.5, opacity: 0.85 }}>Multi-company management · OBO TECH Financial System</div>
+            <div style={{ fontSize: 11.5, opacity: 0.85 }} data-platform-name>Multi-company management · {(branding && branding.name) || "OBO TECH Financial System"}</div>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <LangToggle /><ThemePill theme={theme} setTheme={setTheme} />
           <div style={{ textAlign: "right", lineHeight: 1.2 }}><div style={{ fontSize: 12.5, fontWeight: 700 }}>{user.name}</div><div style={{ fontSize: 10.5, opacity: 0.85 }}>Super Admin</div></div>
+          <button onClick={() => setBrandOpen(true)} style={{ background: "rgba(255,255,255,0.14)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 6, padding: "6px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Platform branding</button>
           <button onClick={() => setPwOpen(true)} style={{ background: "rgba(255,255,255,0.14)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 6, padding: "6px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Password</button>
           <button onClick={onLogout} style={{ background: "#fff", color: EMERALD.deep, border: "none", borderRadius: 6, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Sign out</button>
         </div>
@@ -4864,6 +4944,7 @@ function PlatformConsole({ user, call, notify, onSwitch, onLogout, onToken, them
         )}
       </div>
       {pwOpen && <PlatformPasswordModal call={call} notify={notify} onClose={() => setPwOpen(false)} onToken={onToken} />}
+      {brandOpen && <PlatformBrandingModal call={call} notify={notify} onClose={() => setBrandOpen(false)} onSaved={() => onBrandingSaved && onBrandingSaved()} />}
     </div>
   );
 }
@@ -4885,7 +4966,10 @@ const LOGIN_SLUG = (() => {
 })();
 function companyLoginUrl(slug) { try { return `${window.location.origin}/${slug}`; } catch (e) { return `/${slug}`; } }
 
-function LoginScreen({ onSuccess, loginPage, loginSlug }) {
+function LoginScreen({ onSuccess, loginPage, loginSlug, platformBrand }) {
+  // PLATFORM BRANDING round: a company link shows that company; the main
+  // address shows the platform's own branding (never a company's).
+  const shown = loginSlug ? loginPage : (platformBrand || null);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -4927,13 +5011,13 @@ function LoginScreen({ onSuccess, loginPage, loginSlug }) {
       <div style={{ position: "absolute", top: 16, right: 16, zIndex: 2 }}><LangToggle onDark /></div>
       <div style={{ width: 380, maxWidth: "100%", position: "relative", zIndex: 1 }}>
         <div className="gk-login-in" style={{ display: "flex", justifyContent: "center", marginBottom: 14, animationDelay: "0.02s" }}>
-          <div className="gk-login-logo-ring" data-login-company={loginPage ? loginPage.slug : undefined}>
-            {loginPage && loginPage.logoDataUrl
-              ? <img src={loginPage.logoDataUrl} alt="" style={{ width: 52, height: 52, objectFit: "contain", borderRadius: 10, background: "#fff", padding: 4 }} />
+          <div className="gk-login-logo-ring" data-login-company={loginPage ? loginPage.slug : undefined} data-login-platform={!loginSlug ? "1" : undefined}>
+            {shown && shown.logoDataUrl
+              ? <img src={shown.logoDataUrl} alt="" style={{ width: 52, height: 52, objectFit: "contain", borderRadius: 10, background: "#fff", padding: 4 }} />
               : <BrandMark size={52} />}
           </div>
         </div>
-        <div className="gk-login-in" style={{ textAlign: "center", color: "#fff", fontSize: 22, fontWeight: 700, animationDelay: "0.08s" }}>{loginPage ? loginPage.name : "Financial System"}</div>
+        <div className="gk-login-in" style={{ textAlign: "center", color: "#fff", fontSize: 22, fontWeight: 700, animationDelay: "0.08s" }} data-login-title>{loginPage ? loginPage.name : (!loginSlug && platformBrand && platformBrand.name) || "Financial System"}</div>
         <div className="gk-login-in" style={{ textAlign: "center", color: C.mint, fontSize: 13, marginTop: 4, marginBottom: 28, animationDelay: "0.13s", lineHeight: 1.5 }}>
           {loginSlug && !loginPage ? "This sign-in link is not in use." : loginPage ? "Welcome — sign in to your workspace." : "Welcome — sign in to access your company's workspace."}
         </div>
@@ -5544,7 +5628,7 @@ function App() {
   }, [view]);
 
   if (!checked) return <><style>{THEME_CSS}</style><div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: C.slate, fontFamily: FONT_SANS, background: C.paper }}>Loading…</div></>;
-  if (!token || !user || companyLinkNeedsLogin) return <><style>{THEME_CSS}</style><LoginScreen onSuccess={loginSuccess} loginPage={loginPage} loginSlug={LOGIN_SLUG} /></>;
+  if (!token || !user || companyLinkNeedsLogin) return <><style>{THEME_CSS}</style><LoginScreen onSuccess={loginSuccess} loginPage={loginPage} loginSlug={LOGIN_SLUG} platformBrand={!LOGIN_SLUG ? company : null} /></>;
   // SECURITY AUDIT round: signed in with a published default password —
   // nothing else is reachable until a new password is set (the server
   // refuses every other request for this session too).
@@ -5554,7 +5638,7 @@ function App() {
   // MULTI-COMPANY round: a Super Admin with no company selected only has the
   // Companies console — no company's financial screens are reachable.
   if (user.isPlatformAdmin && !user.company) {
-    return <><style>{THEME_CSS}</style><PlatformConsole user={user} call={call} notify={notify} onSwitch={switchCompany} onLogout={logout} onToken={replaceToken} theme={theme} setTheme={setTheme} />
+    return <><style>{THEME_CSS}</style><PlatformConsole user={user} call={call} notify={notify} onSwitch={switchCompany} onLogout={logout} onToken={replaceToken} theme={theme} setTheme={setTheme} branding={company} onBrandingSaved={refreshCompany} />
       {toast && <div style={{ position: "fixed", bottom: 20, left: "50%", transform: "translateX(-50%)", background: toast.isError ? "#bd4b3c" : "#0d2436", color: "#fff", padding: "10px 18px", borderRadius: 6, fontSize: 13, zIndex: 400, maxWidth: "80vw" }}>{toast.msg}</div>}</>;
   }
 

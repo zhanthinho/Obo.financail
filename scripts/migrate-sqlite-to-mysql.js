@@ -183,7 +183,7 @@ function readScope(file, kind, scopeId) {
         // MySQL version — a SQLite installation never had any snapshots.
         // Customer profiles (CROSS-CURRENCY CUSTOMER LINKING round) likewise
         // exist only in MySQL; the app builds them from the accounts on start.
-        if (t.name === "reset_log" || t.name.startsWith("daily_snapshot") || t.name === "customers" || t.name === "customer_link_reviews" || t.name === "user_account_access" || t.name === "role_account_access" || t.name.startsWith("daily_financial_history") || t.name.startsWith("daily_reconciliation") || t.name === "daily_closings" || t.name === "template_versions") { out.tables.push({ name: t.name, columns, rows: [], checksum: dump.rowsChecksum(columns, []) }); continue; }
+        if (t.name === "reset_log" || t.name.startsWith("daily_snapshot") || t.name === "customers" || t.name === "customer_link_reviews" || t.name === "user_account_access" || t.name === "role_account_access" || t.name.startsWith("daily_financial_history") || t.name.startsWith("daily_reconciliation") || t.name === "daily_closings" || t.name === "template_versions" || t.name === "platform_settings") { out.tables.push({ name: t.name, columns, rows: [], checksum: dump.rowsChecksum(columns, []) }); continue; }
         throw fail(`${scopeId}: table ${t.name} is missing from the SQLite database after the upgrade.`);
       }
       const live = h.prepare(`PRAGMA table_info("${t.name}")`).all().map((c) => c.name);

@@ -92,6 +92,23 @@ function register(router) {
     } catch (e) { fail(res, e); }
   });
 
+  // PLATFORM BRANDING round: the platform's own name, tagline, logo,
+  // favicon and colours (general sign-in page + Super Admin Console).
+  // Stored in the control database; companies' branding is untouched.
+  router.get("/api/platform/branding", (req, res) => {
+    const user = requirePlatformAdmin(req, res); if (!user) return;
+    sendJSON(res, 200, { branding: require("../platform-branding").getPlatformBranding() });
+  });
+  router.patch("/api/platform/branding", async (req, res) => {
+    const user = requirePlatformAdmin(req, res); if (!user) return;
+    let body; try { body = await readJSONBody(req); } catch (e) { return badRequest(res, e.message); }
+    const pb = require("../platform-branding");
+    let changed;
+    try { changed = pb.savePlatformBranding(body || {}, user); } catch (e) { if (e.status === 400) return badRequest(res, e.message); throw e; }
+    if (changed.length) tenancy.platformAudit(user, "Platform branding updated", null, `Changed: ${changed.join(", ")}`);
+    sendJSON(res, 200, { branding: pb.getPlatformBranding() });
+  });
+
   // Global overview: one clearly separated summary per company. Totals are
   // never added together across companies (different businesses, different
   // books — a combined figure would be meaningless and would mix records).

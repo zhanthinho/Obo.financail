@@ -85,7 +85,10 @@ function register(router) {
     const sessionUser = payload && cid ? requireAuth(req, silent, { allowPasswordChange: true }) : null;
     const company = sessionUser && sessionUser._company ? sessionUser._company : null;
     if (!company) {
-      return sendJSON(res, 200, { company: { ...serialize({ name: PLATFORM_NAME }), tagline: PLATFORM_TAGLINE, isDefault: true } });
+      // PLATFORM BRANDING round: no company bound (anonymous visitor on the
+      // main address, or the Super Admin Console) → the PLATFORM's own
+      // branding, kept in the control database — never a company's.
+      return sendJSON(res, 200, { company: { ...serialize({ name: PLATFORM_NAME }), ...require("../platform-branding").getPlatformBranding({ forPublic: true }), isDefault: true } });
     }
     const data = tenancy.withCompany(company, () => serialize(getCompanySettings()));
     // COMPANY ID VISIBILITY round: the Company ID is only included for a

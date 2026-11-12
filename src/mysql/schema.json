@@ -9433,6 +9433,143 @@
      "expression": null
     }
    ]
+  },
+  {
+   "name": "platform_settings",
+   "columns": [
+    {
+     "name": "id",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 1,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "name",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "tagline",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "logo_data_url",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "favicon_data_url",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    },
+    {
+     "name": "brand_color",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(64)",
+     "isCompanyId": false
+    },
+    {
+     "name": "secondary_color",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(64)",
+     "isCompanyId": false
+    },
+    {
+     "name": "accent_color",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(64)",
+     "isCompanyId": false
+    },
+    {
+     "name": "primary_dark",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(64)",
+     "isCompanyId": false
+    },
+    {
+     "name": "primary_light",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(64)",
+     "isCompanyId": false
+    },
+    {
+     "name": "accent_bright",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(64)",
+     "isCompanyId": false
+    },
+    {
+     "name": "brand_theme_key",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(64)",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_at",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "VARCHAR(255)",
+     "isCompanyId": false
+    },
+    {
+     "name": "updated_by",
+     "sqliteType": "TEXT",
+     "notNull": false,
+     "default": null,
+     "pk": 0,
+     "mysqlType": "LONGTEXT",
+     "isCompanyId": false
+    }
+   ],
+   "primaryKey": [
+    "id"
+   ],
+   "foreignKeys": [],
+   "checks": [],
+   "indexes": []
   }
  ]
 }
