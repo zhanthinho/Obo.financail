@@ -1773,23 +1773,31 @@ function routeCompanySlug() {
 }
 // Browser preferences belong to the company login link (or the signed-in
 // company), not to whichever company happened to use this browser last.
+// BRAND ISOLATION round: one key per company whoever is signed in — staff
+// sessions carry the company's login link and name (never its Company ID),
+// so the Super Admin inside that workspace uses the very same key rather
+// than a Company-ID one, and the platform console keeps its own.
 function preferenceScope(user = storedSessionUser()) {
   const slug = routeCompanySlug() || (user && user.company && user.company.loginSlug) || "";
   if (slug) return `company:${String(slug).toLowerCase()}`;
-  if (user && user.company) {
-    if (user.company.id) return `company-id:${user.company.id}`;
-    if (user.company.name) return `company-name:${String(user.company.name).trim().toLowerCase()}`;
-  }
+  if (user && user.company && user.company.name) return `company-name:${String(user.company.name).trim().toLowerCase()}`;
   if (user && user.isPlatformAdmin) return `platform:${user.id || user.username || "admin"}`;
   return "public";
 }
 function scopedPreferenceKey(base, scope = preferenceScope()) { return `${base}:${scope}`; }
 // A choice saved before preferences were kept per company (the plain
-// obo_lang / geeska_theme keys) is still honoured until this company's own
-// choice is saved, so nobody's language or theme resets with the update.
+// obo_lang / geeska_theme keys) is handed over ONCE: the first company (or
+// platform console) that reads it in this browser adopts it as its own and
+// the shared key is removed, so it can never feed another company later.
+// The anonymous main sign-in page only reads it (it has no company).
 function readScopedPref(base, scope) {
-  const scoped = localStorage.getItem(scopedPreferenceKey(base, scope));
-  return scoped !== null ? scoped : localStorage.getItem(base);
+  const key = scopedPreferenceKey(base, scope);
+  const scoped = localStorage.getItem(key);
+  if (scoped !== null) return scoped;
+  const legacy = localStorage.getItem(base);
+  if (legacy === null) return null;
+  if (scope !== "public") { localStorage.setItem(key, legacy); localStorage.removeItem(base); }
+  return legacy;
 }
 function readSavedLang(user = storedSessionUser()) {
   try { return readScopedPref(LANG_KEY, preferenceScope(user)) === "so" ? "so" : "en"; }
@@ -5403,7 +5411,9 @@ function App() {
     }
     api("/api/settings/company", {}, token)
       .then((d) => { if (seq === brandSeqRef.current) setCompanyBrandRecord({ owner, value: d.company || null }); })
-      .catch(() => {});
+      // BRAND ISOLATION round: a failed reply means "no branding known" for
+      // this owner — the default theme — never whatever was shown before.
+      .catch(() => { if (seq === brandSeqRef.current) setCompanyBrandRecord({ owner, value: null }); });
   }, [token, user]);
   useEffect(() => { loadCompanyBranding(); }, [loadCompanyBranding]);
   const refreshCompany = loadCompanyBranding;
