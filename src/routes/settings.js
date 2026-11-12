@@ -207,7 +207,19 @@ function register(router) {
        secondaryColor, accentColor, statusPendingColor, statusPaidColor, statusRefundedColor, fontFamily, fontSize,
        primaryDark, primaryLight, accentBright, brandThemeKey, registrationNumber, taxNumber, user.name, nowISO()]
     );
-    addAudit(user, "Company settings updated", `${name}`);
+    // BRANDING ISOLATION round: record WHICH branding fields changed (and the
+    // colour values), never image contents — a logo/favicon/stamp is only
+    // "uploaded / replaced / removed". The audit row already holds who and
+    // when; company_settings.updated_by/updated_at hold the latest change.
+    const brandChanges = [];
+    const colorFields = { brandColor: "brand_color", secondaryColor: "secondary_color", accentColor: "accent_color", primaryDark: "primary_dark", primaryLight: "primary_light", accentBright: "accent_bright", pdfAccentColor: "pdf_accent_color", statusPendingColor: "status_pending_color", statusPaidColor: "status_paid_color", statusRefundedColor: "status_refunded_color", brandThemeKey: "brand_theme_key", fontFamily: "font_family", fontSize: "font_size" };
+    for (const [k, col] of Object.entries(colorFields)) {
+      if (body[k] !== undefined && (body[k] || null) !== (current[col] || null)) brandChanges.push(`${k}: ${current[col] || "default"} → ${body[k] || "default"}`);
+    }
+    for (const [k, col, label] of [["logoDataUrl", "logo_data_url", "logo"], ["faviconDataUrl", "favicon_data_url", "favicon"]]) {
+      if (body[k] !== undefined && (body[k] || null) !== (current[col] || null)) brandChanges.push(`${label} ${body[k] ? (current[col] ? "replaced" : "uploaded") : "removed"}`);
+    }
+    addAudit(user, "Company settings updated", brandChanges.length ? `${name} — ${brandChanges.join("; ")}` : `${name}`);
     if (body.stampDataUrl !== undefined && (body.stampDataUrl || null) !== (current.stamp_data_url || null)) {
       addAudit(user, stampDataUrl ? (current.stamp_data_url ? "Company stamp replaced" : "Company stamp uploaded") : "Company stamp removed", name);
     }

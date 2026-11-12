@@ -1658,6 +1658,17 @@ function shadeHex(hex, delta) {
   return hslToHex(hsl.h, hsl.s, hsl.l + delta);
 }
 function isValidHex(hex) { return /^#[0-9a-fA-F]{6}$/.test(String(hex || "")); }
+// BRANDING ISOLATION round: the sign-in page and the console header always
+// carry WHITE text. A very light brand colour (e.g. #f1f5f9) would make
+// that text unreadable, so those two hero surfaces use the brand darkened
+// just enough for white text; everywhere else uses the brand as-is with
+// --c-text-on-primary choosing dark or light text.
+function heroSafeHex(hex) {
+  if (!/^#[0-9a-fA-F]{6}$/.test(String(hex || ""))) return null;
+  let c = hex;
+  for (let i = 0; i < 16 && relLuminance(c) > 0.18; i++) c = shadeHex(c, -0.05);
+  return c;
+}
 // "r, g, b" triplet string for a hex color, for use inside rgba(var(--x), a)
 // — lets CSS build a translucent glow/shadow from a brand color that's only
 // known as a hex CSS variable at runtime.
@@ -4904,7 +4915,7 @@ function PlatformConsole({ user, call, notify, onSwitch, onLogout, onToken, them
   useEffect(() => { call("/api/platform/overview").then(setOverview).catch(() => {}); }, [call]);
   return (
     <div style={{ fontFamily: FONT_SANS, minHeight: "100vh", background: C.paper, color: C.ink }}>
-      <div style={{ background: `linear-gradient(120deg, ${EMERALD.deep} 0%, ${EMERALD.main} 55%, ${EMERALD.teal} 100%)`, color: "#fff", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+      <div data-console-hero style={{ background: `linear-gradient(120deg, var(--c-hero-deep, ${EMERALD.deep}) 0%, var(--c-hero, ${EMERALD.main}) 55%, var(--c-hero, ${EMERALD.teal}) 100%)`, color: "#fff", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ width: 38, height: 38, borderRadius: 10, background: "rgba(255,255,255,0.16)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }} data-platform-logo={branding && branding.logoDataUrl ? "custom" : "default"}>
             {branding && branding.logoDataUrl ? <img src={branding.logoDataUrl} alt="" style={{ width: 34, height: 34, objectFit: "contain", background: "#fff", borderRadius: 7 }} /> : <NavIcon name="companies" size={20} />}
@@ -5003,7 +5014,7 @@ function LoginScreen({ onSuccess, loginPage, loginSlug, platformBrand }) {
   // here exactly as it did before — only the motion and micro-interactions
   // are new.
   return (
-    <div style={{ minHeight: "100vh", background: `linear-gradient(160deg, ${C.navy} 0%, ${C.navyDeep} 55%, #05263f 100%)`, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, position: "relative", overflow: "hidden" }}>
+    <div data-login-hero style={{ minHeight: "100vh", background: `linear-gradient(160deg, var(--c-hero, ${C.navy}) 0%, var(--c-hero-deep, ${C.navyDeep}) 55%, #05263f 100%)`, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, position: "relative", overflow: "hidden" }}>
       <div className="gk-login-blob" style={{ position: "absolute", top: "-12%", left: "-8%", width: 420, height: 420, borderRadius: "50%", background: `radial-gradient(circle, ${C.mint}55 0%, transparent 70%)`, filter: "blur(10px)", animationDelay: "0s" }} />
       <div className="gk-login-blob" style={{ position: "absolute", bottom: "-14%", right: "-10%", width: 480, height: 480, borderRadius: "50%", background: `radial-gradient(circle, color-mix(in srgb, ${C.cyan} 27%, transparent) 0%, transparent 70%)`, filter: "blur(10px)", animationDelay: "-4s" }} />
       <div className="gk-login-blob" style={{ position: "absolute", top: "35%", right: "8%", width: 220, height: 220, borderRadius: "50%", background: `radial-gradient(circle, ${C.mint}33 0%, transparent 70%)`, filter: "blur(10px)", animationDelay: "-8s" }} />
@@ -5243,6 +5254,8 @@ function App() {
       root.removeProperty("--c-text-on-primary");
       root.removeProperty("--c-thead-bg");
       root.removeProperty("--c-tfoot-bg");
+      root.removeProperty("--c-hero");
+      root.removeProperty("--c-hero-deep");
       return;
     }
     const hsl = hexToHsl(brand);
@@ -5260,6 +5273,10 @@ function App() {
     // glows/shadows behind the active-menu gradient without hardcoding a color.
     root.setProperty("--c-navy-light-rgb", hexToRgbTriplet(navyLight) || "0,0,0");
     root.setProperty("--c-text-on-primary", readableTextColor(brand));
+    // White-text hero surfaces (sign-in page, console header) stay readable
+    // whatever the brand: a light brand is darkened there only.
+    if (relLuminance(brand) > 0.18) { root.setProperty("--c-hero", heroSafeHex(brand)); root.setProperty("--c-hero-deep", heroSafeHex(navyDeep)); }
+    else { root.removeProperty("--c-hero"); root.removeProperty("--c-hero-deep"); }
     // ENTERPRISE TABLE STANDARD round: restores deriving --c-thead-bg/
     // --c-tfoot-bg from the Brand Color (a short-lived experiment removed
     // this; the uploaded reference spec explicitly calls for "Dark green /

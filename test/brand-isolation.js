@@ -5,7 +5,9 @@
 // switching, a session of another company opening a link, and delayed
 // (stale) branding replies. The platform has its own (purple) branding for
 // the main address and the Super Admin Console. Theme and language are
-// kept per company and per platform.
+// kept per company and per platform. Also: who may change which branding,
+// rejected/invalid values (default theme), persistence across devices,
+// readable text on light brands, PDFs, and the audit trail.
 // Throw-away DB. Run with: npm run test:brand-isolation
 process.env.SEED_DEMO_PASSWORD = process.env.SEED_DEMO_PASSWORD || "Test-Demo-Pass-2026";
 process.env.SUPER_ADMIN_INITIAL_PASSWORD = process.env.SUPER_ADMIN_INITIAL_PASSWORD || "Test-Super-Pass-2026";
@@ -41,6 +43,8 @@ async function api(p, { method = "GET", body, token, raw, headers = {} } = {}) {
 const ok = (r, what) => { if (r.status >= 300) throw new Error(`${what}: ${r.status} ${r.text}`); return r.json; };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+const { openScope } = require("./helpers/mysql");
+const FAKE_PNG = "data:image/png;base64," + Buffer.from("this is not an image at all").toString("base64");
 const RED = "#b91c1c", BLUE = "#1d4ed8", PURPLE = "#7e22ce";
 
 let srv;
@@ -89,6 +93,48 @@ async function run() {
     assert(ok(await api("/api/settings/company", { token: await tokFor(A.id) }), "a").company.brandColor === RED, "red workspace");
     assert(ok(await api("/api/settings/company"), "anon").company.brandColor === PURPLE, "anonymous did not get the platform colour");
     assert(ok(await api("/api/settings/company", { token: sa }), "console").company.brandColor === PURPLE, "console did not get the platform colour");
+  });
+
+  await check("permissions: only users with Settings manage their OWN company's branding; nobody else's", async () => {
+    const viewer = ok(await api("/api/auth/login", { method: "POST", body: { username: "sahra.ismail", password: PW } }), "viewer").token;
+    assert((await api("/api/settings/company", { method: "PATCH", token: viewer, body: { brandColor: "#000000" } })).status === 403, "viewer changed branding");
+    const blue = ok(await api("/api/auth/login", { method: "POST", body: { username: "blue.admin", password: "Blue-Admin-Pass-2026" } }), "blue").token;
+    ok(await api("/api/settings/company", { method: "PATCH", token: blue, body: { secondaryColor: "#dbeafe" } }), "blue own");
+    assert(ok(await api("/api/settings/company", { token: await tokFor(A.id) }), "a").company.secondaryColor !== "#dbeafe", "Blue's change reached Red");
+    assert(ok(await api("/api/settings/company", { token: blue }), "b").company.brandColor === BLUE, "Blue lost its colour");
+    assert((await api("/api/platform/branding", { method: "PATCH", token: blue, body: { name: "x" } })).status === 403, "company admin changed platform branding");
+    assert((await api("/api/platform/branding", { token: blue })).status === 403, "company admin read platform settings");
+  });
+  await check("validation: bad colours and fake images are refused; nothing is stored", async () => {
+    const t = await tokFor(B.id);
+    for (const body of [{ brandColor: "blue" }, { accentColor: "#12345" }, { secondaryColor: "#zzzzzz" }, { logoDataUrl: FAKE_PNG }, { faviconDataUrl: FAKE_PNG }, { brandThemeKey: "<script>" }]) {
+      const r = await api("/api/settings/company", { method: "PATCH", token: t, body });
+      assert(r.status === 400, `company ${JSON.stringify(body).slice(0, 40)} → ${r.status}`);
+    }
+    for (const body of [{ brandColor: "blue" }, { logoDataUrl: FAKE_PNG }, { faviconDataUrl: FAKE_PNG }, { name: "  " }]) {
+      const r = await api("/api/platform/branding", { method: "PATCH", token: sa, body });
+      assert(r.status === 400, `platform ${JSON.stringify(body).slice(0, 40)} → ${r.status}`);
+    }
+    const b = ok(await api("/api/settings/company", { token: t }), "b").company;
+    assert(b.brandColor === BLUE && !b.logoDataUrl, "a refused value was stored");
+    assert(ok(await api("/api/platform/branding", { token: sa }), "p").branding.brandColor === PURPLE, "platform changed");
+  });
+  await check("audit: who changed which branding field and when — never image data", async () => {
+    const t = await tokFor(B.id);
+    const tiny = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+    ok(await api("/api/settings/company", { method: "PATCH", token: t, body: { accentColor: "#60a5fa", logoDataUrl: tiny } }), "change");
+    const e = ok(await api("/api/reports/audit-log", { token: t }), "audit").entries.find((x) => x.action === "Company settings updated");
+    assert(e && /accentColor: .* → #60a5fa/.test(e.details) && /logo uploaded/.test(e.details) && e.at && (e.actor_name || e.actorName), e && JSON.stringify(e).slice(0, 300));
+    assert(!JSON.stringify(e).includes("base64"), "image data in the audit log");
+    const rows = ok(await api("/api/platform/overview", { token: sa }), "ov").recentActivity.filter((x) => x.action === "Platform branding updated");
+    assert(rows.length && !JSON.stringify(rows).includes("base64") && rows[0].actorName, "platform change not audited");
+    ok(await api("/api/settings/company", { method: "PATCH", token: t, body: { logoDataUrl: null } }), "logo off");
+  });
+  await check("PDF documents still build after branding changes", async () => {
+    const t = await tokFor(B.id);
+    const tpls = ok(await api("/api/pdf-templates?kind=global", { token: t }), "tpl").templates;
+    const r = await api(`/api/pdf-templates/${tpls[0].id}/preview.pdf`, { token: t, raw: true });
+    assert(r.status === 200 && r.buf.slice(0, 4).toString() === "%PDF", `pdf ${r.status}`);
   });
 
   let chromium;
@@ -287,6 +333,49 @@ async function run() {
       assert(ok(await api("/api/settings/company", { token: await tokFor(B.id) }), "b").company.brandColor === BLUE, "Blue changed");
       ok(await api("/api/platform/branding", { method: "PATCH", token: sa, body: { brandColor: PURPLE, primaryDark: null, primaryLight: null, brandThemeKey: "custom" } }), "restore");
       await signOut(p8); await p8.close();
+    });
+    await check("persistence: a company's branding is the same after a refresh and on another device", async () => {
+      for (let i = 0; i < 2; i++) {
+        const dev = await browser.newContext(); const pd = await newPage(dev);
+        await pd.goto(BASE + "/blue"); await pd.waitForTimeout(800);
+        await signIn(pd, "blue.admin", "Blue-Admin-Pass-2026");
+        assert((await navy(pd)) === BLUE, `device ${i + 1} navy ${await navy(pd)}`);
+        await pd.reload(); await pd.waitForTimeout(1500);
+        assert((await navy(pd)) === BLUE, `after refresh ${await navy(pd)}`);
+        await dev.close();
+      }
+    });
+    await check("missing or invalid stored branding → default theme, page still usable", async () => {
+      const db = openScope(TESTDB.env, { companyId: B.id });
+      try { db.prepare("UPDATE company_settings SET brand_color = ?, accent_color = ?, secondary_color = ? WHERE id = 1").run("not-a-colour", "#12", ""); } finally { db.close(); }
+      const dev = await browser.newContext(); const pd = await newPage(dev);
+      await pd.goto(BASE + "/blue"); await pd.waitForTimeout(1200);
+      assert((await navy(pd)) === "", `invalid colour applied: ${await navy(pd)}`);
+      await signIn(pd, "blue.admin", "Blue-Admin-Pass-2026");
+      assert((await navy(pd)) === "" && (await pd.evaluate(() => document.documentElement.style.getPropertyValue("--c-cyan"))) === "", "invalid colours applied in the workspace");
+      assert(await pd.getByRole("button", { name: "Account menu" }).count() === 1, "workspace not usable");
+      await dev.close();
+      ok(await api("/api/settings/company", { method: "PATCH", token: await tokFor(B.id), body: { brandColor: BLUE, accentColor: null, secondaryColor: null } }), "restore");
+    });
+    await check("readability: a very light brand keeps white text readable on the sign-in page; dark text on brand buttons", async () => {
+      const LIGHT = "#f1f5f9";
+      ok(await api("/api/settings/company", { method: "PATCH", token: await tokFor(B.id), body: { brandColor: LIGHT } }), "light");
+      const dev = await browser.newContext(); const pd = await newPage(dev);
+      await pd.goto(BASE + "/blue"); await pd.waitForTimeout(1500);
+      const r = await pd.evaluate(() => {
+        const cs = getComputedStyle(document.documentElement);
+        const lum = (hex) => { const n = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }; const v = parseInt(hex.slice(1), 16); return 0.2126 * n((v >> 16) & 255) + 0.7152 * n((v >> 8) & 255) + 0.0722 * n(v & 255); };
+        const hero = cs.getPropertyValue("--c-hero").trim();
+        return { hero, heroLum: hero ? lum(hero) : null, onPrimary: cs.getPropertyValue("--c-text-on-primary").trim(), navy: document.documentElement.style.getPropertyValue("--c-navy").trim() };
+      });
+      assert(r.navy === LIGHT, `brand not applied ${r.navy}`);
+      assert(r.hero && r.heroLum <= 0.18, `hero not darkened: ${JSON.stringify(r)}`);
+      assert(1.05 / (r.heroLum + 0.05) >= 4.5, `white text contrast too low on ${r.hero}`);
+      assert(r.onPrimary === "#0d2436", `text on the light brand is ${r.onPrimary}`);
+      await signIn(pd, "blue.admin", "Blue-Admin-Pass-2026");
+      assert(await pd.getByRole("button", { name: "Account menu" }).count() === 1, "sign-in failed on the light brand");
+      await dev.close();
+      ok(await api("/api/settings/company", { method: "PATCH", token: await tokFor(B.id), body: { brandColor: BLUE } }), "restore");
     });
     await check("no page errors", async () => { assert(!errors.length, errors.slice(0, 3).join(" | ")); });
     await ctx.close();
